@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Models/ErrorViewModel.fs" />
+    <Compile Include="Controllers/HomeController.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Controllers\AuthController.cs" />
+    <None Include="Controllers\ConsultasController.cs" />
+    <None Include="Controllers\InscripcionController.cs" />
+    <None Include="Controllers\TransferenciasController.cs" />
+    <None Include="Models\InputModels\DesinscribirInput.cs" />
+    <None Include="Models\InputModels\InscribirInput.cs" />
+    <None Include="Models\InputModels\TransferirInput.cs" />
+    <None Include="Models\ViewModels\DashboardViewModel.cs" />
+    <None Include="Models\ViewModels\InscripcionViewModel.cs" />
+    <None Include="Models\ViewModels\LoginPortalViewModel.cs" />
+    <None Include="Models\ViewModels\MovimientosViewModel.cs" />
+    <None Include="Models\ViewModels\SaldoViewModel.cs" />
+    <None Include="Models\ViewModels\TransferenciaViewModel.cs" />
+    <None Include="Services\AuthPortalService.cs" />
+    <None Include="Services\ConsultasService.cs" />
+    <None Include="Services\IAuthPortalService.cs" />
+    <None Include="Services\IConsultasService.cs" />
+    <None Include="Services\IPagosService.cs" />
+    <None Include="Services\PagosService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.14" />
+  </ItemGroup>
+
+</Project>

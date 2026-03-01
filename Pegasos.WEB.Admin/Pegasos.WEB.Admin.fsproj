@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Models/ErrorViewModel.fs" />
+    <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Controllers\AuthController.cs" />
+    <None Include="Controllers\ClientesController.cs" />
+    <None Include="Controllers\CuentasController.cs" />
+    <None Include="Controllers\EntidadesController.cs" />
+    <None Include="Controllers\PantallasController.cs" />
+    <None Include="Controllers\ParametrosController.cs" />
+    <None Include="Controllers\ReportesController.cs" />
+    <None Include="Controllers\RolesController.cs" />
+    <None Include="Controllers\UsuariosController.cs" />
+    <None Include="Models\InputModels\CrearUsuarioInput.cs" />
+    <None Include="Models\InputModels\EditarRolInput.cs" />
+    <None Include="Models\LoginViewModel.cs" />
+    <None Include="Models\ReporteViewModel.cs" />
+    <None Include="Models\RolViewModel.cs" />
+    <None Include="Models\UsuarioViewModel.cs" />
+    <None Include="Services\AdminService.cs" />
+    <None Include="Services\AuthService.cs" />
+    <None Include="Services\CoreService.cs" />
+    <None Include="Services\IAdminService.cs" />
+    <None Include="Services\IAuthService.cs" />
+    <None Include="Services\ICoreService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.14" />
+  </ItemGroup>
+
+</Project>

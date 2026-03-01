@@ -1,0 +1,6 @@
+@Solucion_Pagos_Moviles_HostAddress = http://localhost:5188
+
+GET {{Solucion_Pagos_Moviles_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
