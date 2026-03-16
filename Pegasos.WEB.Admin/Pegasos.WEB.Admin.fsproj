@@ -1,41 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="Models/ErrorViewModel.fs" />
-    <Compile Include="Controllers\HomeController.cs" />
-    <Compile Include="Program.fs" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="Models\LoginViewModel.fs" />
+		<Compile Include="Models\UsuarioViewModel.fs" />
+		<Compile Include="Services\IAuthService.fs" />
+		<Compile Include="Services\AuthService.fs" />
 
-  <ItemGroup>
-    <None Include="Controllers\AuthController.cs" />
-    <None Include="Controllers\ClientesController.cs" />
-    <None Include="Controllers\CuentasController.cs" />
-    <None Include="Controllers\EntidadesController.cs" />
-    <None Include="Controllers\PantallasController.cs" />
-    <None Include="Controllers\ParametrosController.cs" />
-    <None Include="Controllers\ReportesController.cs" />
-    <None Include="Controllers\RolesController.cs" />
-    <None Include="Controllers\UsuariosController.cs" />
-    <None Include="Models\InputModels\CrearUsuarioInput.cs" />
-    <None Include="Models\InputModels\EditarRolInput.cs" />
-    <None Include="Models\LoginViewModel.cs" />
-    <None Include="Models\ReporteViewModel.cs" />
-    <None Include="Models\RolViewModel.cs" />
-    <None Include="Models\UsuarioViewModel.cs" />
-    <None Include="Services\AdminService.cs" />
-    <None Include="Services\AuthService.cs" />
-    <None Include="Services\CoreService.cs" />
-    <None Include="Services\IAdminService.cs" />
-    <None Include="Services\IAuthService.cs" />
-    <None Include="Services\ICoreService.cs" />
-  </ItemGroup>
+		<Compile Include="Controllers\AuthController.fs" />
+		<Compile Include="Controllers\UsuariosController.fs" />
+		<Compile Include="Controllers\HomeController.fs" />
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<None Include="Program.fs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.14" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Web.Shared\Web.Shared.csproj" />
+	</ItemGroup>
 
 </Project>

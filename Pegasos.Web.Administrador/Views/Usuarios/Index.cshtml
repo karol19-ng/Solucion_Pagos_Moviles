@@ -1,0 +1,65 @@
+﻿
+@{
+    ViewData["Title"] = "Administración de Usuarios";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-users"></i> Usuarios</h2>
+        <a href="/Usuarios/Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo
+        </a>
+    </div>
+
+    <!-- Buscador -->
+    <form method="get" class="form-group" style="max-width: 400px;">
+        <div style="display: flex; gap: 10px;">
+            <input type="text" name="buscar" value="@ViewBag.Buscar" class="form-control" placeholder="Buscar por nombre o identificación..." />
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </form>
+
+    <div class="table-container" style="margin-top: 20px;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Identificación</th>
+                    <th>Teléfono</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td><strong>@u.NombreCompleto</strong></td>
+                        <td>@u.Email</td>
+                        <td>@u.Identificacion</td>
+                        <td>@u.Telefono</td>
+                        <td><span class="badge @(u.Rol == "Administrador" ? "badge-success" : "badge-danger")">@u.Rol</span></td>
+                        <td>@(u.Activo ? "Activo" : "Inactivo")</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="/Usuarios/Edit/@u.Id" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@u.Id" method="post" style="display: inline;" onsubmit="return confirm('¿Eliminar usuario?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

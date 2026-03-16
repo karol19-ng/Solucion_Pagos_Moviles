@@ -28,14 +28,14 @@ namespace Services.Implementations
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Usuario) || string.IsNullOrWhiteSpace(request.Contraseña))
-                throw new ArgumentException("Todos los datos son requeridos");
+            if (string.IsNullOrWhiteSpace(request.usuario) || string.IsNullOrWhiteSpace(request.password))
+                throw new ArgumentException("ERROR EN LOGIN SERVICE:CAMPOS VACIOS");
 
             // Buscar por Nombre_Usuario (campo cambiado)
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.NombreUsuario == request.Usuario);
+                .FirstOrDefaultAsync(u => u.NombreUsuario == request.usuario);
 
-            if (usuario == null || !BCrypt.Net.BCrypt.Verify(request.Contraseña, usuario.Contraseña))
+            if (usuario == null || !BCrypt.Net.BCrypt.Verify(request.password, usuario.Contraseña))
                 throw new UnauthorizedAccessException("Usuario o contraseña incorrectos");
 
             var token = GenerateJwtToken(usuario);

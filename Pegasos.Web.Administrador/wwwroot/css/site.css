@@ -1,0 +1,63 @@
+/* ============================================
+   NEXUSPAY - SISTEMA DE PAGOS MÓVILES
+   Tema Oscuro Oficial - Avance 2
+   ============================================ */
+
+:root {
+    /* Colores base oscuros */
+    --nx-bg-primary: #0a0e17;
+    --nx-bg-secondary: #111827;
+    --nx-bg-tertiary: #1f2937;
+    --nx-bg-elevated: #374151;
+    /* Acentos */
+    --nx-accent-cyan: #00d4ff;
+    --nx-accent-purple: #8b5cf6;
+    --nx-accent-gradient: linear-gradient(135deg, #00d4ff 0%, #8b5cf6 100%);
+    /* Texto */
+    --nx-text-primary: #f9fafb;
+    --nx-text-secondary: #9ca3af;
+    --nx-text-muted: #6b7280;
+    /* Estados */
+    --nx-success: #10b981;
+    --nx-warning: #f59e0b;
+    --nx-error: #ef4444;
+    --nx-info: #3b82f6;
+    /* Dimensiones */
+    --nx-sidebar-width: 280px;
+    --nx-topbar-height: 70px;
+    --nx-border-radius: 12px;
+    --nx-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.nexus-body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--nx-bg-primary);
+    color: var(--nx-text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--nx-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--nx-bg-elevated);
+    border-radius: 4px;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--nx-accent-cyan);
+    }

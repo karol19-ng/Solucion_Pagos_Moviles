@@ -1,12 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Web.Shared.css
-{
-    class nexus_theme
-    {
-    }
+﻿:root {
+    --nx-bg-primary: #1a050a; 
+    --nx-bg-secondary: #2b0610; 
+    --nx-bg-tertiary: #4a0e1c; 
+    --nx-bg-elevated: #5d1a29;
+    --nx-accent-gold: #c5a059; 
+    --nx-accent-light-gold: #e2c275;
+    --nx-accent-gradient: linear-gradient(135deg, #c5a059 0%, #8d6e35 100%);
+    --nx-text-primary: #ffffff;
+    --nx-text-secondary: #e2c275; 
+    --nx-text-muted: #8d6e35;
+    --nx-success: #2ecc71;
+    --nx-warning: #f1c40f;
+    --nx-error: #e74c3c;
+    --nx-sidebar-width: 280px;
+    --nx-topbar-height: 70px;
+    --nx-border-radius: 12px;
+    --nx-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

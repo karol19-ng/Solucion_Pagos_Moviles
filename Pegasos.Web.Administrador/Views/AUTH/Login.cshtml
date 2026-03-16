@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco Pegasos | Login Seguro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --vinotinto-oscuro: #2b0811;
+            --vinotinto-medio: #4a0e1e;
+            --dorado-primario: #c5a367;
+            --dorado-brillo: #e9d5a3;
+            --texto-suave: rgba(255, 255, 255, 0.7);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(197, 163, 103, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* Fondo con degradado radial para dar profundidad como en la imagen */
+            background: radial-gradient(circle, var(--vinotinto-medio) 0%, var(--vinotinto-oscuro) 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Contenedor principal con efecto Glassmorphism */
+        .login-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 3rem 2.5rem;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            position: relative;
+        }
+
+            .login-card::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, var(--dorado-primario), transparent);
+            }
+
+        .brand-logo {
+            width: 140px;
+            margin-bottom: 1.5rem;
+            /* Filtro para que el logo resalte */
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.4));
+        }
+
+        .bank-title {
+            font-family: 'Cinzel', serif; /* Fuente tipo romana para bancos */
+            color: var(--dorado-primario);
+            font-size: 1.6rem;
+            letter-spacing: 5px;
+            font-weight: 400;
+            margin-bottom: 0.3rem;
+        }
+
+        .bank-slogan {
+            color: var(--texto-suave);
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            margin-bottom: 2.5rem;
+            text-transform: uppercase;
+        }
+
+        /* Estilos de Formulario */
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-label {
+            color: var(--dorado-brillo);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 0.6rem;
+            text-transform: uppercase;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            border-radius: 5px;
+            padding: 12px 15px;
+            color: #fff;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+            .form-control:focus {
+                outline: none;
+                border-color: var(--dorado-primario);
+                background: rgba(255, 255, 255, 0.05);
+                box-shadow: 0 0 10px rgba(197, 163, 103, 0.2);
+            }
+
+        /* Botón Estilo Premium */
+        .btn-pegasos {
+            width: 100%;
+            padding: 14px;
+            margin-top: 1rem;
+            background: linear-gradient(135deg, #c5a367 0%, #8e6d31 100%);
+            border: none;
+            border-radius: 5px;
+            color: #1a050a;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+            .btn-pegasos:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+                background: linear-gradient(135deg, #d6b880 0%, #a6813d 100%);
+            }
+
+            .btn-pegasos:active {
+                transform: translateY(0);
+            }
+
+        .footer-links {
+            margin-top: 2rem;
+        }
+
+        .forgot-link {
+            color: var(--texto-suave);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.3s;
+        }
+
+            .forgot-link:hover {
+                color: var(--dorado-brillo);
+            }
+
+        .security-tag {
+            margin-top: 2rem;
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <img src="/images/logo_pegasos.png" alt="Logo Banco Pegasos" class="brand-logo">
+        <h1 class="bank-title">BANCO PEGASOS</h1>
+        <p class="bank-slogan">Solidez que inspira confianza</p>
+
+
+        @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+        {
+            <div style="background: rgba(255,0,0,0.2); color: #ff6b6b; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ff0000; font-size: 0.8rem; text-align: center;">
+                
+                @ViewBag.ErrorMessage
+            </div>
+        })
+
+
+
+        <form asp-action="Login" asp-controller="Auth" method="POST">
+            <div asp-validation-summary="All" class="text-danger" style="color: #ff6b6b; font-weight: bold;"></div>
+            @Html.AntiForgeryToken() <div class="form-group">
+                <label class="form-label">Nombre de Usuario</label>
+                <input asp-for="Username" name="Username" class="form-control" placeholder="Ej: Usuario Seguro" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input asp-for="Password" name="Password" type="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-pegasos">INGRESAR</button>
+        </form>
+
+        <div class="footer-links">
+            <a href="#" class="forgot-link">¿Olvidó sus credenciales?</a>
+        </div>
+
+        <div class="security-tag">
+            Conexión encriptada AES-256
+        </div>
+    </div>
+
+</body>
+</html>

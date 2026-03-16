@@ -1,12 +1,98 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NexusPay</title>
 
-namespace Web.Shared.Views
-{
-    class LayoutDark
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Estilos NexusPay -->
+    <link rel="stylesheet" href="~/css/nexus-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/nexus-components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/nexus-layout.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="nexus-body">
+
+    @if (User.Identity?.IsAuthenticated == true)
     {
+        <!-- SA3: Sidebar Navigation -->
+        <aside class="nexus-sidebar" id="nexusSidebar">
+            @await Html.PartialAsync("_Sidebar")
+        </aside>
+
+        <!-- SA3: Main Content Area -->
+        <div class="nexus-wrapper">
+            <!-- SA3: Top Header -->
+            @await Html.PartialAsync("_TopBar")
+
+            <!-- Page Content -->
+            <main class="nexus-main">
+                @RenderBody()
+            </main>
+        </div>
     }
-}
+    else
+    {
+        <!-- SA3: Auth Layout (sin sidebar) -->
+        <div class="nexus-auth-wrapper">
+            @RenderBody()
+        </div>
+    }
+
+    <!-- SA4: Session Timeout Modal -->
+    <div id="sessionTimeoutModal" class="nexus-modal" style="display: none;">
+        <div class="nexus-modal-content nexus-modal-warning">
+            <div class="nexus-modal-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h3>Sesión por expirar</h3>
+            <p>Su sesión expirará en <span id="countdownSeconds">30</span> segundos por inactividad.</p>
+            <div class="nexus-modal-actions">
+                <button type="button" class="nexus-btn nexus-btn-primary" onclick="extendSession()">
+                    <i class="fas fa-sync-alt"></i> Continuar sesión
+                </button>
+                <a href="/Auth/Logout" class="nexus-btn nexus-btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SA4: Session Expired Modal -->
+    <div id="sessionExpiredModal" class="nexus-modal" style="display: none;">
+        <div class="nexus-modal-content nexus-modal-error">
+            <div class="nexus-modal-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h3>Sesión expirada</h3>
+            <p>Su sesión ha expirado por inactividad. Por favor inicie sesión nuevamente.</p>
+            <div class="nexus-modal-actions">
+                <a href="/Auth/Login" class="nexus-btn nexus-btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+
+    <!-- SA4: Session Timeout Script -->
+    <script src="~/js/session-timeout.js" asp-append-version="true"></script>
+    <script src="~/js/nexus-core.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

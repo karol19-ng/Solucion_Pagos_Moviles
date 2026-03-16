@@ -8,8 +8,8 @@ namespace Entities.DTOs
 {
     public class LoginRequest
     {
-        public string Usuario { get; set; }
-        public string Contraseña { get; set; }
+        public string usuario { get; set; }
+        public string password { get; set; }
     }
 
     public class LoginResponse
