@@ -17,31 +17,36 @@
 
             <div class="form-group mb-3">
                 <label asp-for="NombreCompleto" class="form-label">Nombre Completo</label>
-                <input asp-for="NombreCompleto" class="form-control" readonly disabled />
-                <span class="text-muted small">Este dato se obtiene de su perfil</span>
+                <input asp-for="NombreCompleto" class="form-control" readonly />
             </div>
 
             <div class="form-group mb-3">
                 <label asp-for="Identificacion" class="form-label">Identificación</label>
                 <input asp-for="Identificacion" class="form-control" placeholder="Ingrese su número de identificación" required />
                 <span asp-validation-for="Identificacion" class="text-danger"></span>
+                <small class="text-muted">Ej: 407580410</small>
             </div>
 
             <div class="form-group mb-3">
                 <label asp-for="NumeroCuenta" class="form-label">Número de Cuenta</label>
-                <input asp-for="NumeroCuenta" class="form-control" placeholder="Ej: CR123456789" required />
+                <input asp-for="NumeroCuenta" class="form-control" placeholder="Ej: CR012345678901234568" required />
                 <span asp-validation-for="NumeroCuenta" class="text-danger"></span>
+                <small class="text-muted">Debe ser una cuenta activa en el banco</small>
             </div>
 
             <div class="form-group mb-4">
                 <label asp-for="Telefono" class="form-label">Número de Teléfono</label>
-                <input asp-for="Telefono" class="form-control" placeholder="8888-5555" required />
+                <input asp-for="Telefono" class="form-control" placeholder="70407040" required
+                       onkeypress="return event.charCode >= 48 && event.charCode <= 57" />
                 <span asp-validation-for="Telefono" class="text-danger"></span>
-                <span class="text-muted small">Formato: 8 dígitos sin guiones</span>
+                <small class="text-muted">8 dígitos, solo números</small>
             </div>
 
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> Al inscribirse, su cuenta quedará habilitada para realizar y recibir transferencias mediante pagos móviles.
+                <i class="fas fa-info-circle"></i>
+                <strong>Importante:</strong> Al inscribirse, su cuenta quedará habilitada para realizar y recibir transferencias mediante pagos móviles.
+                <br>
+                <small>Los datos deben coincidir con su información registrada en el banco.</small>
             </div>
 
             <div class="form-group text-center">
@@ -58,4 +63,10 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Validar que el teléfono solo tenga números
+        document.getElementById('Telefono').addEventListener('input', function (e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
 }

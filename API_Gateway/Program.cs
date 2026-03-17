@@ -31,9 +31,13 @@ builder.Services.AddAuthentication()
         };
     });
 
+// IMPORTANTE: Registrar HttpClientFactory
+builder.Services.AddHttpClient();
+
 builder.Services.AddOcelot();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
 // GTW2: Middleware de validación ANTES de Ocelot
@@ -42,7 +46,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseRouting();
-app.UseMiddleware<GatewayAuthMiddleware>();
+
 // GTW1: Ocelot como middleware final
 await app.UseOcelot();
 

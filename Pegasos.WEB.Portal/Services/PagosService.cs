@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using System.Net.Http.Headers;
 using Pegasos.WEB.Portal.Models.InputModels;
 using Pegasos.WEB.Portal.Models.ViewModels;
 
@@ -20,19 +21,41 @@ namespace Pegasos.WEB.Portal.Services
         {
             try
             {
+                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    new AuthenticationHeaderValue("Bearer", token);
+                _httpClient.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
 
                 var json = JsonSerializer.Serialize(input);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync("gateway/auth/register", content);
+                _logger.LogInformation("Enviando inscripción con token: {TokenPreview}",
+                    token?.Substring(0, Math.Min(20, token?.Length ?? 0)) + "...");
+                _logger.LogInformation("URL: auth/register");
+                _logger.LogInformation("JSON: {Json}", json);
+
+                var response = await _httpClient.PostAsync("auth/register", content);
 
                 var responseJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<InscripcionResult>(responseJson, new JsonSerializerOptions
+                _logger.LogInformation("Respuesta inscripción: Status={status}, Body={body}",
+                    response.StatusCode, responseJson);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    return JsonSerializer.Deserialize<InscripcionResult>(responseJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+                else
+                {
+                    _logger.LogWarning("Error en inscripción: {StatusCode} - {Response}",
+                        response.StatusCode, responseJson);
+                    return new InscripcionResult
+                    {
+                        Codigo = -1,
+                        Descripcion = $"Error {response.StatusCode}: {responseJson}"
+                    };
+                }
             }
             catch (Exception ex)
             {
@@ -45,19 +68,36 @@ namespace Pegasos.WEB.Portal.Services
         {
             try
             {
+                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    new AuthenticationHeaderValue("Bearer", token);
+                _httpClient.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
 
                 var json = JsonSerializer.Serialize(input);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync("gateway/auth/cancel-subscription", content);
+                _logger.LogInformation("Enviando desinscripción: {Json}", json);
+
+                var response = await _httpClient.PostAsync("auth/cancel-subscription", content);
 
                 var responseJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<InscripcionResult>(responseJson, new JsonSerializerOptions
+                _logger.LogInformation("Respuesta desinscripción: Status={status}, Body={body}",
+                    response.StatusCode, responseJson);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    return JsonSerializer.Deserialize<InscripcionResult>(responseJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+                else
+                {
+                    return new InscripcionResult
+                    {
+                        Codigo = -1,
+                        Descripcion = $"Error {response.StatusCode}"
+                    };
+                }
             }
             catch (Exception ex)
             {
@@ -70,19 +110,36 @@ namespace Pegasos.WEB.Portal.Services
         {
             try
             {
+                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    new AuthenticationHeaderValue("Bearer", token);
+                _httpClient.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
 
                 var json = JsonSerializer.Serialize(input);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync("gateway/transactions/route", content);
+                _logger.LogInformation("Enviando transferencia: {Json}", json);
+
+                var response = await _httpClient.PostAsync("transactions/route", content);
 
                 var responseJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<TransferenciaResult>(responseJson, new JsonSerializerOptions
+                _logger.LogInformation("Respuesta transferencia: Status={status}, Body={body}",
+                    response.StatusCode, responseJson);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    return JsonSerializer.Deserialize<TransferenciaResult>(responseJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+                else
+                {
+                    return new TransferenciaResult
+                    {
+                        Codigo = -1,
+                        Descripcion = $"Error {response.StatusCode}"
+                    };
+                }
             }
             catch (Exception ex)
             {

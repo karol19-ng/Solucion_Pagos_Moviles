@@ -1,6 +1,6 @@
 ﻿{
   "Routes": [
-    // 1. LOGIN (PÚBLICO - Prioridad Alta)
+    // 1. LOGIN (PÚBLICO)
     {
       "DownstreamPathTemplate": "/auth/login",
       "DownstreamScheme": "https",
@@ -11,26 +11,72 @@
         }
       ],
       "UpstreamPathTemplate": "/auth/login",
-      "UpstreamHttpMethod": [ "POST" ],
-      "Priority": 2
+      "UpstreamHttpMethod": [ "POST" ]
     },
 
-    // 2. REFRESH Y VALIDATE (PÚBLICOS)
+    // 2. REGISTER (REQUIERE TOKEN - Usando GatewayAuth)
     {
-      "DownstreamPathTemplate": "/auth/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamPathTemplate": "/auth/register",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5005
+          "Port": 7258
         }
       ],
-      "UpstreamPathTemplate": "/auth/{everything}",
+      "UpstreamPathTemplate": "/auth/register",
       "UpstreamHttpMethod": [ "POST" ],
-      "Priority": 1
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "GatewayAuth"
+      }
     },
 
-    // 3. BITACORA (REQUERIR TOKEN)
+    // 3. CANCEL-SUBSCRIPTION (REQUIERE TOKEN)
+    {
+      "DownstreamPathTemplate": "/auth/cancel-subscription",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/auth/cancel-subscription",
+      "UpstreamHttpMethod": [ "POST" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "GatewayAuth"
+      }
+    },
+
+    // 4. REFRESH (PÚBLICO)
+    {
+      "DownstreamPathTemplate": "/auth/refresh",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/auth/refresh",
+      "UpstreamHttpMethod": [ "POST" ]
+    },
+
+    // 5. VALIDATE (PÚBLICO)
+    {
+      "DownstreamPathTemplate": "/auth/validate",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/auth/validate",
+      "UpstreamHttpMethod": [ "POST" ]
+    },
+
+    // 6. BITACORA (REQUIERE TOKEN)
     {
       "DownstreamPathTemplate": "/api/bitacora/{everything}",
       "DownstreamScheme": "http",

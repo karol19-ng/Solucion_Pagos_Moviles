@@ -20,7 +20,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddControllersWithViews();
 
-// HttpClient para llamar al Gateway (IGUAL QUE EL ADMIN)
+// HttpClient para llamar al Gateway
 builder.Services.AddHttpClient<IAuthPortalService, AuthPortalService>(client =>
 {
     var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
@@ -38,6 +38,15 @@ builder.Services.AddHttpClient<IPagosService, PagosService>(client =>
 });
 
 builder.Services.AddHttpClient<IConsultasService, ConsultasService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// NUEVO: Servicio para obtener información del core bancario
+builder.Services.AddHttpClient<ICoreClienteService, CoreClienteService>(client =>
 {
     var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
     client.BaseAddress = new Uri(baseUrl);
