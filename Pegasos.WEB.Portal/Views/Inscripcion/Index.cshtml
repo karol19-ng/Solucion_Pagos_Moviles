@@ -1,5 +1,61 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model InscripcionViewModel
 @{
+    ViewData["Title"] = "Inscripción a Pagos Móviles";
+}
+
+<div class="header-section">
+    <h2 class="page-title">
+        <i class="fas fa-mobile-alt me-2"></i> Inscripción a Pagos Móviles
+    </h2>
+    <p class="text-muted">Complete el formulario para asociar su cuenta a pagos móviles</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <form asp-action="Inscribir" asp-controller="Inscripcion" method="POST" class="mt-4">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group mb-3">
+                <label asp-for="NombreCompleto" class="form-label">Nombre Completo</label>
+                <input asp-for="NombreCompleto" class="form-control" readonly disabled />
+                <span class="text-muted small">Este dato se obtiene de su perfil</span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Identificacion" class="form-label">Identificación</label>
+                <input asp-for="Identificacion" class="form-control" placeholder="Ingrese su número de identificación" required />
+                <span asp-validation-for="Identificacion" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="NumeroCuenta" class="form-label">Número de Cuenta</label>
+                <input asp-for="NumeroCuenta" class="form-control" placeholder="Ej: CR123456789" required />
+                <span asp-validation-for="NumeroCuenta" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-4">
+                <label asp-for="Telefono" class="form-label">Número de Teléfono</label>
+                <input asp-for="Telefono" class="form-control" placeholder="8888-5555" required />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+                <span class="text-muted small">Formato: 8 dígitos sin guiones</span>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Al inscribirse, su cuenta quedará habilitada para realizar y recibir transferencias mediante pagos móviles.
+            </div>
+
+            <div class="form-group text-center">
+                <button type="submit" class="btn btn-pegasos px-5">
+                    <i class="fas fa-check-circle me-2"></i> Inscribirse
+                </button>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-secondary ms-2">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }
