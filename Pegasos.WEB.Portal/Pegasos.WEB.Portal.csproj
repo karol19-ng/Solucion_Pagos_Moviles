@@ -6,4 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Remove="wwwroot\images\logo_pegasos.png" />
+    <Content Remove="wwwroot\js\session-timeout.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\images\logo_pegasos.png" />
+    <None Include="wwwroot\js\session-timeout.js" />
+  </ItemGroup>
+
 </Project>
