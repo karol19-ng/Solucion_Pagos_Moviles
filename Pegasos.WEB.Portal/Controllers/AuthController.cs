@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pegasos.WEB.Portal.Models.ViewModels;
 using Pegasos.WEB.Portal.Services;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Pegasos.WEB.Portal.Controllers
 {
@@ -53,7 +54,7 @@ namespace Pegasos.WEB.Portal.Controllers
 
             var result = await _authService.LoginAsync(model.Username, model.Password);
 
-            if (result == null)
+            if (result == null || string.IsNullOrEmpty(result.access_token))
             {
                 RegisterFailedAttempt(username);
                 int attempts = GetFailedAttempts(username);
@@ -74,14 +75,17 @@ namespace Pegasos.WEB.Portal.Controllers
             // Login exitoso
             ClearAttempts(username);
 
+            // Obtener nombre del token si es posible
+            var nombreCompleto = GetNombreDesdeToken(result.access_token);
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, model.Username),
-                new Claim(ClaimTypes.NameIdentifier, result.UsuarioId.ToString()),
-                new Claim("nombreCompleto", result.NombreCompleto ?? "Cliente Pegasos"),
-                new Claim("access_token", result.AccessToken),
-                new Claim("refresh_token", result.RefreshToken ?? ""),
-                new Claim(ClaimTypes.Role, "Cliente") // Rol fijo para portal
+                new Claim(ClaimTypes.NameIdentifier, model.Username),
+                new Claim("nombreCompleto", nombreCompleto),
+                new Claim("access_token", result.access_token),
+                new Claim("refresh_token", result.refresh_token ?? ""),
+                new Claim(ClaimTypes.Role, "Cliente")
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -90,7 +94,7 @@ namespace Pegasos.WEB.Portal.Controllers
             var authProperties = new AuthenticationProperties
             {
                 IsPersistent = model.RememberMe,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5), // PTL4: 5 minutos
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5),
                 AllowRefresh = false
             };
 
@@ -105,6 +109,27 @@ namespace Pegasos.WEB.Portal.Controllers
                 return Redirect(returnUrl);
 
             return RedirectToAction("Index", "Home");
+        }
+
+        private string GetNombreDesdeToken(string token)
+        {
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadJwtToken(token);
+                // Intentar diferentes posibles claims donde pueda venir el nombre
+                var nombreClaim = jsonToken.Claims.FirstOrDefault(c =>
+                    c.Type == "nombre" ||
+                    c.Type == "name" ||
+                    c.Type == "unique_name" ||
+                    c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+
+                return nombreClaim?.Value ?? "Cliente";
+            }
+            catch
+            {
+                return "Cliente";
+            }
         }
 
         [HttpPost]

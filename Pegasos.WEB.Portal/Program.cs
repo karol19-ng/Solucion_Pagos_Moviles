@@ -3,47 +3,50 @@ using Pegasos.WEB.Portal.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllersWithViews();
-
-// Configure HttpClient for Gateway
-builder.Services.AddHttpClient<IAuthPortalService, AuthPortalService>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ApiSettings:GatewayUrl"]
-        ?? "http://localhost:5000");
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
-
-builder.Services.AddHttpClient<IPagosService, PagosService>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ApiSettings:GatewayUrl"]
-        ?? "http://localhost:5000");
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
-
-builder.Services.AddHttpClient<IConsultasService, ConsultasService>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ApiSettings:GatewayUrl"]
-        ?? "http://localhost:5000");
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
-
-// Cookie Authentication (PTL1, PTL3)
+// Configurar autenticación con cookies (5 minutos = PTL4)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
         options.AccessDeniedPath = "/Auth/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(5); // PTL4: 5 minutos de inactividad
-        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+        options.SlidingExpiration = false;
+        options.Cookie.Name = "Pegasos.Portal.Session";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Lax;
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddControllersWithViews();
+
+// HttpClient para llamar al Gateway (IGUAL QUE EL ADMIN)
+builder.Services.AddHttpClient<IAuthPortalService, AuthPortalService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddHttpClient<IPagosService, PagosService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddHttpClient<IConsultasService, ConsultasService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -53,12 +56,11 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.Run();

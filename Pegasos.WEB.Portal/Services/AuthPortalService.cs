@@ -19,24 +19,28 @@ namespace Pegasos.WEB.Portal.Services
         {
             try
             {
-                var json = $"{{\"usuario\":\"{username}\",\"password\":\"{password}\"}}";
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                _httpClient.DefaultRequestHeaders.Clear();
+
+                var jsonManual = $"{{\"usuario\":\"{username}\",\"password\":\"{password}\"}}";
+                var content = new StringContent(jsonManual, Encoding.UTF8, "application/json");
 
                 _logger.LogInformation("Enviando login a gateway: auth/login");
 
-                var response = await _httpClient.PostAsync("gateway/auth/login", content);
+                var response = await _httpClient.PostAsync("auth/login", content);
+
+                var responseJson = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Respuesta del gateway: Status={status}, Body={body}",
+                    response.StatusCode, responseJson);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseJson = await response.Content.ReadAsStringAsync();
                     return JsonSerializer.Deserialize<AuthResult>(responseJson, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
                 }
 
-                var error = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning("Login fallido: {Error}", error);
+                _logger.LogWarning("Login fallido: {Error}", responseJson);
                 return null;
             }
             catch (Exception ex)
@@ -53,7 +57,7 @@ namespace Pegasos.WEB.Portal.Services
                 _httpClient.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-                var response = await _httpClient.PostAsync("gateway/auth/refresh", new StringContent("{}"));
+                var response = await _httpClient.PostAsync("auth/refresh", new StringContent("{}"));
                 return response.IsSuccessStatusCode;
             }
             catch

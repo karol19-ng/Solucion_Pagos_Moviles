@@ -14,7 +14,7 @@ builder.Logging.AddDebug();
 // GTW1: Configurar Ocelot
 builder.Configuration.AddJsonFile("Configuration/ocelot.json", optional: false, reloadOnChange: true);
 
-// GTW2: Configurar autenticación JWT para validación
+// GTW2: Configurar autenticaciÃ³n JWT para validaciÃ³n
 builder.Services.AddAuthentication()
     .AddJwtBearer("GatewayAuth", options =>
     {
@@ -36,7 +36,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
-// GTW2: Middleware de validación ANTES de Ocelot
+// GTW2: Middleware de validaciÃ³n ANTES de Ocelot
 app.UseMiddleware<GatewayAuthenticationMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();

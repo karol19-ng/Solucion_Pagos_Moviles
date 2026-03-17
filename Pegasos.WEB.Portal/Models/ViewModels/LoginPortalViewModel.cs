@@ -21,10 +21,13 @@ namespace Pegasos.WEB.Portal.Models.ViewModels
 
     public class AuthResult
     {
-        public string AccessToken { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;
-        public DateTime ExpiresIn { get; set; }
-        public int UsuarioId { get; set; }
-        public string NombreCompleto { get; set; } = string.Empty;
+        // IMPORTANTE: Estos nombres deben coincidir con la respuesta del microservicio
+        public string access_token { get; set; } = string.Empty;
+        public string refresh_token { get; set; } = string.Empty;
+        public DateTime expires_in { get; set; }
+
+        // El microservicio devuelve SOLO access_token, refresh_token y expires_in
+        // Los otros datos (usuarioId, nombreCompleto) los obtendremos del token JWT
+        // o de una consulta adicional
     }
 }

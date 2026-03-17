@@ -7,10 +7,6 @@
         "Action": "Start"
       },
       {
-        "Path": "BitacoraService\\BitacoraService.csproj",
-        "Action": "Start"
-      },
-      {
         "Path": "API_Gateway\\API_Gateway.csproj",
         "Action": "Start"
       },
