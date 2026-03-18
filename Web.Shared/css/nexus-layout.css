@@ -1,12 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿<!DOCTYPE html >
+<html lang="es" >
+<head >
+<meta charset="utf-8" / >
+<meta name="viewport" content="width=device-width, initial-scale=1.0" / >
+<title > @ViewData["Title"] - NexusPay</title >
 
-namespace Web.Shared.css
-{
-    class nexus_layout
-    {
-    }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" >
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" / >
+<link rel="stylesheet" href="~/css/nexus-dark.css" asp-append-version="true" / >
+
+@await RenderSectionAsync("Styles", required: false)
+</head >
+<body >
+@if (User.Identity?.IsAuthenticated == true) {
+    <aside class="sidebar"> <div class="brand"> <i class="fas fa-cube brand-icon"></i> <span class="brand-text">NEXUSPAY</span> </div> <nav class="nav-menu"> <a href="/Home/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")"> <i class="fas fa-home"></i> <span>Inicio</span> </a> <a href="/Usuarios/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Usuarios" ? "active" : "")"> <i class="fas fa-users"></i> <span>Usuarios</span> </a> <a href="#" class="nav-link"> <i class="fas fa-user-shield"></i> <span>Roles</span> </a> <a href="#" class="nav-link"> <i class="fas fa-cog"></i> <span>Parámetros</span> </a> </nav> <div class="sidebar-footer"> <small>v2.0 - Avance 2</small> </div> </aside> <div class="main-wrapper"> <header class="topbar"> <h1 class="page-title">@ViewData["Title"]</h1> <div class="topbar-actions">
+    <!-- SA4: Indicador de sesión -->
+    <div class="session-timer" id="sessionTimer" title="Tiempo restante"> <i class="fas fa-clock"></i> <span>05:00</span> </div> <div class="user-menu"> <div class="user-info"> <span class="user-name">@User.FindFirst("nombreCompleto")?.Value</span> <span class="user-role">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span> </div> <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline"> @Html.AntiForgeryToken() <button type="submit" class="btn-logout"> <i class="fas fa-sign-out-alt"></i> </button> </form> </div> </div> </header> <main class="main-content"> @RenderBody() </main> </div>
+    <!-- SA4: Modal timeout -->
+    <div id="timeoutModal" class="modal" style="display: none;"> <div class="modal-content modal-warning"> <i class="fas fa-clock modal-icon"></i> <h3>Sesión por expirar</h3> <p>Su sesión expirará en <span id="countdown">30</span> segundos</p> <div class="modal-actions"> <button onclick="extendSession()" class="btn btn-primary">Continuar</button> <a href="/Auth/Logout" class="btn btn-secondary">Salir</a> </div> </div> </div> <div id="expiredModal" class="modal" style="display: none;"> <div class="modal-content modal-error"> <i class="fas fa-lock modal-icon"></i> <h3>Sesión expirada</h3> <p>Debe iniciar sesión nuevamente</p> <div class="modal-actions"> <a href="/Auth/Login" class="btn btn-primary">Iniciar sesión</a> </div> </div> </div> <script src="~/js/session-timeout.js"></script>
 }
+
+else {
+    @RenderBody()
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" > </script >
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js" > </script >
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js" > </script >
+
+@await RenderSectionAsync("Scripts", required: false)
+</body >
+</html >

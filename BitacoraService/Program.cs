@@ -13,8 +13,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<BitacoraDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("BitacoraConnection")));
 
-builder.Services.AddScoped<IBitacoraService, BitacoraService>();
-
+// Cambia la línea por esta:
+builder.Services.AddScoped<IBitacoraService, Services.Implementations.BitacoraService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

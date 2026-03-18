@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace API_Proyecto1.Controllers
 {
-    [ApiController]
+   [ApiController]
     [Route("[controller]")]
     public class auth : ControllerBase
     {
@@ -19,29 +19,47 @@ namespace API_Proyecto1.Controllers
             _afiliacionService = afiliacionService;
         }
 
+
+        // Endpoint solo para pruebas - generar contraseña encriptada
+        //    [HttpGet("encrypt-test")]
+        //   public IActionResult EncryptTest()
+        //   {
+        //       string password = "Ozzy.2025";
+        //
+        //        string hash = BCrypt.Net.BCrypt.HashPassword(password);
+
+        //         return Ok(new
+        //         {
+        //             usuario = "marinnet",
+        //             password_original = password,
+        //             password_encriptada = hash
+        //          });
+        //      }
         // SRV5 - Login
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] System.Text.Json.JsonElement requestRaw)
         {
             try
             {
+                // Convertimos el JSON crudo a nuestra clase manualmente
+                var opciones = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var request = System.Text.Json.JsonSerializer.Deserialize<LoginRequest>(requestRaw.GetRawText(), opciones);
+
+                if (request == null || string.IsNullOrWhiteSpace(request.usuario))
+                {
+                    return BadRequest(new { codigo = -1, descripcion = "Sigue llegando vacío: " + requestRaw.GetRawText() });
+                }
+
                 var result = await _loginService.LoginAsync(request);
+                if (result == null) return Unauthorized(new { codigo = -1, descripcion = "Fallo de validación" });
                 return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { codigo = -1, descripcion = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { codigo = -1, descripcion = ex.Message });
+
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { codigo = -1, descripcion = ex.Message });
+                return BadRequest(new { codigo = -1, descripcion = ex.Message });
             }
         }
-
 
 
 

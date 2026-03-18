@@ -1,2 +1,23 @@
-﻿module Login
+﻿<div class="login-card text-center">
+    <img src="~/images/logo_pegasos.png" alt="Banco Pegasos" style="width: 150px; margin-bottom: 1rem;">
 
+    <h3 style="color: var(--dorado-bronce); font-weight: 300;">BANCO PEGASOS</h3>
+    <p class="small mb-4 text-white-50">SOLIDEZ QUE INSPIRA CONFIANZA</p>
+
+    <form asp-action="Login" method="post">
+        <div class="mb-3 text-start">
+            <label class="form-label small">Usuario</label>
+            <input type="text" name="Username" class="form-control" placeholder="Ingrese su usuario" required>
+        </div>
+        <div class="mb-4 text-start">
+            <label class="form-label small">Contraseña</label>
+            <input type="password" name="Password" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-pegasos w-100 py-2 mb-3">INICIAR SESIÓN</button>
+
+        <div class="text-center">
+            <a href="#" class="text-white-50 small text-decoration-none">¿Olvidó su contraseña?</a>
+        </div>
+    </form>
+</div>

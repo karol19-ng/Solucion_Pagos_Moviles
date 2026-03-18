@@ -1,0 +1,89 @@
+﻿@model Pegasos.Web.Administrador.Models.UsuarioViewModel
+
+<div class="crud-container mx-auto" style="max-width: 700px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 style="color: var(--dorado-primario); font-family: 'Cinzel'; margin: 0;">
+            <i class="fas fa-user-edit me-2"></i>Editar Usuario
+        </h3>
+        <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDelete(@Model.Id)">
+            <i class="fas fa-trash-alt me-1"></i> Eliminar Cuenta
+        </button>
+    </div>
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-white-50">Nombre Completo</label>
+                <input asp-for="NombreCompleto" class="form-control bg-dark text-white border-secondary" />
+                <span asp-validation-for="NombreCompleto" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-white-50">Correo Electrónico</label>
+                <input asp-for="Email" class="form-control bg-dark text-white border-secondary" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-white-50">Identificación</label>
+                <input asp-for="Identificacion" class="form-control bg-dark text-white border-secondary" readonly />
+                <small class="text-muted">La identificación no es editable.</small>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-white-50">Rol del Sistema</label>
+                <select asp-for="Rol" class="form-select bg-dark text-white border-secondary">
+                    <option value="Usuario">Usuario</option>
+                    <option value="Administrador">Administrador</option>
+                    <option value="Auditor">Auditor</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-check form-switch mb-4">
+            <input class="form-check-input" type="checkbox" asp-for="Activo" id="estadoCheck">
+            <label class="form-check-label text-white" for="estadoCheck">Usuario Activo</label>
+        </div>
+
+        <hr style="border-color: rgba(197, 163, 103, 0.2);">
+
+        <div class="d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-outline-light">Volver</a>
+            <button type="submit" class="btn btn-warning px-4" style="font-weight: bold;">
+                GUARDAR CAMBIOS
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDelete(id) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Se eliminará permanentemente al usuario. ¡Esta acción es irreversible!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar ahora',
+                cancelButtonText: 'Cancelar',
+                background: '#1f060c',
+                color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Crear un form temporal para el POST de eliminación
+                    var form = document.createElement("form");
+                    form.method = "POST";
+                    form.action = "/Usuarios/Delete/" + id;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}

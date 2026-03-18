@@ -1,0 +1,28 @@
+﻿@model Pegasos.Web.Administrador.Models.DashboardViewModels
+@{
+    ViewData["Title"] = "Panel Principal";
+    Layout = "_Layout";
+    var inicial = !string.IsNullOrEmpty(Model.NombreCompleto) ? Model.NombreCompleto[0].ToString().ToUpper() : "P";
+}
+
+<div class="welcome-section text-center py-4">
+    <h2 style="font-family: 'Cinzel', serif; color: var(--dorado-primario); letter-spacing: 2px;">
+        SISTEMA ADMINISTRATIVO PEGASOS
+    </h2>
+    <hr style="border-color: rgba(197, 163, 103, 0.3);">
+
+    <div class="row mt-4">
+        <div class="col-md-6 offset-md-3">
+            <div class="p-4" style="background: rgba(197, 163, 103, 0.1); border-radius: 15px; border: 1px solid var(--dorado-primario);">
+                <i class="fas fa-user-shield fa-3x mb-3" style="color: var(--dorado-primario);"></i>
+                <h4>¡Bienvenido, @Model.NombreCompleto!</h4>
+                <p class="text-white-50">Has ingresado como: <strong>@Model.Rol</strong></p>
+                <p class="small">Hora de ingreso: @Model.HoraIngreso</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <p>Utiliza el menú lateral para gestionar usuarios, roles y transacciones.</p>
+    </div>
+</div>
