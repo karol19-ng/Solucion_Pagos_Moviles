@@ -1,5 +1,4 @@
 using API_Gateway.Middleware;
-using Gateway_2.Middleware;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using System.Text;
@@ -15,7 +14,7 @@ builder.Logging.AddDebug();
 builder.Configuration.AddJsonFile("Configuration/ocelot.json", optional: false, reloadOnChange: true);
 
 // GTW2: Configurar autenticación JWT para validación
-builder.Services.AddAuthentication()
+builder.Services.AddAuthentication("GatewayAuth")  // ← Especificar esquema por defecto
     .AddJwtBearer("GatewayAuth", options =>
     {
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
@@ -40,12 +39,17 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// IMPORTANTE: Agregar UseAuthentication y UseAuthorization ANTES del middleware
+app.UseRouting();
+app.UseAuthentication();  // ← NUEVO
+app.UseAuthorization();   // ← NUEVO
+
 // GTW2: Middleware de validación ANTES de Ocelot
 app.UseMiddleware<GatewayAuthenticationMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseRouting();
+app.UseHttpsRedirection();
 
 // GTW1: Ocelot como middleware final
 await app.UseOcelot();

@@ -20,18 +20,19 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddControllersWithViews();
 
-// HttpClient para llamar al Gateway
+// HttpClient para AUTH (Gateway_2 - puerto 7233)
 builder.Services.AddHttpClient<IAuthPortalService, AuthPortalService>(client =>
 {
-    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    var baseUrl = builder.Configuration["GatewayAuthUrl"] ?? "https://localhost:7233/";
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+// HttpClient para SERVICIOS (API_Gateway - puerto 7096)
 builder.Services.AddHttpClient<IPagosService, PagosService>(client =>
 {
-    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    var baseUrl = builder.Configuration["GatewayApiUrl"] ?? "https://localhost:7096/";
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
@@ -39,16 +40,15 @@ builder.Services.AddHttpClient<IPagosService, PagosService>(client =>
 
 builder.Services.AddHttpClient<IConsultasService, ConsultasService>(client =>
 {
-    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    var baseUrl = builder.Configuration["GatewayApiUrl"] ?? "https://localhost:7096/";
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// NUEVO: Servicio para obtener información del core bancario
 builder.Services.AddHttpClient<ICoreClienteService, CoreClienteService>(client =>
 {
-    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    var baseUrl = builder.Configuration["GatewayApiUrl"] ?? "https://localhost:7096/";
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);

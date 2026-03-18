@@ -11,51 +11,71 @@ namespace Pegasos.WEB.Portal.Controllers
     public class TransferenciasController : Controller
     {
         private readonly IPagosService _pagosService;
-        private readonly IConsultasService _consultasService;
         private readonly ILogger<TransferenciasController> _logger;
 
         public TransferenciasController(
             IPagosService pagosService,
-            IConsultasService consultasService,
             ILogger<TransferenciasController> logger)
         {
             _pagosService = pagosService;
-            _consultasService = consultasService;
             _logger = logger;
         }
 
-        // PTL9: Mostrar formulario de transferencia
         [HttpGet]
         public IActionResult Index()
         {
             var model = new TransferirInput();
-            model.NombreOrigen = User.FindFirst("nombreCompleto")?.Value ?? "";
+            model.NombreOrigen = User.FindFirst("nombreCompleto")?.Value ??
+                                 User.FindFirst(ClaimTypes.Name)?.Value ??
+                                 "Cliente";
+
+            var token = User.FindFirst("access_token")?.Value ?? "";
+            _logger.LogInformation("Token en GET Index: {Token}",
+                !string.IsNullOrEmpty(token) ? token.Substring(0, Math.Min(20, token.Length)) + "..." : "NO HAY TOKEN");
+
             return View(model);
         }
 
-        // PTL9: Procesar transferencia
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RealizarTransferencia(TransferirInput model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View("Index", model);
-            }
-
+            // Obtener el token ANTES de validar el modelo
             var token = User.FindFirst("access_token")?.Value ?? "";
+
+            _logger.LogInformation("=== INICIANDO TRANSFERENCIA ===");
+            _logger.LogInformation("Usuario: {User}", User.Identity?.Name);
+            _logger.LogInformation("Token presente: {TokenPresent}", !string.IsNullOrEmpty(token));
+            _logger.LogInformation("Token: {Token}",
+                !string.IsNullOrEmpty(token) ? token.Substring(0, Math.Min(20, token.Length)) + "..." : "NO HAY TOKEN");
+
             if (string.IsNullOrEmpty(token))
             {
+                _logger.LogWarning("No hay token, redirigiendo a login");
                 return RedirectToAction("Login", "Auth");
             }
 
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Modelo inválido: {Errors}",
+                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                return View("Index", model);
+            }
+
             // Asegurar que el nombre origen sea el del usuario autenticado
-            model.NombreOrigen = User.FindFirst("nombreCompleto")?.Value ?? "";
+            model.NombreOrigen = User.FindFirst("nombreCompleto")?.Value ??
+                                 User.FindFirst(ClaimTypes.Name)?.Value ??
+                                 "Cliente";
+
+            _logger.LogInformation("Enviando transferencia: Origen={Origen}, Destino={Destino}, Monto={Monto}",
+                model.TelefonoOrigen, model.TelefonoDestino, model.Monto);
 
             var result = await _pagosService.RealizarTransferenciaAsync(model, token);
 
             if (result != null && result.Codigo == 0)
             {
+                _logger.LogInformation("Transferencia exitosa. Comprobante: {Comprobante}", result.Comprobante);
+
                 var viewModel = new TransferenciaViewModel
                 {
                     TelefonoOrigen = model.TelefonoOrigen,
@@ -71,7 +91,9 @@ namespace Pegasos.WEB.Portal.Controllers
             }
             else
             {
-                ModelState.AddModelError("", result?.Descripcion ?? "Error en la transferencia");
+                var errorMsg = result?.Descripcion ?? "Error en la transferencia";
+                _logger.LogWarning("Transferencia fallida: {Error}", errorMsg);
+                ModelState.AddModelError("", errorMsg);
                 return View("Index", model);
             }
         }
@@ -79,7 +101,6 @@ namespace Pegasos.WEB.Portal.Controllers
         [HttpGet]
         public IActionResult Comprobante(string id)
         {
-            // Aquí se mostraría un comprobante guardado
             ViewBag.ComprobanteId = id;
             return View();
         }

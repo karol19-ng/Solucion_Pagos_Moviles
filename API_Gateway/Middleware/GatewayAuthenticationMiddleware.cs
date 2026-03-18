@@ -1,5 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 namespace API_Gateway.Middleware
@@ -38,7 +39,7 @@ namespace API_Gateway.Middleware
             RequestDelegate next,
             IConfiguration configuration,
             ILogger<GatewayAuthenticationMiddleware> logger,
-            IHttpClientFactory httpClientFactory)  // Cambiado a IHttpClientFactory
+            IHttpClientFactory httpClientFactory)
         {
             _next = next;
             _configuration = configuration;
@@ -77,9 +78,13 @@ namespace API_Gateway.Middleware
             var token = authHeader.Substring("Bearer ".Length).Trim();
 
             // Validar token localmente
-            if (ValidateTokenLocally(token, out var error))
+            if (ValidateTokenLocally(token, out var principal))
             {
                 _logger.LogDebug("GTW1: Token válido localmente. Path: {Path}", path);
+
+                // IMPORTANTE: Establecer el usuario con el esquema correcto
+                context.User = principal;
+
                 await _next(context);
                 return;
             }
@@ -103,6 +108,22 @@ namespace API_Gateway.Middleware
                     if (result.ToLower().Contains("true"))
                     {
                         _logger.LogInformation("Token validado por microservicio para: {Path}", path);
+
+                        // ===== CORRECCIÓN IMPORTANTE =====
+                        // Crear un ClaimsPrincipal que Ocelot reconozca como autenticado
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, "user"),
+                            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                            // Agregar cualquier otro claim que necesites
+                        };
+
+                        // Usar el mismo esquema de autenticación que Ocelot espera
+                        var identity = new ClaimsIdentity(claims, "GatewayAuth");  // ← ESQUEMA CORRECTO
+                        var authenticatedPrincipal = new ClaimsPrincipal(identity);
+
+                        context.User = authenticatedPrincipal;
+
                         await _next(context);
                         return;
                     }
@@ -124,9 +145,9 @@ namespace API_Gateway.Middleware
             return PublicRoutes.Any(r => path.StartsWith(r, StringComparison.OrdinalIgnoreCase));
         }
 
-        private bool ValidateTokenLocally(string token, out string error)
+        private bool ValidateTokenLocally(string token, out ClaimsPrincipal principal)
         {
-            error = string.Empty;
+            principal = null;
             try
             {
                 var handler = new JwtSecurityTokenHandler();
@@ -144,22 +165,12 @@ namespace API_Gateway.Middleware
                     ClockSkew = TimeSpan.Zero
                 };
 
-                handler.ValidateToken(token, validationParameters, out _);
+                principal = handler.ValidateToken(token, validationParameters, out _);
                 return true;
-            }
-            catch (SecurityTokenExpiredException)
-            {
-                error = "Su token ha expirado. Por favor, inicie sesión nuevamente.";
-                return false;
-            }
-            catch (SecurityTokenInvalidSignatureException)
-            {
-                error = "La firma del token es inválida. Por favor, inicie sesión nuevamente.";
-                return false;
             }
             catch (Exception ex)
             {
-                error = ex.Message;
+                _logger.LogDebug("Validación local falló: {Message}", ex.Message);
                 return false;
             }
         }
