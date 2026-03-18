@@ -47,6 +47,14 @@ builder.Services.AddHttpClient<IScreenService, ScreenService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<IClienteCoreService, ClienteCoreService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
