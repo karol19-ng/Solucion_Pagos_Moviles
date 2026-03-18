@@ -7,23 +7,15 @@
         "Action": "Start"
       },
       {
-        "Path": "Web.Portal\\Web.Portal.fsproj",
-        "Action": "Start"
-      },
-      {
-        "Path": "BitacoraService\\BitacoraService.csproj",
-        "Action": "Start"
-      },
-      {
-        "Path": "API_Gateway\\API_Gateway.csproj",
-        "Action": "Start"
-      },
-      {
         "Path": "Gateway_2\\Gateway_2.csproj",
         "Action": "Start"
       },
       {
-        "Path": "Pegasos.Web.Administrador\\Pegasos.Web.Administrador.csproj",
+        "Path": "Pegasos.WEB.Portal\\Pegasos.WEB.Portal.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "API_Gateway\\API_Gateway.csproj",
         "Action": "Start"
       }
     ]
