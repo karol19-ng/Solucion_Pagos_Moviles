@@ -49,7 +49,7 @@ namespace Pegasos.Web.Administrador.Controllers
             [ValidateAntiForgeryToken]
             public async Task<IActionResult> Login([FromForm]LoginViewModel model, string? returnUrl = null)
             {
-               // if (!ModelState.IsValid) return View(model);
+               if (!ModelState.IsValid) return View(model);
 
                 var username = model.Username;
 
@@ -67,7 +67,10 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 if (result == null )
                 {
-                    RegisterFailedAttempt(username);
+
+                //Pruebas
+                System.Diagnostics.Debug.WriteLine($"DEBUG NEXUSPAY: Token recibido -> {result.AccessToken}");
+                RegisterFailedAttempt(username);
                     int attempts = GetFailedAttempts(username);
                     int remaining = 3 - attempts;
 
@@ -87,20 +90,33 @@ namespace Pegasos.Web.Administrador.Controllers
                 ClearAttempts(username);
 
             // Creamos los Claims con el token que nos dio la API a través del Gateway
-            var tokenSeguro = result.AccessToken ?? "token_temporal";
+           // var tokenSeguro = result.AccessToken ?? "token_temporal";
+            var tokenSeguro = result.AccessToken;
 
-                var claims = new List<Claim>
+            // DEBUG: Verifica en la consola de salida de VS si el token viene nulo desde el servicio
+            if (string.IsNullOrEmpty(tokenSeguro))
+            {
+                _logger.LogWarning("¡OJO! El servicio de Auth no devolvió un AccessToken.");
+                tokenSeguro = "TOKEN_NO_RECIBIDO";
+            }
+
+            var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, model.Username),
-                new Claim(ClaimTypes.NameIdentifier, result.UsuarioId.ToString()),
-                new Claim("nombreCompleto", result.NombreCompleto ?? "Usuario Pegasos"),
-                // El AccessToken es vital para que el Gateway 1 (5000) nos deje usar servicios
-                new Claim("access_token", tokenSeguro),//cambio para probar ingresar a la nueva ventana 
+    
+                // USAMOS "0" SI EL ID VIENE NULO PARA QUE NO DE ERROR
+                new Claim(ClaimTypes.NameIdentifier, result.UsuarioId != 0 ? result.UsuarioId.ToString() : "0"),    
+                // USAMOS EL NOMBRE DE USUARIO SI NO VIENE EL NOMBRE COMPLETO
+                new Claim("nombreCompleto", result.NombreCompleto ?? model.Username),
+    
+                // EL TOKEN QUE YA SABEMOS QUE SE LLAMA access_token
+                new Claim("access_token", tokenSeguro),
+
                 new Claim("refresh_token", result.RefreshToken ?? "")
             };
 
-                // Rol fijo o dinámico
-                claims.Add(new Claim(ClaimTypes.Role, "Administrador"));
+            // Rol fijo o dinámico
+            claims.Add(new Claim(ClaimTypes.Role, "Administrador"));
 
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
@@ -113,7 +129,15 @@ namespace Pegasos.Web.Administrador.Controllers
                     AllowRefresh = false
                 };
 
-                await HttpContext.SignInAsync(
+                authProperties.StoreTokens(new[]
+                {
+                    new Microsoft.AspNetCore.Authentication.AuthenticationToken {
+                        Name = "access_token",
+                        Value = tokenSeguro
+                    }
+                });
+
+            await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     principal,
                     authProperties);
@@ -136,18 +160,23 @@ namespace Pegasos.Web.Administrador.Controllers
             [Authorize]
             public async Task<IActionResult> ExtendSession()
             {
-                // SA4: Extender la cookie local de acceso
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    User,
-                    new AuthenticationProperties
-                    {
-                        IsPersistent = true,
-                        ExpiresUtc = DateTime.UtcNow.AddMinutes(5)
-                    });
+            // SA4: Extender la cookie local de acceso
+            var identity = User.Identity as ClaimsIdentity;
+            if (identity == null) return Unauthorized();
 
-                return Ok(new { success = true, message = "Sesión Banco Pegasos extendida" });
-            }
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5) // Le damos 5 min más
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity),
+                authProperties);
+
+            return Ok(new { success = true, newTime = 300 });
+        }
 
         [HttpGet]
             public async Task<IActionResult> Logout()

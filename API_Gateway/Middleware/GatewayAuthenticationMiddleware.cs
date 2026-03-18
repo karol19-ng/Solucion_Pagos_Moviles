@@ -143,22 +143,12 @@ namespace API_Gateway.Middleware
         }// end of ValidateToken
 
 
-        private static async Task RespondUnauthorized(HttpContext context, string message)
+        private async Task RespondUnauthorized(HttpContext context, string message)
         {
-
             context.Response.StatusCode = 401;
             context.Response.ContentType = "application/json";
-
-            var response = new
-            {
-                StatusCode = 401,
-                Error = "Unauthorized",
-                Message = message,
-                Timestamp= DateTime.UtcNow
-            };
-
-            await context.Response.WriteAsJsonAsync(response);
-
+            var response = new { error = message };
+            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
         }
 
     }//end of class

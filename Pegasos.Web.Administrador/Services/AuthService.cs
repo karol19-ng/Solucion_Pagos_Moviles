@@ -43,10 +43,23 @@ namespace Pegasos.Web.Administrador.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var responseJson = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<AuthResult>(responseJson, new JsonSerializerOptions
+
+                    _logger.LogInformation("JSON RECIBIDO DEL MICRO: {json}", responseJson);
+                    var options = new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
-                    });
+                    };
+
+                    var resultado = JsonSerializer.Deserialize<AuthResult>(responseJson, options);
+
+                    // Verificación de seguridad antes de retornar
+                    if (resultado == null || string.IsNullOrEmpty(resultado.AccessToken))
+                    {
+                        _logger.LogWarning("¡Atención! El JSON se recibió pero AuthResult.AccessToken quedó nulo.");
+                    }
+
+                    return resultado;
+
                 }
 
                 var error = await response.Content.ReadAsStringAsync();

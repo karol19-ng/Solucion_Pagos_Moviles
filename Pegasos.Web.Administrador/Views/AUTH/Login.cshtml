@@ -175,6 +175,12 @@
         <h1 class="bank-title">BANCO PEGASOS</h1>
         <p class="bank-slogan">Solidez que inspira confianza</p>
 
+        @if (!string.IsNullOrEmpty(Model?.ErrorMessage))
+        {
+            <div style="background: rgba(255,107,107,0.15); color: #ff6b6b; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(255,107,107,0.4); font-size: 0.85rem; text-align: center;">
+                <i class="fas fa-exclamation-triangle me-2"></i> @Model.ErrorMessage
+            </div>
+        }
 
         @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
         {
