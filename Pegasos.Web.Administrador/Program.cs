@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+ï»¿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Pegasos.Web.Administrador.Services;
 using Microsoft.AspNetCore.Builder;
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar autenticación con cookies (5 minutos = SA4)
+// Configurar autenticaciÃ³n con cookies (5 minutos = SA4)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -17,7 +17,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/Auth/Logout";
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(5); // SA4: 5 minutos exactos
-        options.SlidingExpiration = false; // Forzar re-login después de 5 min de inactividad
+        options.SlidingExpiration = false; // Forzar re-login despuÃ©s de 5 min de inactividad
         options.Cookie.Name = "NexusPay.Admin.Session";
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
@@ -26,11 +26,21 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddControllersWithViews();
 
-// HttpClient para llamar al Gateway (GTW1)
-// HttpClient para llamar al Gateway (GTW1) - Versión corregida
+// IMPORTANTE: Agregar IHttpContextAccessor para que funcione ScreenService
+builder.Services.AddHttpContextAccessor();
+
+// HttpClient para llamar al Gateway (GTW1) - AuthService
 builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 {
-    // Usamos la configuración del appsettings o lo ponemos directo para probar
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// ðŸ”´ NUEVO: Registrar IScreenService con su propio HttpClient
+builder.Services.AddHttpClient<IScreenService, ScreenService>(client =>
+{
     var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
