@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+锘縰sing Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Pegasos.Web.Administrador.Services;
 using Microsoft.AspNetCore.Builder;
@@ -6,10 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
-
+using Microsoft.AspNetCore.Authentication;
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar autenticaci髇 con cookies (5 minutos = SA4)
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+// Configurar autenticaci锟絥 con cookies (5 minutos = SA4)
+// Configurar autenticaci贸n con cookies (5 minutos = SA4)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -17,22 +19,91 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/Auth/Logout";
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(5); // SA4: 5 minutos exactos
-        options.SlidingExpiration = false; // Forzar re-login despu閟 de 5 min de inactividad
+        options.SlidingExpiration = false; // Forzar re-login despu茅s de 5 min de inactividad
         options.Cookie.Name = "NexusPay.Admin.Session";
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
     });
 
+// 馃敶 NUEVO: Configurar sesi贸n para guardar el token JWT
+builder.Services.AddDistributedMemoryCache(); // Almacenamiento en memoria para la sesi贸n
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(5); // La sesi贸n expira a los 5 minutos tambi茅n
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Name = "NexusPay.Admin.SessionState";
+});
+
 builder.Services.AddControllersWithViews();
 
-// HttpClient para llamar al Gateway (GTW1)
-// HttpClient para llamar al Gateway (GTW1) - Versi髇 corregida
+// IMPORTANTE: Agregar IHttpContextAccessor para que funcione ScreenService
+builder.Services.AddHttpContextAccessor();
+
+// HttpClient para llamar al Gateway (GTW1) - AuthService
 builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 {
-    // Usamos la configuraci髇 del appsettings o lo ponemos directo para probar
     var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
     client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar IScreenService con su propio HttpClient
+builder.Services.AddHttpClient<IPantallaService, PantallaService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar ClienteCoreService
+builder.Services.AddHttpClient<IClienteCoreService, ClienteCoreService>(client =>
+{
+    // Esta URL debe ser la del GATEWAY 1 (puerto 7096)
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// REGISTRAR CuentaCoreService - NUEVO
+builder.Services.AddHttpClient<ICuentaCoreService, CuentaCoreService>(client =>
+{
+    // La misma URL del GATEWAY 1 (puerto 7096)
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar ParametroService
+builder.Services.AddHttpClient<IParametroService, ParametroService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar EntidadService
+builder.Services.AddHttpClient<IEntidadService, EntidadService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+// Despu茅s de los otros AddHttpClient
+builder.Services.AddHttpClient<IPantallaService, PantallaService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddHttpClient<IRolService, RolService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/"); 
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
@@ -50,7 +121,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// IMPORTANTE: Auth antes de endpoints
+// 馃敶 NUEVO: Importante - Session debe ir antes de Authentication
+app.UseSession(); // HABILITAR SESI脫N
+
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
-using System.Diagnostics.Metrics;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 namespace API_Gateway.Middleware
@@ -10,9 +10,7 @@ namespace API_Gateway.Middleware
         private readonly RequestDelegate _next;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GatewayAuthenticationMiddleware> _logger;
-
-
-        //rutas que no requieren autenticacion 
+        private readonly IHttpClientFactory _httpClientFactory;
 
         private static readonly string[] PublicRoutes = new[]
         {
@@ -33,119 +31,154 @@ namespace API_Gateway.Middleware
             "/css/",
             "/js/",
             "/swagger",
-                "/index.html",
-            "/images/"    
-        
-        };//end of rutas publicas
+            "/index.html",
+            "/images/"
+        };
 
         public GatewayAuthenticationMiddleware(
             RequestDelegate next,
             IConfiguration configuration,
-            ILogger<GatewayAuthenticationMiddleware> logger)
+            ILogger<GatewayAuthenticationMiddleware> logger,
+            IHttpClientFactory httpClientFactory)
         {
             _next = next;
             _configuration = configuration;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task InvokeAsync(HttpContext context)
-        { 
-            var path =context.Request.Path.Value;
+        {
+            var path = context.Request.Path.Value;
+
+            // Rutas públicas rápidas
             if (path.Contains("swagger") || path.Contains("login"))
             {
-                await _next(context);
-                return;
+                foreach (var header in context.Request.Headers)
+                {
+                    _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value.ToString());
+                }
             }
-            //verificacion de ruta si es publica 
+
+            // Verificar si es ruta pública
             if (IsPublicRoute(path))
             {
-                _logger.LogDebug("Ruta publica accedida:{Path}", path);
+                _logger.LogDebug("Ruta publica accedida: {Path}", path);
                 await _next(context);
                 return;
             }
 
-            //verificacion sin token no ingresa
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
 
-            var authHeader=context.Request.Headers["Authorization"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(authHeader)||!authHeader.StartsWith("Bearer "))
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
             {
-                _logger.LogWarning("GTW2:Acceso denegado -Sin Token.Path:{Path}", path);
+                _logger.LogWarning("GTW1: Acceso denegado - Sin Token. Path: {Path}", path);
                 await RespondUnauthorized(context, "Token de autenticacion requerido");
                 return;
-
             }
 
-            var token =authHeader.Substring("Bearer ".Length).Trim();
+            var token = authHeader.Substring("Bearer ".Length).Trim();
 
-            //validacion token
-            if (!ValidateToken(token, out var error))
-            { 
-                _logger.LogWarning("GTW2:Acceso Denegado-Token Invalido.Path:{Path}.Error:{Error}", path, error);
-                await RespondUnauthorized(context, $"Token invalido: {error}");
+            // Validar token localmente
+            if (ValidateTokenLocally(token, out var principal))
+            {
+                _logger.LogDebug("GTW1: Token válido localmente. Path: {Path}", path);
+
+                // IMPORTANTE: Establecer el usuario con el esquema correcto
+                context.User = principal;
+
+                await _next(context);
                 return;
             }
 
-            _logger.LogDebug("GTW2: Token valido.Acceso concedido.Path:{Path}", path);
-            await _next(context);
+            // Si falla localmente, intentar validar con microservicio
+            _logger.LogInformation("Validación local falló, intentando con microservicio para: {Path}", path);
 
-        }//fin de InvokeAsync
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient();
+
+                var validateRequest = new { token = token };
+                var json = System.Text.Json.JsonSerializer.Serialize(validateRequest);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var validateResponse = await httpClient.PostAsync("https://localhost:7258/auth/validate", content);
+
+                if (validateResponse.IsSuccessStatusCode)
+                {
+                    var result = await validateResponse.Content.ReadAsStringAsync();
+                    if (result.ToLower().Contains("true"))
+                    {
+                        _logger.LogInformation("Token validado por microservicio para: {Path}", path);
+
+                        // ===== CORRECCIÓN IMPORTANTE =====
+                        // Crear un ClaimsPrincipal que Ocelot reconozca como autenticado
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, "user"),
+                            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                            // Agregar cualquier otro claim que necesites
+                        };
+
+                        // Usar el mismo esquema de autenticación que Ocelot espera
+                        var identity = new ClaimsIdentity(claims, "GatewayAuth");  // ← ESQUEMA CORRECTO
+                        var authenticatedPrincipal = new ClaimsPrincipal(identity);
+
+                        context.User = authenticatedPrincipal;
+
+                        await _next(context);
+                        return;
+                    }
+                }
+
+                _logger.LogWarning("GTW1: Token inválido según microservicio. Path: {Path}", path);
+                await RespondUnauthorized(context, "Token invalido");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validando token con microservicio para: {Path}", path);
+                await RespondUnauthorized(context, "Error validando token");
+            }
+        }
 
         private bool IsPublicRoute(string path)
         {
-            return PublicRoutes.Any(r => path.StartsWith(r.ToLower()));
+            if (string.IsNullOrEmpty(path)) return false;
+            return PublicRoutes.Any(r => path.StartsWith(r, StringComparison.OrdinalIgnoreCase));
         }
 
-        private bool ValidateToken(string token, out string error) 
+        private bool ValidateTokenLocally(string token, out ClaimsPrincipal principal)
         {
-            error = string.Empty;
+            principal = null;
             try
             {
                 var handler = new JwtSecurityTokenHandler();
                 var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
 
-                var validationParameters = new
-                    Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                var validationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = true,
                     ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidAudience = _configuration["Jwt:Audience"],
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
 
-
-                handler.ValidateToken(token, validationParameters, out _);
+                principal = handler.ValidateToken(token, validationParameters, out _);
                 return true;
-            }//fin del try
-
-            catch (SecurityTokenInvalidAlgorithmException)
-            {
-
-                error = "Su token ha expirado. Por favor, inicie sesión nuevamente.";
-                return false;
-
-            }//fin del catch
-            catch (SecurityTokenInvalidSignatureException)
-            {
-                error = "La firma del token es inválida. Por favor, inicie sesión nuevamente.";
-                return false;
             }
             catch (Exception ex)
-            { 
-                error= ex.Message;
+            {
+                _logger.LogDebug("Validación local falló: {Message}", ex.Message);
                 return false;
-
             }
-        }// end of ValidateToken
-
+        }
 
         private static async Task RespondUnauthorized(HttpContext context, string message)
         {
-
             context.Response.StatusCode = 401;
             context.Response.ContentType = "application/json";
 
@@ -154,14 +187,10 @@ namespace API_Gateway.Middleware
                 StatusCode = 401,
                 Error = "Unauthorized",
                 Message = message,
-                Timestamp= DateTime.UtcNow
+                Timestamp = DateTime.UtcNow
             };
 
             await context.Response.WriteAsJsonAsync(response);
-
         }
-
-    }//end of class
-
-
-}// end of namespace
+    }
+}

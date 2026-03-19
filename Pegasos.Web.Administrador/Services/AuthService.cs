@@ -1,12 +1,11 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using System.Net.Http;
-using System.Net.Http.Json;
+using Pegasos.Web.Administrador.DTOs;
+using System.IdentityModel.Tokens.Jwt;
+using System;
+using System.Linq;
 
 namespace Pegasos.Web.Administrador.Services
 {
@@ -21,44 +20,81 @@ namespace Pegasos.Web.Administrador.Services
             _logger = logger;
         }
 
-
         public async Task<AuthResult?> LoginAsync(string username, string password)
         {
             try
             {
                 _httpClient.DefaultRequestHeaders.Clear();
 
-                // 1. CREAMOS EL JSON MANUALMENTE (Exactamente como lo pones en Swagger)
-                // Usamos minúsculas porque Swagger suele ser case-insensitive o usa camelCase
+                // 1. Enviar credenciales al gateway
                 var jsonManual = $"{{\"usuario\":\"{username}\",\"password\":\"{password}\"}}";
-
-                // 2. Definimos el contenido con el Header exacto
                 var content = new StringContent(jsonManual, Encoding.UTF8, "application/json");
 
-                _logger.LogInformation("Enviando JSON Crudo: {json}", jsonManual);
+                _logger.LogInformation("Enviando login para usuario: {Username}", username);
 
-                // 3. Enviamos al puerto 5200 (Gateway) ya que dices que ya no da problemas
                 var response = await _httpClient.PostAsync("auth/login", content);
+                var responseJson = await response.Content.ReadAsStringAsync();
 
-                if (response.IsSuccessStatusCode)
+                _logger.LogInformation("RESPUESTA COMPLETA DEL GATEWAY: StatusCode: {StatusCode}, Body: {Body}",
+                    response.StatusCode, responseJson);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<AuthResult>(responseJson, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    _logger.LogWarning("Error en login. StatusCode: {StatusCode}, Error: {Error}",
+                        response.StatusCode, responseJson);
+                    return null;
                 }
 
-                var error = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning("Respuesta final del Micro: {Error}", error);
-                return null;
+                // 2. Deserializar a DTO que coincide con la respuesta del gateway
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var dto = JsonSerializer.Deserialize<AuthResponseDto>(responseJson, options);
+
+                if (dto == null || string.IsNullOrEmpty(dto.AccessToken))
+                {
+                    _logger.LogWarning("No se pudo deserializar el token o el token está vacío");
+                    return null;
+                }
+
+                _logger.LogInformation("Token recibido correctamente. Longitud: {Length}", dto.AccessToken.Length);
+
+                // 3. Decodificar el JWT para obtener los claims del usuario
+                var handler = new JwtSecurityTokenHandler();
+                var jwtToken = handler.ReadJwtToken(dto.AccessToken);
+
+                // Extraer claims del token
+                var usuarioId = jwtToken.Claims.FirstOrDefault(c => c.Type == "nameid")?.Value ?? "0";
+                var nombreCompleto = jwtToken.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value ?? username;
+                var email = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? "";
+
+                _logger.LogInformation("Claims extraídos del token - UsuarioId: {UsuarioId}, Nombre: {Nombre}, Email: {Email}",
+                    usuarioId, nombreCompleto, email);
+
+                // 4. Crear el AuthResult con todos los datos
+                var resultado = new AuthResult
+                {
+                    AccessToken = dto.AccessToken,
+                    RefreshToken = dto.RefreshToken ?? string.Empty,
+                    ExpiresIn = dto.ExpiresIn ?? string.Empty,
+                    UsuarioId = int.TryParse(usuarioId, out var id) ? id : 0,
+                    NombreCompleto = nombreCompleto
+                };
+
+                _logger.LogInformation("Login exitoso para usuario: {Nombre}, ID: {UsuarioId}",
+                    resultado.NombreCompleto, resultado.UsuarioId);
+
+                return resultado;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error de conexión");
+                _logger.LogError(ex, "Error de conexión en LoginAsync para usuario {Username}", username);
                 return null;
             }
         }
+
         public async Task<bool> ExtendSessionAsync(string accessToken)
         {
             try

@@ -44,86 +44,108 @@ namespace Pegasos.Web.Administrador.Controllers
                 return View(new LoginViewModel());
             }
 
-            [HttpPost]
+        [HttpPost]
         [AllowAnonymous]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult> Login([FromForm]LoginViewModel model, string? returnUrl = null)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login([FromForm] LoginViewModel model, string? returnUrl = null)
+        {
+            // if (!ModelState.IsValid) return View(model);
+
+            var username = model.Username;
+
+            // SA1: Verificación de Bloqueo
+            if (IsUserLockedOut(username))
             {
-               // if (!ModelState.IsValid) return View(model);
-
-                var username = model.Username;
-
-                // SA1: Verificación de Bloqueo
-                if (IsUserLockedOut(username))
-                {
-                    model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos).";
-                    return View(model);
-                }
-
-                // LLAMADA AL GATEWAY (Puerto 5001)
-                // Aquí el result ya trae el Token firmado con tu clave: 
-                // "Pegasos_BancoPegasos_SecretKey_2026_CUC_ProgV_Avance2"
-                var result = await _authService.LoginAsync(model.Username, model.Password);
-
-                if (result == null )
-                {
-                    RegisterFailedAttempt(username);
-                    int attempts = GetFailedAttempts(username);
-                    int remaining = 3 - attempts;
-
-                    if (remaining <= 0)
-                    {
-                        LockUser(username);
-                        model.ErrorMessage = "Usuario bloqueado. Intente en 15 minutos.";
-                    }
-                    else
-                    {
-                        model.ErrorMessage = $"Credenciales incorrectas. Intentos restantes: {remaining}";
-                    }
-                    return View(model);
-                }
-
-                // LOGIN EXITOSO
-                ClearAttempts(username);
-
-            // Creamos los Claims con el token que nos dio la API a través del Gateway
-            var tokenSeguro = result.AccessToken ?? "token_temporal";
-
-                var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, model.Username),
-                new Claim(ClaimTypes.NameIdentifier, result.UsuarioId.ToString()),
-                new Claim("nombreCompleto", result.NombreCompleto ?? "Usuario Pegasos"),
-                // El AccessToken es vital para que el Gateway 1 (5000) nos deje usar servicios
-                new Claim("access_token", tokenSeguro),//cambio para probar ingresar a la nueva ventana 
-                new Claim("refresh_token", result.RefreshToken ?? "")
-            };
-
-                // Rol fijo o dinámico
-                claims.Add(new Claim(ClaimTypes.Role, "Administrador"));
-
-                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var principal = new ClaimsPrincipal(identity);
-
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.RememberMe,
-                    // SA4: Sesión de 5 minutos según Program.cs
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5),
-                    AllowRefresh = false
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    principal,
-                    authProperties);
-
-                _logger.LogInformation("Usuario {Username} autenticado exitosamente vía Gateway.", username);
-
-                return RedirectToAction("Index", "Home");
+                model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos).";
+                return View(model);
             }
 
-            [HttpPost]
+            // LLAMADA AL GATEWAY
+            var result = await _authService.LoginAsync(model.Username, model.Password);
+
+            if (result == null)
+            {
+                _logger.LogWarning("Login fallido para usuario {Username}: AuthService retornó null", username);
+                RegisterFailedAttempt(username);
+                int attempts = GetFailedAttempts(username);
+                int remaining = 3 - attempts;
+
+                if (remaining <= 0)
+                {
+                    LockUser(username);
+                    model.ErrorMessage = "Usuario bloqueado. Intente en 15 minutos.";
+                }
+                else
+                {
+                    model.ErrorMessage = $"Credenciales incorrectas. Intentos restantes: {remaining}";
+                }
+
+                return View(model);
+            }
+
+            // Determinar token (soporta ambas propiedades por compatibilidad tras merge)
+            var token = !string.IsNullOrEmpty(result.AccessToken) ? result.AccessToken : result.access_token;
+            var refresh = !string.IsNullOrEmpty(result.RefreshToken) ? result.RefreshToken : result.refresh_token;
+
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogError("¡ERROR CRÍTICO! El token de acceso es null o vacío");
+                model.ErrorMessage = "Error de autenticación: no se recibió token válido";
+                return View(model);
+            }
+
+            // LOGIN EXITOSO
+            ClearAttempts(username);
+
+            // Guardar token en sesión como respaldo
+            try
+            {
+                HttpContext.Session.SetString("AccessToken", token);
+                HttpContext.Session.SetString("RefreshToken", refresh ?? string.Empty);
+                HttpContext.Session.SetString("UsuarioId", (result.UsuarioId != 0 ? result.UsuarioId : result.usuarioID).ToString());
+                HttpContext.Session.SetString("NombreCompleto", result.NombreCompleto ?? result.NombreCompleto ?? string.Empty);
+
+                _logger.LogInformation("Token guardado en sesión. Longitud: {Length}", token.Length);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar token en sesión");
+            }
+
+            // Crear claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, model.Username),
+                new Claim(ClaimTypes.NameIdentifier, (result.UsuarioId != 0 ? result.UsuarioId : result.usuarioID).ToString()),
+                new Claim("nombreCompleto", result.NombreCompleto ?? "Usuario Pegasos"),
+                new Claim("access_token", token),
+                new Claim("refresh_token", refresh ?? string.Empty)
+            };
+
+            // Rol fijo
+            claims.Add(new Claim(ClaimTypes.Role, "Administrador"));
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = model.RememberMe,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5),
+                AllowRefresh = false
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                authProperties);
+
+            _logger.LogInformation("Usuario {Username} autenticado exitosamente vía Gateway.", username);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
             [ValidateAntiForgeryToken]
             public async Task<IActionResult> Logout(bool expired = false)
             {
@@ -136,18 +158,23 @@ namespace Pegasos.Web.Administrador.Controllers
             [Authorize]
             public async Task<IActionResult> ExtendSession()
             {
-                // SA4: Extender la cookie local de acceso
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    User,
-                    new AuthenticationProperties
-                    {
-                        IsPersistent = true,
-                        ExpiresUtc = DateTime.UtcNow.AddMinutes(5)
-                    });
+            // SA4: Extender la cookie local de acceso
+            var identity = User.Identity as ClaimsIdentity;
+            if (identity == null) return Unauthorized();
 
-                return Ok(new { success = true, message = "Sesión Banco Pegasos extendida" });
-            }
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5) // Le damos 5 min más
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity),
+                authProperties);
+
+            return Ok(new { success = true, newTime = 300 });
+        }
 
         [HttpGet]
             public async Task<IActionResult> Logout()

@@ -1,13 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Pegasos.Web.Administrador.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using System.Net.Http;
-using System.Text;
-using System.Net.Http.Headers;
+using System.Security.Claims; // Necesario para ClaimTypes
+
 namespace Pegasos.Web.Administrador.Controllers
 {
     [Authorize]
@@ -15,19 +12,27 @@ namespace Pegasos.Web.Administrador.Controllers
     {
         public IActionResult Index()
         {
+            // Verificación de seguridad básica
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
             // SA2: Preparar datos para la vista de bienvenida
+            // Nota: Cambié a DashboardViewModel (singular)
             var model = new DashboardViewModels
             {
-                NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Usuario",
-                Email = User.Identity?.Name ?? "",
-                Rol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Sin rol",
+                NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Usuario Pegasos",
+                Email = User.Identity.Name ?? "Sin Email",
+                // Buscamos el rol de forma segura
+                Rol = User.FindFirst(ClaimTypes.Role)?.Value ?? "Administrador",
                 FechaIngreso = DateTime.Now,
                 HoraIngreso = DateTime.Now.ToString("HH:mm")
             };
 
-            // SA2: Mensaje de bienvenida dinámico
+            // SA2: Mensajes dinámicos para la interfaz
             ViewData["WelcomeTitle"] = $"¡Bienvenido, {model.NombreCompleto}!";
-            ViewData["PageTitle"] = "Inicio";
+            ViewData["PageTitle"] = "Panel de Control";
 
             return View(model);
         }

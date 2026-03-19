@@ -1,0 +1,40 @@
+﻿
+  {
+    "Routes": [
+      // Ruta para GET (Todos), POST (Crear) y GET {id} (Obtener uno)
+      {
+        "DownstreamPathTemplate": "/user/{everything}",
+        "DownstreamScheme": "https",
+        "DownstreamHostAndPorts": [
+          {
+            "Host": "localhost",
+            "Port": 7258
+          }
+        ],
+        "UpstreamPathTemplate": "/gateway/user/{everything}",
+        "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+        "AuthenticationOptions": {
+          "AuthenticationProviderKey": "GatewayAuth"
+        }
+      },
+      // Ruta específica para la raíz /user (GET y POST)
+      {
+        "DownstreamPathTemplate": "/user",
+        "DownstreamScheme": "https",
+        "DownstreamHostAndPorts": [
+          {
+            "Host": "localhost",
+            "Port": 7258
+          }
+        ],
+        "UpstreamPathTemplate": "/gateway/user",
+        "UpstreamHttpMethod": [ "GET", "POST" ],
+        "AuthenticationOptions": {
+          "AuthenticationProviderKey": "GatewayAuth"
+        }
+      }
+    ],
+    "GlobalConfiguration": {
+      "BaseUrl": "http://localhost:5000"
+    }
+  }

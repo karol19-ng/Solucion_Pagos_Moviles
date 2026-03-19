@@ -1,6 +1,5 @@
 ﻿{
   "Routes": [
-    // 1. LOGIN (PÚBLICO - Prioridad Alta)
     {
       "DownstreamPathTemplate": "/auth/login",
       "DownstreamScheme": "https",
@@ -11,43 +10,34 @@
         }
       ],
       "UpstreamPathTemplate": "/auth/login",
-      "UpstreamHttpMethod": [ "POST" ],
-      "Priority": 2
+      "UpstreamHttpMethod": [ "POST" ]
     },
-
-    // 2. REFRESH Y VALIDATE (PÚBLICOS)
     {
-      "DownstreamPathTemplate": "/auth/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamPathTemplate": "/auth/refresh",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5005
+          "Port": 7258
         }
       ],
-      "UpstreamPathTemplate": "/auth/{everything}",
-      "UpstreamHttpMethod": [ "POST" ],
-      "Priority": 1
+      "UpstreamPathTemplate": "/auth/refresh",
+      "UpstreamHttpMethod": [ "POST" ]
     },
-
-    // 3. BITACORA (REQUERIR TOKEN)
     {
-      "DownstreamPathTemplate": "/api/bitacora/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamPathTemplate": "/auth/validate",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5004
+          "Port": 7258
         }
       ],
-      "UpstreamPathTemplate": "/bitacora/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST" ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "GatewayAuth"
-      }
+      "UpstreamPathTemplate": "/auth/validate",
+      "UpstreamHttpMethod": [ "POST" ]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5200"
+    "BaseUrl": "https://localhost:7233"
   }
 }

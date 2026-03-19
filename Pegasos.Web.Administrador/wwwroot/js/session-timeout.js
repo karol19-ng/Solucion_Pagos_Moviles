@@ -1,24 +1,23 @@
 ﻿/**
- * SA4: Control de sesión por inactividad
+ * SA4: Control de sesión por inactividad - PEGASOS BANK
  * Configuración: 5 minutos = 300,000 ms
  */
 
 (function () {
     'use strict';
 
-    // Configuración
-    const SESSION_DURATION = 5 * 60 * 1000; // 5 minutos
-    const WARNING_BEFORE = 30 * 1000; // Advertir 30 seg antes
-    const CHECK_INTERVAL = 1000; // Revisar cada segundo
+    // 1. CONFIGURACIÓN
+    const SESSION_DURATION = 5 * 60 * 1000; // 5 minutos totales
+    const WARNING_BEFORE = 30 * 1000;      // Mostrar aviso 30 segundos antes
+    const CHECK_INTERVAL = 1000;           // Revisar cada 1 segundo
 
-    // Elementos DOM
+    // 2. ELEMENTOS DEL DOM (Asegúrate de que existan en tu _Layout)
     const timeoutModal = document.getElementById('sessionTimeoutModal');
-    const expiredModal = document.getElementById('sessionExpiredModal');
     const countdownEl = document.getElementById('countdownSeconds');
     const timerEl = document.getElementById('sessionTimer');
     const indicatorEl = document.getElementById('sessionIndicator');
 
-    // Estado
+    // 3. ESTADO
     let lastActivity = Date.now();
     let warningShown = false;
     let checkIntervalId = null;
@@ -27,26 +26,27 @@
      * Inicializar control de sesión
      */
     function init() {
-        // Solo si hay sesión activa
-        if (!document.querySelector('.nexus-user-menu')) {
+        // Solo activamos el contador si el usuario está logueado 
+        // (Buscamos tu sidebar de perfil que creamos antes)
+        if (!document.querySelector('.user-profile-sidebar')) {
             return;
         }
 
-        // Eventos que resetean el timer
+        // Eventos que resetean el timer (Movimiento, teclado, scroll)
         const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
         events.forEach(event => {
             document.addEventListener(event, resetTimer, true);
         });
 
-        // Iniciar revisión periódica
+        // Iniciar la revisión cada segundo
         checkIntervalId = setInterval(checkSession, CHECK_INTERVAL);
 
-        // Mostrar tiempo inicial
+        // Mostrar tiempo inicial en la barra superior
         updateTimerDisplay(SESSION_DURATION);
     }
 
     /**
-     * Resetear timer por actividad
+     * Resetear timer por actividad del usuario
      */
     function resetTimer() {
         lastActivity = Date.now();
@@ -57,28 +57,28 @@
     }
 
     /**
-     * Verificar estado de sesión
+     * Verificar cuánto tiempo queda
      */
     function checkSession() {
         const elapsed = Date.now() - lastActivity;
         const remaining = SESSION_DURATION - elapsed;
 
-        // Actualizar display
+        // Actualizar el numerito en el Header
         updateTimerDisplay(Math.max(0, remaining));
 
-        // Mostrar advertencia
+        // ¿Es hora de mostrar la advertencia? (Faltan 30 seg)
         if (remaining <= WARNING_BEFORE && remaining > 0 && !warningShown) {
             showWarning(Math.ceil(remaining / 1000));
         }
 
-        // Sesión expirada
+        // ¿Se acabó el tiempo? (0 seg)
         if (remaining <= 0) {
             sessionExpired();
         }
     }
 
     /**
-     * Mostrar modal de advertencia
+     * Mostrar el modal de advertencia
      */
     function showWarning(seconds) {
         warningShown = true;
@@ -86,16 +86,6 @@
         if (timeoutModal) {
             timeoutModal.style.display = 'flex';
             updateCountdown(seconds);
-
-            // Contador regresivo en el modal
-            const countdownInterval = setInterval(() => {
-                seconds--;
-                updateCountdown(seconds);
-
-                if (seconds <= 0 || !warningShown) {
-                    clearInterval(countdownInterval);
-                }
-            }, 1000);
         }
     }
 
@@ -110,50 +100,31 @@
     }
 
     /**
-     * Sesión expirada - logout forzado
+     * Acción cuando la sesión expira
      */
     function sessionExpired() {
         clearInterval(checkIntervalId);
         hideWarning();
 
-        if (expiredModal) {
-            expiredModal.style.display = 'flex';
-        }
-
-        // Llamar logout después de mostrar modal
-        setTimeout(() => {
-            window.location.href = '/Auth/Logout?expired=true';
-        }, 3000);
+        // Redirección inmediata al Logout con parámetro de expiración
+        window.location.href = '/Auth/Logout?expired=true';
     }
 
     /**
-     * Extender sesión (llamada desde botón)
+     * Función global para el botón "Continuar trabajando"
      */
     window.extendSession = function () {
         hideWarning();
         resetTimer();
 
-        // Llamada AJAX para renovar cookie en servidor
-        fetch('/Auth/ExtendSession', {
-            method: 'POST',
-            headers: {
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '',
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
-        })
-            .then(response => {
-                if (!response.ok) {
-                    console.warn('No se pudo extender la sesión en servidor');
-                }
-            })
-            .catch(err => {
-                console.error('Error extendiendo sesión:', err);
-            });
+        // Opcional: Llamada al servidor para mantener la cookie viva
+        fetch('/Auth/ExtendSession', { method: 'POST' })
+            .then(res => console.log("Sesión extendida en servidor"))
+            .catch(err => console.error("Error al extender sesión"));
     };
 
     /**
-     * Actualizar display del timer
+     * Actualiza el texto del reloj (05:00)
      */
     function updateTimerDisplay(ms) {
         if (!timerEl) return;
@@ -164,16 +135,16 @@
 
         timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-        // Cambiar color si queda poco tiempo
+        // Poner el texto en rojo si queda menos de 1 minuto
         if (totalSeconds < 60) {
-            indicatorEl?.classList.add('nexus-session-warning');
+            indicatorEl?.style.setProperty('color', '#ff4444', 'important');
         } else {
-            indicatorEl?.classList.remove('nexus-session-warning');
+            indicatorEl?.style.setProperty('color', 'var(--dorado-primario)', 'important');
         }
     }
 
     /**
-     * Actualizar countdown del modal
+     * Actualizar el segundero del Modal
      */
     function updateCountdown(seconds) {
         if (countdownEl) {
@@ -181,10 +152,7 @@
         }
     }
 
-    // Iniciar cuando DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    // Arrancar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', init);
+
 })();

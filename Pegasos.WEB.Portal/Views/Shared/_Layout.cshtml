@@ -1,49 +1,116 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Pegasos.WEB.Portal</title>
+    <title>@ViewData["Title"] - Pegasos Bank Clientes</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Pegasos.WEB.Portal.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Pegasos.WEB.Portal</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <!-- Sidebar solo visible para usuarios autenticados -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="/images/logo_pegasos.png" class="sidebar-logo" alt="Pegasos Logo">
+                <div class="sidebar-title">PEGASOS BANK</div>
+                <div class="sidebar-subtitle">Portal Cliente</div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Pegasos.WEB.Portal - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <nav class="sidebar-menu">
+                <p class="menu-section-title">Principal</p>
+                <a href="@Url.Action("Index", "Home")" class="menu-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+
+                <p class="menu-section-title" style="margin-top: 20px;">Pagos Móviles</p>
+                <a href="@Url.Action("Index", "Inscripcion")" class="menu-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Inscripcion" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                    <i class="fas fa-mobile-alt"></i> Inscribirse
+                </a>
+                <a href="@Url.Action("Desinscribir", "Inscripcion")" class="menu-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Inscripcion" && ViewContext.RouteData.Values["action"]?.ToString() == "Desinscribir" ? "active" : "")">
+                    <i class="fas fa-ban"></i> Desinscribirse
+                </a>
+
+                <p class="menu-section-title" style="margin-top: 20px;">Operaciones</p>
+                <a href="@Url.Action("Index", "Transferencias")" class="menu-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Transferencias" ? "active" : "")">
+                    <i class="fas fa-exchange-alt"></i> Transferir
+                </a>
+                <a href="@Url.Action("Saldo", "Consultas")" class="menu-item">
+                    <i class="fas fa-wallet"></i> Consultar Saldo
+                </a>
+                <a href="@Url.Action("Movimientos", "Consultas")" class="menu-item">
+                    <i class="fas fa-history"></i> Últimos Movimientos
+                </a>
+
+                <p class="menu-section-title" style="margin-top: 20px;">Seguridad</p>
+                <a href="@Url.Action("Logout", "Auth")" class="menu-item text-danger">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </nav>
+        </aside>
+
+        <div class="main-wrapper">
+            <header class="top-user-bar">
+                <span>
+                    <i class="fas fa-user-circle me-2" style="color: var(--dorado-primario)"></i>
+                    Cliente: <strong>@User.FindFirst("nombreCompleto")?.Value</strong>
+                </span>
+                <span class="ms-3" id="sessionTimer" style="font-size: 0.9rem; color: var(--dorado-primario);">
+                    <i class="fas fa-clock me-1"></i> <span id="timerDisplay">05:00</span>
+                </span>
+            </header>
+
+            <main role="main" class="main-content">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="crud-container">
+                    @RenderBody()
+                </div>
+            </main>
+
+            <footer class="text-muted">
+                <div class="container-fluid">
+                    &copy; 2026 - Pegasos Bank - Portal Cliente v2.0
+                </div>
+            </footer>
         </div>
-    </footer>
+    }
+    else
+    {
+        <!-- Sin sidebar para login -->
+        @RenderBody()
+    }
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/portal-custom.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script src="~/js/session-timeout.js"></script>
+        <script>
+                // Iniciar contador de sesión (5 minutos)
+                iniciarContadorSesion(5, '@Url.Action("Logout", "Auth")');
+        </script>
+    }
 </body>
 </html>

@@ -1,0 +1,46 @@
+﻿@{
+    ViewData["Title"] = "Inscripción Exitosa";
+    var telefono = ViewBag.Telefono as string;
+}
+
+<div class="text-center py-5">
+    <div class="success-icon mb-4">
+        <i class="fas fa-check-circle fa-5x" style="color: #10b981;"></i>
+    </div>
+
+    <h2 class="text-success mb-3">¡Inscripción Realizada!</h2>
+
+    <p class="lead mb-4">
+        El teléfono <strong>@telefono</strong> ha sido asociado exitosamente a su cuenta.
+    </p>
+
+    <p class="text-muted mb-4">
+        Ya puede realizar transferencias y consultas utilizando su número de teléfono.
+    </p>
+
+    <div class="mt-4">
+        <a href="@Url.Action("Index", "Transferencias")" class="btn btn-pegasos me-2">
+            <i class="fas fa-exchange-alt"></i> Realizar Transferencia
+        </a>
+        <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">
+            <i class="fas fa-home"></i> Ir al Inicio
+        </a>
+    </div>
+</div>
+
+<style>
+    .success-icon {
+        animation: scaleIn 0.5s ease;
+    }
+
+    @@keyframes scaleIn {
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>

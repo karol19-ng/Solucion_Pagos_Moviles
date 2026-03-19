@@ -1,113 +1,124 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 namespace Gateway_2.Middleware
 {
-
     public class GatewayAuthMiddleware
     {
-
         private readonly RequestDelegate _next;
         private readonly IConfiguration _config;
         private readonly ILogger<GatewayAuthMiddleware> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         private static readonly string[] PublicRoutes = new[]
         {
-
-            "/gateway/auth/login",
-            "/gateway/auth/refresh",
-            "/admin/auth/login",
-            "/admin/Auth/Login",
+            "/auth/login",
+            "/auth/refresh",
             "/swagger",
             "/index.html",
-            "/ccs/","/js","/images","/lib"
+            "/css/",
+            "/js/",
+            "/images/",
+            "/lib/"
+        };
 
-        };// fin de rutas publicas
-
-        public GatewayAuthMiddleware(RequestDelegate next, IConfiguration config,
-            ILogger<GatewayAuthMiddleware> logger)
+        public GatewayAuthMiddleware(
+            RequestDelegate next,
+            IConfiguration config,
+            ILogger<GatewayAuthMiddleware> logger,
+            IHttpClientFactory httpClientFactory)
         {
-
             _next = next;
             _config = config;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
+        }
 
-        }//fin del gateway auth middleware
-
-        public async Task InvokeAsync(HttpContext contex)
+        public async Task InvokeAsync(HttpContext context)
         {
+            var path = context.Request.Path.Value?.ToLower() ?? "";
 
-            var path = contex.Request.Path.Value?.ToLower() ?? "";
-            if (path.Contains("swagger") || path.Contains("login")) 
+            // Rutas siempre públicas
+            if (IsPublicRoute(path) || path.Contains("swagger") || path.Contains("login"))
             {
-                await _next(contex);
+                _logger.LogInformation("Ruta pública: {Path}", path);
+                await _next(context);
                 return;
             }
 
-            if (IsPublicRoute(path))
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
             {
-                await _next(contex);
+                _logger.LogWarning("GTW2: No token - {Path}", path);
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsJsonAsync(new { error = "Unauthorized: No token provided" });
                 return;
-            }// fin de ruta publica
+            }
 
-            var authHeader = contex.Request.Headers["Authorization"].FirstOrDefault();
+            var token = authHeader.Substring("Bearer ".Length).Trim();
 
-            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer"))
+            // Intentar validar con microservicio
+            try
             {
-                _logger.LogWarning("GTW2:No se ha encontrado el token de autorizacion - {path}", path);
-                contex.Response.StatusCode = 401;// ERROR 401 sin token
-                await contex.Response.WriteAsJsonAsync(new { error = "Unauthorized: No token provided", message = "Token requerido" });
-                return;
+                var httpClient = _httpClientFactory.CreateClient();
+                var validateRequest = new { token = token };
+                var json = System.Text.Json.JsonSerializer.Serialize(validateRequest);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            }//fin de inicio con bearer
+                var validateResponse = await httpClient.PostAsync("https://localhost:7258/auth/validate", content);
 
-            var token = authHeader.Substring("Bearer".Length).Trim();
-            if (!ValidateToken(token))
-            {
-                _logger.LogWarning("GTW2:Token de autorizacion invalido - {path}", path);
-                contex.Response.StatusCode = 401;
-                await contex.Response.WriteAsJsonAsync(new { error = "Unauthorized: Invalid token", message = "Token invalido" });
-                return;
-            }//fin if validete
-
-            await _next(contex);
-        }
-
-            //metodo de ruta publica
-            private bool IsPublicRoute(string path)
-            {
-
-            return PublicRoutes.Any(r => path.StartsWith(r.ToLower()));
-
-            }// fin ruta publica
-
-        private bool ValidateToken(string token)
-        {
-            try 
-            {
-                var handler= new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
-
-                handler.ValidateToken(token, new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                if (validateResponse.IsSuccessStatusCode)
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidIssuer = _config["Jwt:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = _config["Jwt:Audience"],
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                }, out _);
-                return true;
-            }//fin try
+                    var result = await validateResponse.Content.ReadAsStringAsync();
+                    if (result.ToLower().Contains("true"))
+                    {
+                        _logger.LogInformation("Token válido para: {Path}", path);
+
+                        // === IMPORTANTE: Crear identidad para el usuario ===
+                        var handler = new JwtSecurityTokenHandler();
+                        var jwtToken = handler.ReadJwtToken(token);
+
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, jwtToken.Subject ?? "user"),
+                            new Claim("access_token", token)
+                        };
+
+                        // Agregar todos los claims del token
+                        foreach (var claim in jwtToken.Claims)
+                        {
+                            claims.Add(new Claim(claim.Type, claim.Value));
+                        }
+
+                        var identity = new ClaimsIdentity(claims, "Gateway");
+                        var principal = new ClaimsPrincipal(identity);
+
+                        // ESTO ES CRÍTICO - Establecer el usuario autenticado
+                        context.User = principal;
+
+                        await _next(context);
+                        return;
+                    }
+                }
+
+                _logger.LogWarning("Token inválido para: {Path}", path);
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsJsonAsync(new { error = "Unauthorized: Invalid token" });
+            }
             catch (Exception ex)
             {
-                return false;
-            }//fin catch
+                _logger.LogError(ex, "Error validando token");
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsJsonAsync(new { error = "Internal Server Error" });
+            }
+        }
 
-        }//fin valide token 
+        private bool IsPublicRoute(string path)
+        {
+            return PublicRoutes.Any(r => path.StartsWith(r));
+        }
     }
 }
-

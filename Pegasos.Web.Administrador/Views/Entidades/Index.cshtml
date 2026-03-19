@@ -1,2 +1,481 @@
-﻿module Index
+﻿@model IEnumerable<Pegasos.Web.Administrador.Models.EntidadViewModel>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Administración de Entidades Bancarias";
+}
 
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        :root {
+            --vinotinto-sidebar: #1f060c;
+            --vinotinto-fondo: #2b0811;
+            --dorado-primario: #c5a367;
+            --dorado-suave: rgba(197, 163, 103, 0.15);
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+            .page-header h1 {
+                color: var(--dorado-primario);
+                font-size: 1.8rem;
+                font-weight: 600;
+                margin: 0;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .page-header i {
+                margin-right: 15px;
+                color: var(--dorado-primario);
+                font-size: 2rem;
+            }
+
+        .btn-primary-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 10px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+            .btn-primary-custom:hover {
+                background: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(197, 163, 103, 0.3);
+            }
+
+            .btn-primary-custom i {
+                margin-right: 8px;
+            }
+
+        .alert-custom {
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--dorado-primario);
+            background: rgba(31, 6, 12, 0.8);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+
+        .alert-success-custom {
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger-custom {
+            border-left: 4px solid #dc3545;
+        }
+
+        .search-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(5px);
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+            .search-box:focus {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                outline: none;
+            }
+
+        .btn-search {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+            .btn-search:hover {
+                background: #d4b574;
+            }
+
+        .btn-clear {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+            .btn-clear:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+        .table-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .table-custom thead th {
+                background: rgba(31, 6, 12, 0.8);
+                color: var(--dorado-primario);
+                padding: 12px 15px;
+                font-weight: 600;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                border-bottom: 2px solid var(--dorado-primario);
+            }
+
+            .table-custom tbody tr {
+                border-bottom: 1px solid rgba(197, 163, 103, 0.1);
+            }
+
+                .table-custom tbody tr:hover {
+                    background: rgba(197, 163, 103, 0.1);
+                }
+
+            .table-custom tbody td {
+                padding: 12px 15px;
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+        .badge-success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            border: 1px solid #28a745;
+        }
+
+        .badge-danger {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            border: 1px solid #dc3545;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn-action-warning {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+        }
+
+        .btn-action-danger {
+            background: #dc3545;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+            .no-data i {
+                font-size: 3rem;
+                margin-bottom: 15px;
+                color: rgba(197, 163, 103, 0.3);
+            }
+
+        .pagination-custom {
+            margin-top: 25px;
+        }
+
+        .page-link {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            margin: 0 3px;
+            border-radius: 4px !important;
+            transition: all 0.3s ease;
+        }
+
+            .page-link:hover {
+                background: var(--dorado-primario);
+                border-color: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+            }
+
+        .page-item.active .page-link {
+            background: var(--dorado-primario);
+            border-color: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            font-weight: 600;
+        }
+
+        .id-badge {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+}
+
+<div class="container-fluid mt-4">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <h1>
+            <i class="fas fa-university"></i>
+            Entidades Bancarias
+        </h1>
+        <a href="/Entidades/Create" class="btn-primary-custom">
+            <i class="fas fa-plus-circle"></i>
+            Nueva Entidad
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-custom alert-success-custom">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-custom alert-danger-custom">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <!-- Buscador por identificador -->
+    <div class="search-container">
+        <div class="row">
+            <div class="col-md-8">
+                <form method="get" asp-action="Index" id="searchForm">
+                    <div class="input-group">
+                        <input type="text" name="searchId" id="searchId" class="form-control search-box"
+                               placeholder="Buscar por identificador de entidad..."
+                               value="@ViewBag.SearchId">
+                        <button class="btn-search" type="submit">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchId))
+                        {
+                            <a href="@Url.Action("Index")" class="btn-clear">
+                                <i class="fas fa-times me-2"></i>Limpiar
+                            </a>
+                        }
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="text-muted">
+                    <i class="fas fa-database me-1"></i> Total: @ViewBag.TotalRegistros registros
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Identificador</th>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="entidadesTableBody">
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var entidad in Model)
+                        {
+                            <tr>
+                                <td><span class="id-badge">@entidad.Id</span></td>
+                                <td><strong>@entidad.Identificador</strong></td>
+                                <td>@entidad.Nombre</td>
+                                <td>
+                                    @if (entidad.EstadoId == 1)
+                                    {
+                                        <span class="badge-success">ACTIVO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">INACTIVO</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/Entidades/Edit/@entidad.Id"
+                                           class="btn-action btn-action-warning"
+                                           title="Editar entidad">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn-action btn-action-danger delete-btn"
+                                            onclick="confirmarEliminacion(@entidad.Id, '@entidad.Identificador')"
+                                            title="Eliminar entidad">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="no-data">
+                                <i class="fas fa-university"></i>
+                                @if (!string.IsNullOrEmpty(ViewBag.SearchId))
+                                {
+                                    <span>No se encontraron entidades con identificador '@ViewBag.SearchId'</span>
+                                }
+                                else
+                                {
+                                    <span>No hay entidades registradas en el sistema</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        @if (ViewBag.TotalPaginas > 1)
+        {
+            <nav class="pagination-custom">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(ViewBag.PaginaActual == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual - 1)" asp-route-searchId="@ViewBag.SearchId">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPaginas; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@i" asp-route-searchId="@ViewBag.SearchId">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.PaginaActual == ViewBag.TotalPaginas ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual + 1)" asp-route-searchId="@ViewBag.SearchId">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmarEliminacion(id, identificador) {
+            if (confirm('¿Está seguro que desea eliminar la entidad "' + identificador + '"? Esta acción no se puede deshacer.')) {
+                var btn = $(`button[onclick*="confirmarEliminacion(${id}"]`);
+                var originalHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+                var token = $('input[name="__RequestVerificationToken"]').first().val();
+
+                $.ajax({
+                    url: '/Entidades/Delete/' + id,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token,
+                        id: id
+                    },
+                    success: function(response) {
+                        btn.prop('disabled', false).html(originalHtml);
+
+                        if (response.success) {
+                            // Mostrar notificación temporal
+                            var notification = $('<div class="alert-custom alert-success-custom" style="position: fixed; top: 20px; right: 20px; z-index: 9999; animation: slideIn 0.3s ease;">' +
+                                '<i class="fas fa-check-circle"></i> ' + response.message +
+                                '</div>');
+                            $('body').append(notification);
+                            setTimeout(function() {
+                                notification.fadeOut(300, function() { $(this).remove(); });
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        alert('Error al eliminar la entidad');
+                        console.error('Error:', xhr.responseText);
+                    }
+                });
+            }
+        }
+
+        $(document).ready(function() {
+            // Búsqueda en tiempo real
+            var timeoutId;
+            $('#searchId').on('keyup', function() {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(function() {
+                    $('#searchForm').submit();
+                }, 500);
+            });
+        });
+    </script>
+}

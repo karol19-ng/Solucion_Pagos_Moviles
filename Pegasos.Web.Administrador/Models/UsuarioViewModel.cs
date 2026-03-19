@@ -1,5 +1,17 @@
-﻿namespace Pegasos.Web.Administrador.Models
+﻿using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
+
+namespace Pegasos.Web.Administrador.Models
 {
+    public class AuthResult
+    {
+        public int UsuarioId { get; set; }
+        public string NombreCompleto { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public string ExpiresIn { get; set; } = string.Empty;
+    }
     public class UsuarioViewModel
     {
         public int Id { get; set; }
