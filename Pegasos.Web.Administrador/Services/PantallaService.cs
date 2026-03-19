@@ -292,15 +292,27 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var apiUrl = $"https://localhost:7258/api/screen/{id}";  
-                _logger.LogInformation("Eliminando pantalla {Id} desde URL: {Url}", id, apiUrl);
+                var apiUrl = $"https://localhost:7258/api/screen/{id}";
+                _logger.LogInformation("=== ELIMINANDO PANTALLA ===");
+                _logger.LogInformation("URL: {Url}", apiUrl);
 
                 var response = await _httpClient.DeleteAsync(apiUrl);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Respuesta: {StatusCode} - {Response}", response.StatusCode, responseContent);
+                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta: {Response}", responseContent);
 
-                return response.IsSuccessStatusCode;
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent);
+                    if (result != null && result.ContainsKey("codigo") && result["codigo"]?.ToString() == "0")
+                    {
+                        return true;
+                    }
+                    return true; // Si es éxito aunque no tenga el formato esperado
+                }
+
+                return false;
             }
             catch (Exception ex)
             {

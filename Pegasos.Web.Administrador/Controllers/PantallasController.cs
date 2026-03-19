@@ -212,23 +212,26 @@ namespace Pegasos.Web.Administrador.Controllers
         {
             try
             {
-                _logger.LogInformation("Intentando eliminar pantalla {Id}", id);
+                _logger.LogInformation("=== DELETE CONTROLLER ===");
+                _logger.LogInformation("ID recibido desde la vista: {Id}", id);
 
                 var resultado = await _pantallaService.EliminarAsync(id);
 
                 if (resultado)
                 {
+                    _logger.LogInformation("✅ Pantalla {Id} eliminada exitosamente", id);
                     return Json(new { success = true, message = "Pantalla eliminada exitosamente" });
                 }
                 else
                 {
+                    _logger.LogWarning("❌ No se pudo eliminar la pantalla {Id}", id);
                     return Json(new { success = false, message = "No se pudo eliminar la pantalla" });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar pantalla {Id}", id);
-                return Json(new { success = false, message = "Error al eliminar la pantalla" });
+                _logger.LogError(ex, "❌ Error al eliminar pantalla {Id}", id);
+                return Json(new { success = false, message = ex.Message });
             }
         }
 

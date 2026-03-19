@@ -114,24 +114,48 @@ namespace Services.Implementations
 
         public async Task<bool> DeleteAsync(int id, string usuarioEjecutor)
         {
+            _logger.LogInformation("=== ELIMINANDO PANTALLA EN BD ===");
+            _logger.LogInformation("ID recibido: {Id}", id);
+
+            // Buscar por ID exacto
             var pantalla = await _context.TablaPantallas.FindAsync(id);
-            if (pantalla == null) return false;
 
-            var eliminado = System.Text.Json.JsonSerializer.Serialize(MapToResponse(pantalla));
-
-            _context.TablaPantallas.Remove(pantalla);
-            await _context.SaveChangesAsync();
-
-            await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+            if (pantalla == null)
             {
-                Usuario = usuarioEjecutor,
-                Accion = "ELIMINAR_PANTALLA",
-                Descripcion = $"Eliminado: {eliminado}",
-                Servicio = "/screen",
-                Resultado = "OK"
-            });
+                _logger.LogWarning("No se encontró pantalla con ID {Id}", id);
+                return false;
+            }
 
-            return true;
+            _logger.LogInformation("Eliminando pantalla: {Nombre} (ID: {Id})", pantalla.Nombre, pantalla.ID_Pantalla);
+
+            try
+            {
+                _context.TablaPantallas.Remove(pantalla);
+                var result = await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Resultado de eliminación: {Result}", result > 0 ? "Éxito" : "Falló");
+
+                if (result > 0)
+                {
+                    await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                    {
+                        Usuario = usuarioEjecutor,
+                        Accion = "ELIMINAR_PANTALLA",
+                        Descripcion = $"Pantalla eliminada: {pantalla.Nombre} (ID:{id})",
+                        Servicio = "/screen",
+                        Resultado = "OK"
+                    });
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar pantalla {Id}", id);
+                return false;
+            }
         }
 
         private void ValidarPantalla(PantallaRequest request)
