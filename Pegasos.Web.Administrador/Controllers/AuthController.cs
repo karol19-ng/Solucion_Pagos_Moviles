@@ -44,10 +44,17 @@ namespace Pegasos.Web.Administrador.Controllers
                 return View(new LoginViewModel());
             }
 
-            [HttpPost]
+        [HttpPost]
         [AllowAnonymous]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult> Login([FromForm]LoginViewModel model, string? returnUrl = null)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login([FromForm] LoginViewModel model, string? returnUrl = null)
+        {
+            // if (!ModelState.IsValid) return View(model);
+
+            var username = model.Username;
+
+            // SA1: Verificación de Bloqueo
+            if (IsUserLockedOut(username))
             {
                if (!ModelState.IsValid) return View(model);
 
@@ -143,9 +150,95 @@ namespace Pegasos.Web.Administrador.Controllers
                 _logger.LogInformation("Usuario {Username} autenticado exitosamente vía Gateway.", username);
 
                 return RedirectToAction("Index", "Home");
+                model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos).";
+                return View(model);
             }
 
-            [HttpPost]
+            // LLAMADA AL GATEWAY
+            var result = await _authService.LoginAsync(model.Username, model.Password);
+
+            if (result == null)
+            {
+                RegisterFailedAttempt(username);
+                int attempts = GetFailedAttempts(username);
+                int remaining = 3 - attempts;
+
+                if (remaining <= 0)
+                {
+                    LockUser(username);
+                    model.ErrorMessage = "Usuario bloqueado. Intente en 15 minutos.";
+                }
+                else
+                {
+                    model.ErrorMessage = $"Credenciales incorrectas. Intentos restantes: {remaining}";
+                }
+                return View(model);
+            }
+
+            // 🔴 VERIFICAR QUE EL TOKEN NO SEA NULL O VACÍO
+            if (string.IsNullOrEmpty(result.access_token))
+            {
+                _logger.LogError("¡ERROR CRÍTICO! El token de acceso es null o vacío");
+                model.ErrorMessage = "Error de autenticación: no se recibió token válido";
+                return View(model);
+            }
+
+            // LOGIN EXITOSO
+            ClearAttempts(username);
+
+            // Guardar token en sesión como respaldo
+            try
+            {
+                HttpContext.Session.SetString("AccessToken", result.access_token);
+                HttpContext.Session.SetString("RefreshToken", result.refresh_token ?? "");
+                HttpContext.Session.SetString("UsuarioId", result.usuarioID.ToString());
+                HttpContext.Session.SetString("NombreCompleto", result.NombreCompleto ?? "");
+
+                _logger.LogInformation("Token guardado en sesión. Longitud: {Length}", result.access_token.Length);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar token en sesión");
+            }
+
+            // Creamos los Claims con el token que nos dio la API
+            var claims = new List<Claim>
+{
+    new Claim(ClaimTypes.Name, model.Username),
+    new Claim(ClaimTypes.NameIdentifier, result.usuarioID.ToString()),
+    new Claim("nombreCompleto", result.NombreCompleto ?? "Usuario Pegasos"),
+    new Claim("access_token", result.access_token),
+    new Claim("refresh_token", result.refresh_token ?? "")
+};
+
+            claims.Add(new Claim(ClaimTypes.Role, "Administrador"));
+
+            // 🔴 VERIFICAR QUE EL CLAIM TIENE VALOR
+            var tokenClaim = claims.FirstOrDefault(c => c.Type == "access_token");
+            _logger.LogInformation("Claim access_token creado con valor: {Valor}",
+                string.IsNullOrEmpty(tokenClaim?.Value) ? "VACÍO" : $"OK ({tokenClaim.Value.Length} chars)");
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = model.RememberMe,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5),
+                AllowRefresh = false
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                authProperties);
+
+            _logger.LogInformation("Usuario {Username} autenticado exitosamente vía Gateway.", username);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
             [ValidateAntiForgeryToken]
             public async Task<IActionResult> Logout(bool expired = false)
             {

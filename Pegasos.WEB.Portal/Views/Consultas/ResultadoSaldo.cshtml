@@ -1,0 +1,76 @@
+﻿@model SaldoViewModel
+@{
+    ViewData["Title"] = "Resultado de Consulta";
+}
+
+<div class="text-center py-4">
+    <div class="success-icon mb-4">
+        <i class="fas fa-check-circle fa-5x" style="color: #10b981;"></i>
+    </div>
+
+    <h2 class="text-success mb-4">Consulta Exitosa</h2>
+
+    <div class="result-card mx-auto" style="max-width: 500px;">
+        <h5 class="mb-3" style="color: var(--dorado-primario);">
+            <i class="fas fa-wallet"></i> Detalle de la Consulta
+        </h5>
+
+        <table class="table table-dark table-borderless text-start">
+            <tr>
+                <td class="text-muted">Fecha:</td>
+                <td class="text-end"><strong>@Model.FechaConsulta.ToString("dd/MM/yyyy HH:mm")</strong></td>
+            </tr>
+            <tr>
+                <td class="text-muted">Teléfono:</td>
+                <td class="text-end"><strong>@Model.Telefono</strong></td>
+            </tr>
+            @if (!string.IsNullOrEmpty(Model.NombreCompleto))
+            {
+                <tr>
+                    <td class="text-muted">Cliente:</td>
+                    <td class="text-end"><strong>@Model.NombreCompleto</strong></td>
+                </tr>
+            }
+            @if (!string.IsNullOrEmpty(Model.NumeroCuenta))
+            {
+                <tr>
+                    <td class="text-muted">Cuenta:</td>
+                    <td class="text-end"><strong>@Model.NumeroCuenta</strong></td>
+                </tr>
+            }
+            <tr>
+                <td class="text-muted">Saldo Actual:</td>
+                <td class="text-end"><strong style="color: var(--dorado-primario); font-size: 1.5rem;">@Model.Saldo.ToString("C2")</strong></td>
+            </tr>
+        </table>
+
+        <div class="mt-4">
+            <a href="@Url.Action("Saldo", "Consultas")" class="btn btn-secondary me-2">
+                <i class="fas fa-redo"></i> Nueva Consulta
+            </a>
+            <a href="@Url.Action("Index", "Transferencias")" class="btn btn-pegasos">
+                <i class="fas fa-exchange-alt"></i> Transferir
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .result-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(197, 163, 103, 0.2);
+        border-radius: 12px;
+        padding: 30px;
+        margin-top: 20px;
+    }
+
+    .table-dark {
+        --bs-table-bg: transparent;
+        --bs-table-border-color: rgba(197, 163, 103, 0.1);
+    }
+
+        .table-dark td {
+            border-color: rgba(197, 163, 103, 0.1);
+            padding: 12px 8px;
+        }
+</style>

@@ -229,7 +229,7 @@ namespace Services.Implementations
             }
 
             // Validar que teléfono origen esté afiliado
-            var afiliacionOrigen = await _context.Afiliaciones
+            var afiliacionOrigen = await _context.Afiliacion
                 .FirstOrDefaultAsync(a => a.Telefono == request.Telefono_origen && a.ID_Estado == 4); // Habilitado
 
             if (afiliacionOrigen == null)
@@ -242,7 +242,7 @@ namespace Services.Implementations
             }
 
             // Verificar si teléfono destino es interno
-            var afiliacionDestino = await _context.Afiliaciones
+            var afiliacionDestino = await _context.Afiliacion
                 .FirstOrDefaultAsync(a => a.Telefono == request.Telefono_destino && a.ID_Estado == 4);
 
             if (afiliacionDestino != null)

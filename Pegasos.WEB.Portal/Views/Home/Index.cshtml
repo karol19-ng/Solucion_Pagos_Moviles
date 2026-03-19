@@ -1,0 +1,88 @@
+﻿@model BienvenidaViewModel
+@{
+    ViewData["Title"] = "Bienvenido";
+}
+
+<div class="welcome-container">
+    <div class="welcome-card">
+        <div class="text-center">
+            <img src="/images/logo_pegasos.png" alt="Logo Banco Pegasos" class="welcome-logo mb-4">
+            
+            <h1 class="display-5 mb-3" style="color: var(--dorado-primario); font-family: 'Cinzel', serif;">
+                ¡Bienvenido!
+            </h1>
+            
+            <h2 class="mb-4" style="color: white;">
+                @Model.NombreCompleto
+            </h2>
+            
+            <p class="text-muted mb-4">
+                <i class="fas fa-clock me-2"></i>
+                @Model.FechaIngreso.ToString("dd 'de' MMMM 'de' yyyy") - @Model.HoraIngreso
+            </p>
+
+            <div class="welcome-actions mt-5">
+                <a href="@Url.Action("Index", "Transferencias")" class="btn btn-pegasos me-2">
+                    <i class="fas fa-exchange-alt"></i> Transferir
+                </a>
+                <a href="@Url.Action("Saldo", "Consultas")" class="btn btn-secondary">
+                    <i class="fas fa-wallet"></i> Consultar Saldo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .welcome-container {
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .welcome-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(197, 163, 103, 0.2);
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    .welcome-logo {
+        width: 120px;
+        filter: drop-shadow(0 0 10px var(--dorado-primario));
+    }
+
+    .btn-pegasos {
+        background: linear-gradient(135deg, #c5a367 0%, #8e6d31 100%);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        color: #1a050a;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+        .btn-pegasos:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(197, 163, 103, 0.3);
+            color: #1a050a;
+        }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(197, 163, 103, 0.3);
+        color: white;
+        padding: 12px 24px;
+    }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+</style>

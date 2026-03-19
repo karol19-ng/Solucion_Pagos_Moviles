@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+    @await RenderSectionAsync("Styles", required: false)
+
     <style>
         :root {
             --sidebar-width: 260px;
@@ -192,10 +194,19 @@
                 <i class="fas fa-users"></i> Usuarios 
             </a>
             <a href="@Url.Action("Index", "Roles")" class="menu-item">
-                <i class="fas fa-user-tag"></i> Roles 
+                <i class="fas fa-user-tag"></i> Roles (SA7)
             </a>
             <a href="@Url.Action("Index", "Parametros")" class="menu-item">
                 <i class="fas fa-sliders-h"></i> Parámetros
+            </a>
+
+            <!-- CLIENTES CORE - NUEVA OPCIÓN -->
+            <a href="@Url.Action("Index", "ClientesCore")" class="menu-item">
+                <i class="fas fa-id-card"></i> Clientes Core (SA10)
+            </a>
+
+            <a href="@Url.Action("Index", "CuentasCore")" class="menu-item">
+                <i class="fas fa-credit-card"></i> Cuentas Core (SA11)
             </a>
 
             <p class="menu-section-title" style="margin-top: 20px;">Operaciones</p>
@@ -206,6 +217,12 @@
                 <i class="fas fa-mobile-alt"></i> Pagos Móviles
             </a>
 
+            <p class="menu-section-title" style="margin-top: 20px;">Seguridad</p>
+            <a href="@Url.Action("Index", "Pantallas")" class="menu-item">
+                <i class="fas fa-desktop"></i> Pantallas (SA6)
+            </a>
+
+            <!-- Nota: Hay un duplicado de "Seguridad", lo mantengo como está pero podría unificarse -->
             <p class="menu-section-title" style="margin-top: 20px;">Seguridad</p>
             <a href="@Url.Action("Index", "Bitacora")" class="menu-item">
                 <i class="fas fa-history"></i> Bitácora 

@@ -29,7 +29,7 @@ namespace Pegasos.Web.Administrador.Services
                 var jsonManual = $"{{\"usuario\":\"{username}\",\"password\":\"{password}\"}}";
                 var content = new StringContent(jsonManual, Encoding.UTF8, "application/json");
 
-                _logger.LogInformation("Enviando JSON Crudo: {json}", jsonManual);
+                _logger.LogInformation("Enviando login para usuario: {Username}", username);
 
                 var response = await _httpClient.PostAsync("auth/login", content);
                 var responseJson = await response.Content.ReadAsStringAsync();
@@ -92,6 +92,37 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error de conexión en LoginAsync para usuario {Username}", username);
+                    var responseJson = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation("Respuesta del login recibida: {Response}", responseJson);
+
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = null // No cambiar nombres
+                    };
+
+                    var result = JsonSerializer.Deserialize<AuthResult>(responseJson, options);
+
+                    if (result != null)
+                    {
+                        _logger.LogInformation("Token recibido: {TokenPresent} - Longitud: {Length}",
+                            string.IsNullOrEmpty(result.access_token) ? "VACÍO" : "OK",
+                            result.access_token?.Length ?? 0);
+
+                        _logger.LogInformation("UsuarioID recibido: {UsuarioId}", result.usuarioID);
+                    }
+
+                    return result;
+                }
+
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Login fallido - StatusCode: {StatusCode}, Error: {Error}",
+                    response.StatusCode, error);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error de conexión en login");
                 return null;
             }
         }

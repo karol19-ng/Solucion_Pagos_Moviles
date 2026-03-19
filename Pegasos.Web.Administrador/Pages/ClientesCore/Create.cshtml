@@ -1,0 +1,56 @@
+﻿@page
+@model Pegasos.Web.Administrador.Pages.ClientesCore.CreateModel
+@{
+    ViewData["Title"] = "Crear Nuevo Cliente";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>Crear Nuevo Cliente en el Core</h4>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger">@Model.ErrorMessage</div>
+                    }
+
+                    <form method="post">
+                        <div class="mb-3">
+                            <label asp-for="Cliente.TipoIdentificacion" class="form-label">Tipo de Identificación *</label>
+                            <select asp-for="Cliente.TipoIdentificacion" class="form-select" asp-items="Model.TiposIdentificacion"></select>
+                            <span asp-validation-for="Cliente.TipoIdentificacion" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Cliente.Identificacion" class="form-label">Número de Identificación *</label>
+                            <input asp-for="Cliente.Identificacion" class="form-control" />
+                            <span asp-validation-for="Cliente.Identificacion" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Cliente.NombreCompleto" class="form-label">Nombre Completo *</label>
+                            <input asp-for="Cliente.NombreCompleto" class="form-control" />
+                            <span asp-validation-for="Cliente.NombreCompleto" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-page="./Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Regresar al Listado
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Cliente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

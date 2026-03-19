@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using System.Net.Http;
-using System.Text;
-using System.Net.Http.Headers;
+using System.Text.Json.Serialization;
+
 namespace Pegasos.Web.Administrador.Services
 {
     public interface IAuthService
@@ -19,6 +15,31 @@ namespace Pegasos.Web.Administrador.Services
         public string RefreshToken { get; set; } = string.Empty;
         public string ExpiresIn { get; set; }
         public int UsuarioId { get; set; }
+        // Solamente las propiedades que vienen del JSON (con los nombres exactos)
+        [JsonPropertyName("access_token")]
+        public string access_token { get; set; } = string.Empty;
+
+        [JsonPropertyName("refresh_token")]
+        public string refresh_token { get; set; } = string.Empty;
+
+        [JsonPropertyName("expires_in")]
+        public string expires_in { get; set; } = string.Empty;
+
+        [JsonPropertyName("usuarioID")]
+        public int usuarioID { get; set; }
+
+        [JsonPropertyName("NombreCompleto")]
         public string NombreCompleto { get; set; } = string.Empty;
+
+        // Métodos de conveniencia (no propiedades serializables)
+        public string GetAccessToken() => access_token;
+        public string GetRefreshToken() => refresh_token;
+        public int GetUsuarioId() => usuarioID;
+        public DateTime GetExpiration()
+        {
+            if (DateTime.TryParse(expires_in, out var result))
+                return result;
+            return DateTime.UtcNow.AddMinutes(5);
+        }
     }
 }

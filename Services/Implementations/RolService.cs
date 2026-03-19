@@ -8,6 +8,7 @@ using Entities.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging; // Agregar esto
 
 namespace Services.Implementations
 {
@@ -15,11 +16,16 @@ namespace Services.Implementations
     {
         private readonly PagosMovilesDbContext _context;
         private readonly IBitacoraService _bitacoraService;
+        private readonly ILogger<RolService> _logger; // Agregar logger
 
-        public RolService(PagosMovilesDbContext context, IBitacoraService bitacoraService)
+        public RolService(
+            PagosMovilesDbContext context,
+            IBitacoraService bitacoraService,
+            ILogger<RolService> logger) // Inyectar logger
         {
             _context = context;
             _bitacoraService = bitacoraService;
+            _logger = logger;
         }
 
         public async Task<List<RolResponse>> GetAllAsync()
@@ -49,6 +55,7 @@ namespace Services.Implementations
                 {
                     ID_Rol = rol.ID_Rol,
                     Nombre = rol.Nombre,
+                    Descripcion = rol.Descripcion ?? "",  // ✅ Incluir Descripcion
                     Pantallas = pantallasDetalle
                 });
             }
@@ -81,107 +88,177 @@ namespace Services.Implementations
             {
                 ID_Rol = rol.ID_Rol,
                 Nombre = rol.Nombre,
+                Descripcion = rol.Descripcion ?? "",  // ✅ Incluir Descripcion
                 Pantallas = pantallasDetalle
             };
         }
 
         public async Task<RolResponse> CreateAsync(RolRequest request, string usuarioEjecutor)
         {
-            ValidarRol(request);
-
-            var rol = new Rol
+            try
             {
-                ID_Rol = request.ID_Rol,
-                Nombre = request.Nombre
-            };
+                _logger.LogInformation("=== CREANDO ROL EN BD (ID Manual) ===");
+                _logger.LogInformation("Request: {@Request}", request);
 
-            _context.Roles.Add(rol);
-            await _context.SaveChangesAsync();
+                ValidarRol(request);
 
-            // Agregar pantallas
-            foreach (var pantallaId in request.Pantallas)
-            {
-                _context.RolPorPantallas.Add(new RolPorPantalla
+                // Obtener el máximo ID actual
+                var maxId = await _context.Roles
+                    .OrderByDescending(r => r.ID_Rol)
+                    .Select(r => (int?)r.ID_Rol)
+                    .FirstOrDefaultAsync();
+
+                // Si no hay registros, empezar desde 1
+                int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
+
+                _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
+
+                var rol = new Rol
                 {
-                    ID_Rol = rol.ID_Rol,
-                    ID_Pantalla = pantallaId
+                    ID_Rol = nuevoId,  // Asignar ID manualmente
+                    Nombre = request.Nombre
+                };
+
+                _context.Roles.Add(rol);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Rol guardado en BD con ID: {Id}", rol.ID_Rol);
+
+                // Agregar pantallas
+                if (request.Pantallas != null && request.Pantallas.Any())
+                {
+                    foreach (var pantallaId in request.Pantallas)
+                    {
+                        _context.RolPorPantallas.Add(new RolPorPantalla
+                        {
+                            ID_Rol = rol.ID_Rol,
+                            ID_Pantalla = pantallaId
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("{Count} pantallas asignadas al rol", request.Pantallas.Count);
+                }
+
+                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                {
+                    Usuario = usuarioEjecutor,
+                    Accion = "CREAR_ROL",
+                    Descripcion = System.Text.Json.JsonSerializer.Serialize(request),
+                    Servicio = "/rol",
+                    Resultado = "OK"
                 });
+
+                return await GetByIdAsync(rol.ID_Rol);
             }
-            await _context.SaveChangesAsync();
-
-            await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+            catch (Exception ex)
             {
-                Usuario = usuarioEjecutor,
-                Accion = "CREAR_ROL",
-                Descripcion = System.Text.Json.JsonSerializer.Serialize(request),
-                Servicio = "/rol",
-                Resultado = "OK"
-            });
-
-            return await GetByIdAsync(rol.ID_Rol);
+                _logger.LogError(ex, "Error al crear rol en BD");
+                _logger.LogError("Mensaje: {Message}", ex.Message);
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("InnerException: {InnerMessage}", ex.InnerException.Message);
+                }
+                throw;
+            }
         }
 
         public async Task<RolResponse> UpdateAsync(int id, RolRequest request, string usuarioEjecutor)
         {
-            ValidarRol(request);
-
-            var rol = await _context.Roles.FindAsync(id);
-            if (rol == null) return null;
-
-            var anterior = System.Text.Json.JsonSerializer.Serialize(await GetByIdAsync(id));
-
-            rol.Nombre = request.Nombre;
-
-            // Actualizar pantallas
-            var existentes = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
-            _context.RolPorPantallas.RemoveRange(existentes);
-
-            foreach (var pantallaId in request.Pantallas)
+            try
             {
-                _context.RolPorPantallas.Add(new RolPorPantalla
+                _logger.LogInformation("=== ACTUALIZANDO ROL {Id} ===", id);
+                _logger.LogInformation("Nombre: {Nombre}, Pantallas: {Pantallas}",
+                    request.Nombre, string.Join(",", request.Pantallas));
+
+                ValidarRol(request);
+
+                var rol = await _context.Roles.FindAsync(id);
+                if (rol == null)
                 {
-                    ID_Rol = id,
-                    ID_Pantalla = pantallaId
+                    _logger.LogWarning("Rol {Id} no encontrado", id);
+                    return null;
+                }
+
+                var anterior = System.Text.Json.JsonSerializer.Serialize(await GetByIdAsync(id));
+
+                rol.Nombre = request.Nombre;
+
+                // Actualizar pantallas
+                var existentes = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
+                _context.RolPorPantallas.RemoveRange(existentes);
+
+                foreach (var pantallaId in request.Pantallas)
+                {
+                    _context.RolPorPantallas.Add(new RolPorPantalla
+                    {
+                        ID_Rol = id,
+                        ID_Pantalla = pantallaId
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Rol {Id} actualizado exitosamente", id);
+
+                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                {
+                    Usuario = usuarioEjecutor,
+                    Accion = "MODIFICAR_ROL",
+                    Descripcion = $"Anterior: {anterior} | Actual: {System.Text.Json.JsonSerializer.Serialize(request)}",
+                    Servicio = "/rol",
+                    Resultado = "OK"
                 });
+
+                return await GetByIdAsync(id);
             }
-
-            await _context.SaveChangesAsync();
-
-            await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+            catch (Exception ex)
             {
-                Usuario = usuarioEjecutor,
-                Accion = "MODIFICAR_ROL",
-                Descripcion = $"Anterior: {anterior} | Actual: {System.Text.Json.JsonSerializer.Serialize(request)}",
-                Servicio = "/rol",
-                Resultado = "OK"
-            });
-
-            return await GetByIdAsync(id);
+                _logger.LogError(ex, "Error al actualizar rol {Id}", id);
+                throw;
+            }
         }
 
         public async Task<bool> DeleteAsync(int id, string usuarioEjecutor)
         {
-            var rol = await _context.Roles.FindAsync(id);
-            if (rol == null) return false;
-
-            var eliminado = System.Text.Json.JsonSerializer.Serialize(await GetByIdAsync(id));
-
-            var pantallas = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
-            _context.RolPorPantallas.RemoveRange(pantallas);
-
-            _context.Roles.Remove(rol);
-            await _context.SaveChangesAsync();
-
-            await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+            try
             {
-                Usuario = usuarioEjecutor,
-                Accion = "ELIMINAR_ROL",
-                Descripcion = $"Eliminado: {eliminado}",
-                Servicio = "/rol",
-                Resultado = "OK"
-            });
+                _logger.LogInformation("=== ELIMINANDO ROL {Id} ===", id);
 
-            return true;
+                var rol = await _context.Roles.FindAsync(id);
+                if (rol == null)
+                {
+                    _logger.LogWarning("Rol {Id} no encontrado", id);
+                    return false;
+                }
+
+                var eliminado = System.Text.Json.JsonSerializer.Serialize(await GetByIdAsync(id));
+
+                // Primero eliminar las relaciones en Rol_Por_Pantalla
+                var pantallasRelacionadas = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
+                _context.RolPorPantallas.RemoveRange(pantallasRelacionadas);
+
+                // Luego eliminar el rol
+                _context.Roles.Remove(rol);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Rol {Id} eliminado exitosamente", id);
+
+                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                {
+                    Usuario = usuarioEjecutor,
+                    Accion = "ELIMINAR_ROL",
+                    Descripcion = $"Rol eliminado ID:{id}",
+                    Servicio = "/rol",
+                    Resultado = "OK"
+                });
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar rol {Id}", id);
+                throw;
+            }
         }
 
         private void ValidarRol(RolRequest request)
