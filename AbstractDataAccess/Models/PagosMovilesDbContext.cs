@@ -20,7 +20,7 @@ namespace AbstractDataAccess.Models
         public DbSet<Parametro> Parametros { get; set; }
         public DbSet<InicioSesion> InicioSesiones { get; set; }
         public DbSet<TransaccionEnvio> TransaccionEnvios { get; set; }
-        public DbSet<Afiliacion> Afiliaciones { get; set; }
+        public DbSet<Afiliacion> Afiliacion { get; set; }
         public DbSet<Estado> Estados { get; set; }
         public DbSet<TipoIdentificacion> TiposIdentificacion { get; set; }
 

@@ -203,6 +203,63 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
+    // PARAMETRO (con parámetros)
+    {
+      "DownstreamPathTemplate": "/api/parametro/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/parametro/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // PARAMETRO (sin parámetros)
+    {
+      "DownstreamPathTemplate": "/api/parametro",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/parametro",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+
+    // ENTIDAD (con parámetros)
+    {
+      "DownstreamPathTemplate": "/api/entidad/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/entidad/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // ENTIDAD (sin parámetros)
+    {
+      "DownstreamPathTemplate": "/api/entidad",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/entidad",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
     // RUTA GENÉRICA
     {
       "DownstreamPathTemplate": "/api/{everything}",

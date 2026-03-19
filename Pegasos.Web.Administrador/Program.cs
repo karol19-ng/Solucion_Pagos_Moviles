@@ -75,6 +75,21 @@ builder.Services.AddHttpClient<ICuentaCoreService, CuentaCoreService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+// Registrar ParametroService
+builder.Services.AddHttpClient<IParametroService, ParametroService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar EntidadService
+builder.Services.AddHttpClient<IEntidadService, EntidadService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
