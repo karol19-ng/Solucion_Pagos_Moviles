@@ -49,7 +49,7 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 });
 
 // Registrar IScreenService con su propio HttpClient
-builder.Services.AddHttpClient<IScreenService, ScreenService>(client =>
+builder.Services.AddHttpClient<IPantallaService, PantallaService>(client =>
 {
     var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
     client.BaseAddress = new Uri(baseUrl);
@@ -62,6 +62,15 @@ builder.Services.AddHttpClient<IClienteCoreService, ClienteCoreService>(client =
 {
     // Esta URL debe ser la del GATEWAY 1 (puerto 7096)
     client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Después de los otros AddHttpClient
+builder.Services.AddHttpClient<IPantallaService, PantallaService>(client =>
+{
+    var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
+    client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });

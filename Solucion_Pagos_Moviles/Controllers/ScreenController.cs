@@ -7,7 +7,7 @@ using System.Security.Claims;
 namespace API_Proyecto1.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     [Authorize]
     public class screen : ControllerBase
     {

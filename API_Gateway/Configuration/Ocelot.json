@@ -131,6 +131,88 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
+    {
+      "DownstreamPathTemplate": "/api/screen",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // LISTAR TODAS (GET)
+    {
+      "DownstreamPathTemplate": "/api/screen",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+
+    // OBTENER POR ID (GET)
+    {
+      "DownstreamPathTemplate": "/api/screen/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen/{id}",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+
+    // CREAR (POST)
+    {
+      "DownstreamPathTemplate": "/api/screen",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen",
+      "UpstreamHttpMethod": [ "POST" ]
+    },
+
+    // ACTUALIZAR (PUT)
+    {
+      "DownstreamPathTemplate": "/api/screen/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen/{id}",
+      "UpstreamHttpMethod": [ "PUT" ]
+    },
+
+    // ELIMINAR (DELETE)
+    {
+      "DownstreamPathTemplate": "/api/screen/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ]
+    },
+
     // RUTA GENÉRICA
     {
       "DownstreamPathTemplate": "/api/{everything}",
