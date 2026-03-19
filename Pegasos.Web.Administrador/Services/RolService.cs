@@ -68,7 +68,8 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var apiUrl = "https://localhost:7258/api/rol";
+                // Usar URL directa a la API como en PantallaService
+                var apiUrl = "https://localhost:7258/rol";
                 _logger.LogInformation("Listando roles desde: {Url}", apiUrl);
 
                 var response = await _httpClient.GetAsync(apiUrl);
@@ -85,9 +86,12 @@ namespace Pegasos.Web.Administrador.Services
 
                     return roles ?? new List<RolViewModel>();
                 }
-
-                _logger.LogWarning("Error al listar roles: {StatusCode}", response.StatusCode);
-                return new List<RolViewModel>();
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Error al listar roles: {StatusCode} - {Error}", response.StatusCode, error);
+                    return new List<RolViewModel>();
+                }
             }
             catch (Exception ex)
             {
@@ -102,7 +106,7 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var apiUrl = $"https://localhost:7258/api/rol/{id}";
+                var apiUrl = $"https://localhost:7258/rol/{id}";
                 _logger.LogInformation("Obteniendo rol {Id} desde: {Url}", id, apiUrl);
 
                 var response = await _httpClient.GetAsync(apiUrl);
@@ -132,7 +136,7 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                // Primero obtener todas las pantallas
+                // Usar URL directa a la API como en PantallaService
                 var pantallasUrl = "https://localhost:7258/api/screen";
                 _logger.LogInformation("Obteniendo pantallas desde: {Url}", pantallasUrl);
 
@@ -191,7 +195,7 @@ namespace Pegasos.Web.Administrador.Services
                 _logger.LogInformation("=== CREANDO ROL ===");
                 _logger.LogInformation("JSON enviado: {Json}", json);
 
-                var apiUrl = "https://localhost:7258/api/rol";
+                var apiUrl = "https://localhost:7258/rol";
                 var response = await _httpClient.PostAsync(apiUrl, content);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -216,7 +220,7 @@ namespace Pegasos.Web.Administrador.Services
                 var json = JsonSerializer.Serialize(model);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var apiUrl = $"https://localhost:7258/api/rol/{model.Id}";
+                var apiUrl = $"https://localhost:7258/rol/{model.Id}";
                 _logger.LogInformation("Actualizando rol {Id}: {Json}", model.Id, json);
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
@@ -240,7 +244,7 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var apiUrl = $"https://localhost:7258/api/rol/{id}";
+                var apiUrl = $"https://localhost:7258/rol/{id}";
                 _logger.LogInformation("Eliminando rol {Id} desde: {Url}", id, apiUrl);
 
                 var response = await _httpClient.DeleteAsync(apiUrl);

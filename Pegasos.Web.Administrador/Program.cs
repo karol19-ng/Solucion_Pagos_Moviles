@@ -75,6 +75,13 @@ builder.Services.AddHttpClient<IPantallaService, PantallaService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<IRolService, RolService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/"); 
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

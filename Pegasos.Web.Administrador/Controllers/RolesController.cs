@@ -255,5 +255,30 @@ namespace Pegasos.Web.Administrador.Controllers
                 return Json(new List<RolViewModel>());
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Test()
+        {
+            try
+            {
+                _logger.LogInformation("=== TEST ROLES ===");
+
+                var resultado = await _rolService.ListarTodosAsync();
+
+                if (resultado != null && resultado.Any())
+                {
+                    return Content($"✅ Roles encontrados: {resultado.Count}");
+                }
+                else
+                {
+                    return Content("❌ No se encontraron roles");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content($"❌ Error: {ex.Message}");
+            }
+        }
+
     }
 }
