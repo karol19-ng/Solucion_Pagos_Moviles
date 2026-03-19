@@ -11,9 +11,7 @@ namespace API_Gateway.Middleware
         private readonly IConfiguration _configuration;
         private readonly ILogger<GatewayAuthenticationMiddleware> _logger;
 
-
         //rutas que no requieren autenticacion 
-
         private static readonly string[] PublicRoutes = new[]
         {
             "/gateway/auth/login",
@@ -33,10 +31,9 @@ namespace API_Gateway.Middleware
             "/css/",
             "/js/",
             "/swagger",
-                "/index.html",
-            "/images/"    
-        
-        };//end of rutas publicas
+            "/index.html",
+            "/images/"
+        };
 
         public GatewayAuthenticationMiddleware(
             RequestDelegate next,
@@ -49,54 +46,56 @@ namespace API_Gateway.Middleware
         }
 
         public async Task InvokeAsync(HttpContext context)
-        { 
-            var path =context.Request.Path.Value;
-            if (path.Contains("swagger") || path.Contains("login"))
+        {
+            var path = context.Request.Path.Value;
+
+            _logger.LogInformation("=== HEADERS RECIBIDOS EN GATEWAY ===");
+            foreach (var header in context.Request.Headers)
             {
+                _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value);
+            }
+
+            // ✅ SOLO UNA VEZ - Obtener el header de autorización
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+            _logger.LogWarning("AUTH HEADER ESPECÍFICO: {AuthHeader}", authHeader ?? "NO HAY HEADER");
+
+            // Rutas públicas (swagger, login, etc.)
+            if (path.Contains("swagger") || path.Contains("login") || IsPublicRoute(path))
+            {
+                _logger.LogDebug("Ruta pública accedida: {Path}", path);
                 await _next(context);
                 return;
             }
-            //verificacion de ruta si es publica 
-            if (IsPublicRoute(path))
+
+            // Verificar si hay token
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
             {
-                _logger.LogDebug("Ruta publica accedida:{Path}", path);
-                await _next(context);
-                return;
-            }
-
-            //verificacion sin token no ingresa
-
-            var authHeader=context.Request.Headers["Authorization"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(authHeader)||!authHeader.StartsWith("Bearer "))
-            {
-                _logger.LogWarning("GTW2:Acceso denegado -Sin Token.Path:{Path}", path);
+                _logger.LogWarning("GTW2: Acceso denegado - Sin Token. Path: {Path}", path);
                 await RespondUnauthorized(context, "Token de autenticacion requerido");
                 return;
-
             }
 
-            var token =authHeader.Substring("Bearer ".Length).Trim();
+            // Extraer el token
+            var token = authHeader.Substring("Bearer ".Length).Trim();
 
-            //validacion token
+            // Validar el token
             if (!ValidateToken(token, out var error))
-            { 
-                _logger.LogWarning("GTW2:Acceso Denegado-Token Invalido.Path:{Path}.Error:{Error}", path, error);
+            {
+                _logger.LogWarning("GTW2: Acceso Denegado - Token Invalido. Path: {Path}. Error: {Error}", path, error);
                 await RespondUnauthorized(context, $"Token invalido: {error}");
                 return;
             }
 
-            _logger.LogDebug("GTW2: Token valido.Acceso concedido.Path:{Path}", path);
+            _logger.LogDebug("GTW2: Token valido. Acceso concedido. Path: {Path}", path);
             await _next(context);
-
-        }//fin de InvokeAsync
+        }
 
         private bool IsPublicRoute(string path)
         {
-            return PublicRoutes.Any(r => path.StartsWith(r.ToLower()));
+            return PublicRoutes.Any(r => path.StartsWith(r, StringComparison.OrdinalIgnoreCase));
         }
 
-        private bool ValidateToken(string token, out string error) 
+        private bool ValidateToken(string token, out string error)
         {
             error = string.Empty;
             try
@@ -104,44 +103,37 @@ namespace API_Gateway.Middleware
                 var handler = new JwtSecurityTokenHandler();
                 var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
 
-                var validationParameters = new
-                    Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                var validationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
                     ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidAudience = _configuration["Jwt:Audience"],
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
 
-
                 handler.ValidateToken(token, validationParameters, out _);
                 return true;
-            }//fin del try
-
-            catch (SecurityTokenInvalidAlgorithmException)
+            }
+            catch (SecurityTokenExpiredException)
             {
-
                 error = "Su token ha expirado. Por favor, inicie sesión nuevamente.";
                 return false;
-
-            }//fin del catch
+            }
             catch (SecurityTokenInvalidSignatureException)
             {
                 error = "La firma del token es inválida. Por favor, inicie sesión nuevamente.";
                 return false;
             }
             catch (Exception ex)
-            { 
-                error= ex.Message;
+            {
+                error = ex.Message;
                 return false;
-
             }
-        }// end of ValidateToken
-
+        }
 
         private async Task RespondUnauthorized(HttpContext context, string message)
         {
@@ -150,8 +142,5 @@ namespace API_Gateway.Middleware
             var response = new { error = message };
             await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
         }
-
-    }//end of class
-
-
-}// end of namespace
+    }
+}
