@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
+using System.Net.Http.Headers;
 using Pegasos.WEB.Portal.Models.ViewModels;
 
 namespace Pegasos.WEB.Portal.Services
@@ -18,19 +20,48 @@ namespace Pegasos.WEB.Portal.Services
         {
             try
             {
+                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    new AuthenticationHeaderValue("Bearer", token);
 
-                var response = await _httpClient.GetAsync($"gateway/accounts/balance?telefono={telefono}&identificacion={identificacion}");
+                _logger.LogInformation("=== CONSULTA SALDO ===");
+                _logger.LogInformation("Teléfono: {Telefono}", telefono);
+                _logger.LogInformation("Identificación: {Identificacion}", identificacion);
+
+                // Construir URL con los parámetros requeridos
+                var url = $"gateway/accounts/balance?telefono={telefono}&identificacion={identificacion}";
+                _logger.LogInformation("URL: {Url}", url);
+
+                var response = await _httpClient.GetAsync(url);
+                var responseJson = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("Status Code: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta: {Response}", responseJson);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<SaldoViewModel>(json, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<SaldoResponse>(responseJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (result != null)
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        return new SaldoViewModel
+                        {
+                            Telefono = telefono,
+                            Identificacion = identificacion,
+                            Saldo = result.Saldo,
+                            NumeroCuenta = result.NumeroCuenta,
+                            NombreCompleto = result.NombreCompleto,
+                            FechaConsulta = DateTime.Now
+                        };
+                    }
                 }
+                else
+                {
+                    _logger.LogWarning("Error en consulta de saldo: {StatusCode} - {Response}",
+                        response.StatusCode, responseJson);
+                }
+
                 return null;
             }
             catch (Exception ex)
@@ -44,19 +75,29 @@ namespace Pegasos.WEB.Portal.Services
         {
             try
             {
+                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    new AuthenticationHeaderValue("Bearer", token);
 
-                var response = await _httpClient.GetAsync($"gateway/accounts/transactions?telefono={telefono}&identificacion={identificacion}");
+                _logger.LogInformation("=== CONSULTA MOVIMIENTOS ===");
+                _logger.LogInformation("Teléfono: {Telefono}", telefono);
+                _logger.LogInformation("Identificación: {Identificacion}", identificacion);
+
+                var url = $"gateway/accounts/transactions?telefono={telefono}&identificacion={identificacion}";
+                _logger.LogInformation("URL: {Url}", url);
+
+                var response = await _httpClient.GetAsync(url);
+                var responseJson = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("Status Code: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta: {Response}", responseJson);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<MovimientosViewModel>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    return JsonSerializer.Deserialize<MovimientosViewModel>(responseJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 }
+
                 return null;
             }
             catch (Exception ex)
