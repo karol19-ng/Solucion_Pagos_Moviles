@@ -94,7 +94,7 @@ namespace API_Proyecto1.Controllers
                 var usuario = User.FindFirst(ClaimTypes.Name)?.Value ?? "Sistema";
                 var result = await _service.DeleteAsync(id, usuario);
                 if (!result) return NotFound(new { codigo = -1, descripcion = "Pantalla no encontrada" });
-                return NoContent();
+                return Ok(new { codigo = 0, descripcion = "Pantalla eliminada exitosamente" });  // ✅ Devolver JSON
             }
             catch (Exception ex)
             {

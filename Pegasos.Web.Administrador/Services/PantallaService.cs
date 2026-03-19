@@ -134,19 +134,19 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var url = $"gateway/api/Screen/{id}";
-                _logger.LogInformation("Llamando a Gateway: {Url}", url);
+                var apiUrl = $"https://localhost:7258/api/screen/{id}";
+                _logger.LogInformation("URL: {Url}", apiUrl);
 
-                var response = await _httpClient.GetAsync(url);
+                var response = await _httpClient.GetAsync(apiUrl);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PantallaResponse>(json, new JsonSerializerOptions
+                    var pantalla = JsonSerializer.Deserialize<PantallaViewModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
-                    return result?.Pantalla;
+                    return pantalla;
                 }
 
                 return null;
@@ -167,27 +167,86 @@ namespace Pegasos.Web.Administrador.Services
                 var json = JsonSerializer.Serialize(model);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                _logger.LogInformation("Creando pantalla: {Json}", json);
+                _logger.LogInformation("=== INTENTANDO CREAR PANTALLA ===");
+                _logger.LogInformation("JSON enviado: {Json}", json);
+                _logger.LogInformation("Headers Authorization: {Auth}", _httpClient.DefaultRequestHeaders.Authorization?.ToString());
 
-                var response = await _httpClient.PostAsync("gateway/api/Screen", content);
+                var apiUrl = "https://localhost:7258/api/screen";
+                _logger.LogInformation("URL: {Url}", apiUrl);
+
+                _logger.LogInformation("Enviando petición...");
+                var response = await _httpClient.PostAsync(apiUrl, content);
+
+                _logger.LogInformation("=== RESPUESTA RECIBIDA ===");
+                _logger.LogInformation("StatusCode: {StatusCode} ({(int)response.StatusCode})", response.StatusCode, response.StatusCode);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Respuesta: {StatusCode} - {Response}", response.StatusCode, responseContent);
+                _logger.LogInformation("Contenido: {ResponseContent}", responseContent);
+
+                // Mostrar todos los headers de la respuesta
+                _logger.LogInformation("Headers de respuesta:");
+                foreach (var header in response.Headers)
+                {
+                    _logger.LogInformation("  {Key}: {Value}", header.Key, string.Join(", ", header.Value));
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = JsonSerializer.Deserialize<PantallaResponse>(responseContent, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    return result?.Codigo == 0;
-                }
+                    _logger.LogInformation("✅ ÉXITO - Pantalla creada");
 
+                    // Intentar deserializar la respuesta para ver si obtenemos el ID
+                    try
+                    {
+                        var pantallaCreada = JsonSerializer.Deserialize<PantallaViewModel>(responseContent, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        _logger.LogInformation("ID de pantalla creada: {Id}", pantallaCreada?.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("No se pudo deserializar respuesta: {Message}", ex.Message);
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning("❌ ERROR - Código: {StatusCode}", response.StatusCode);
+                    _logger.LogWarning("Detalle: {ResponseContent}", responseContent);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        _logger.LogWarning("Error 400 Bad Request - Posiblemente datos inválidos");
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        _logger.LogWarning("Error 401 Unauthorized - Token inválido o expirado");
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        _logger.LogWarning("Error 404 Not Found - URL incorrecta: {Url}", apiUrl);
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                    {
+                        _logger.LogWarning("Error 500 Internal Server Error - Error en el servidor");
+                    }
+
+                    return false;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "❌ HttpRequestException al crear pantalla");
+                _logger.LogError("Mensaje: {Message}", ex.Message);
+                _logger.LogError("Status Code: {StatusCode}", ex.StatusCode);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear pantalla");
+                _logger.LogError(ex, "❌ Error general al crear pantalla");
+                _logger.LogError("Mensaje: {Message}", ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
                 return false;
             }
         }
@@ -233,24 +292,15 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var url = $"gateway/api/Screen/{id}";
-                _logger.LogInformation("Eliminando pantalla {Id}", id);
+                var apiUrl = $"https://localhost:7258/api/screen/{id}";  
+                _logger.LogInformation("Eliminando pantalla {Id} desde URL: {Url}", id, apiUrl);
 
-                var response = await _httpClient.DeleteAsync(url);
+                var response = await _httpClient.DeleteAsync(apiUrl);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("Respuesta: {StatusCode} - {Response}", response.StatusCode, responseContent);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = JsonSerializer.Deserialize<PantallaResponse>(responseContent, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    return result?.Codigo == 0;
-                }
-
-                return false;
+                return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {

@@ -8,6 +8,7 @@ using Entities.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace Services.Implementations
 {
@@ -15,11 +16,16 @@ namespace Services.Implementations
     {
         private readonly PagosMovilesDbContext _context;
         private readonly IBitacoraService _bitacoraService;
+        private readonly ILogger<PantallaService> _logger;  // Agregar logger
 
-        public PantallaService(PagosMovilesDbContext context, IBitacoraService bitacoraService)
+        public PantallaService(
+        PagosMovilesDbContext context,
+        IBitacoraService bitacoraService,
+        ILogger<PantallaService> logger)
         {
             _context = context;
             _bitacoraService = bitacoraService;
+            _logger = logger;  // ✅ Agregar esta línea
         }
 
         public async Task<List<PantallaResponse>> GetAllAsync()
@@ -36,11 +42,26 @@ namespace Services.Implementations
 
         public async Task<PantallaResponse> CreateAsync(PantallaRequest request, string usuarioEjecutor)
         {
+            _logger.LogInformation("=== CREANDO PANTALLA EN BD (ID Manual) ===");
+            _logger.LogInformation("Request: {@Request}", request);
+            _logger.LogInformation("Usuario: {Usuario}", usuarioEjecutor);
+
             ValidarPantalla(request);
+
+            // Obtener el máximo ID actual
+            var maxId = await _context.TablaPantallas
+                .OrderByDescending(p => p.ID_Pantalla)
+                .Select(p => (int?)p.ID_Pantalla)
+                .FirstOrDefaultAsync();
+
+            // Si no hay registros, empezar desde 1
+            int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
+
+            _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
 
             var pantalla = new TablaPantalla
             {
-                ID_Pantalla = request.ID_Pantalla,
+                ID_Pantalla = nuevoId,  // Asignar ID manualmente
                 Nombre = request.Nombre,
                 Descripcion = request.Descripcion,
                 Ruta = request.Ruta,
@@ -49,6 +70,8 @@ namespace Services.Implementations
 
             _context.TablaPantallas.Add(pantalla);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Pantalla creada con ID: {Id}", pantalla.ID_Pantalla);
 
             await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
             {

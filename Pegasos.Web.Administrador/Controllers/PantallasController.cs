@@ -67,24 +67,73 @@ namespace Pegasos.Web.Administrador.Controllers
         {
             try
             {
-                if (!ModelState.IsValid)
+                _logger.LogInformation("=== RECIBIDA PETICIÓN CREATE DESDE VISTA ===");
+                _logger.LogInformation("Modelo recibido - Nombre: {Nombre}, Descripción: {Descripcion}, Ruta: {Ruta}",
+                    model?.Nombre, model?.Descripcion, model?.Ruta);
+
+                if (model == null)
                 {
+                    _logger.LogWarning("Modelo es null");
+                    ModelState.AddModelError(string.Empty, "Datos no válidos");
                     return View(model);
                 }
 
+                // Validaciones manuales
+                if (string.IsNullOrWhiteSpace(model.Nombre))
+                {
+                    _logger.LogWarning("Nombre vacío");
+                    ModelState.AddModelError("Nombre", "El nombre es requerido");
+                }
+                else
+                {
+                    _logger.LogInformation("Nombre válido: {Nombre}", model.Nombre);
+                }
+
+                if (string.IsNullOrWhiteSpace(model.Descripcion))
+                {
+                    _logger.LogWarning("Descripción vacía");
+                    ModelState.AddModelError("Descripcion", "La descripción es requerida");
+                }
+                else
+                {
+                    _logger.LogInformation("Descripción válida: {Descripcion}", model.Descripcion);
+                }
+
+                if (string.IsNullOrWhiteSpace(model.Ruta))
+                {
+                    _logger.LogWarning("Ruta vacía");
+                    ModelState.AddModelError("Ruta", "La ruta es requerida");
+                }
+                else
+                {
+                    _logger.LogInformation("Ruta válida: {Ruta}", model.Ruta);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("ModelState inválido - Errores: {ErrorCount}", ModelState.ErrorCount);
+                    return View(model);
+                }
+
+                _logger.LogInformation("Llamando a servicio para crear pantalla...");
                 var resultado = await _pantallaService.CrearAsync(model);
+
+                _logger.LogInformation("Resultado del servicio: {Resultado}", resultado);
+
                 if (resultado)
                 {
+                    _logger.LogInformation("✅ Pantalla creada exitosamente");
                     TempData["Success"] = "Pantalla creada exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError(string.Empty, "No se pudo crear la pantalla");
+                _logger.LogWarning("❌ Servicio devolvió false");
+                ModelState.AddModelError(string.Empty, "No se pudo crear la pantalla. Verifique los datos.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear pantalla");
-                ModelState.AddModelError(string.Empty, "Error al crear la pantalla");
+                _logger.LogError(ex, "❌ Error al crear pantalla");
+                ModelState.AddModelError(string.Empty, "Error al crear la pantalla: " + ex.Message);
             }
 
             return View(model);
