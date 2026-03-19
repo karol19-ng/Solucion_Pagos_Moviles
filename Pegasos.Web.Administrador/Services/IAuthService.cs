@@ -11,6 +11,10 @@ namespace Pegasos.Web.Administrador.Services
 
     public class AuthResult
     {
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public string ExpiresIn { get; set; }
+        public int UsuarioId { get; set; }
         // Solamente las propiedades que vienen del JSON (con los nombres exactos)
         [JsonPropertyName("access_token")]
         public string access_token { get; set; } = string.Empty;

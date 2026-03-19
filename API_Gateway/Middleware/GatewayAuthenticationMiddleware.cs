@@ -54,8 +54,7 @@ namespace API_Gateway.Middleware
             // Rutas públicas rápidas
             if (path.Contains("swagger") || path.Contains("login"))
             {
-                await _next(context);
-                return;
+                _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value);
             }
 
             // Verificar si es ruta pública
@@ -159,7 +158,7 @@ namespace API_Gateway.Middleware
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = true,
                     ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidAudience = _configuration["Jwt:Audience"],
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero

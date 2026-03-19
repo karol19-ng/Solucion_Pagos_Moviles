@@ -56,6 +56,100 @@ namespace Pegasos.Web.Administrador.Controllers
             // SA1: Verificación de Bloqueo
             if (IsUserLockedOut(username))
             {
+               if (!ModelState.IsValid) return View(model);
+
+                var username = model.Username;
+
+                // SA1: Verificación de Bloqueo
+                if (IsUserLockedOut(username))
+                {
+                    model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos).";
+                    return View(model);
+                }
+
+                // LLAMADA AL GATEWAY (Puerto 5001)
+                // Aquí el result ya trae el Token firmado con tu clave: 
+                // "Pegasos_BancoPegasos_SecretKey_2026_CUC_ProgV_Avance2"
+                var result = await _authService.LoginAsync(model.Username, model.Password);
+
+            if (result == null)
+            {
+                _logger.LogWarning("Login fallido para usuario {Username}: AuthService retornó null", username);
+
+                RegisterFailedAttempt(username);
+                int attempts = GetFailedAttempts(username);
+                int remaining = 3 - attempts;
+
+                if (remaining <= 0)
+                {
+                    LockUser(username);
+                    model.ErrorMessage = "Usuario bloqueado. Intente en 15 minutos.";
+                }
+                else
+                {
+                    model.ErrorMessage = $"Credenciales incorrectas. Intentos restantes: {remaining}";
+                }
+
+                return View(model);
+            }
+
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Token recibido -> {result.AccessToken}");
+
+            // LOGIN EXITOSO
+            ClearAttempts(username);
+
+            var tokenSeguro = result.AccessToken;
+
+            if (string.IsNullOrEmpty(tokenSeguro))
+            {
+                _logger.LogWarning("¡OJO! El servicio de Auth no devolvió un AccessToken.");
+                tokenSeguro = "TOKEN_NO_RECIBIDO";
+            }
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, model.Username),
+    
+                new Claim(ClaimTypes.NameIdentifier, result.UsuarioId != 0 ? result.UsuarioId.ToString() : "0"),    
+                new Claim("nombreCompleto", result.NombreCompleto ?? model.Username),
+                new Claim("access_token", tokenSeguro),
+                new Claim("refresh_token", result.RefreshToken ?? ""),
+                new Claim("aud", "PegasosBankAPI"), 
+                new Claim("iss", "PegasosBankIssuer")
+            };
+
+            // Rol fijo o dinámico
+            claims.Add(new Claim(ClaimTypes.Role, "Administrador"));
+
+
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = model.RememberMe,
+                    // SA4: Sesión de 5 minutos según Program.cs
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5),
+                    AllowRefresh = false
+                };
+
+                authProperties.StoreTokens(new[]
+                {
+                    new Microsoft.AspNetCore.Authentication.AuthenticationToken {
+                        Name = "access_token",
+                        Value = tokenSeguro
+                    }
+                });
+
+            await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    principal,
+                    authProperties);
+
+                _logger.LogInformation("Usuario {Username} autenticado exitosamente vía Gateway.", username);
+
+                return RedirectToAction("Index", "Home");
                 model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos).";
                 return View(model);
             }
@@ -157,18 +251,23 @@ namespace Pegasos.Web.Administrador.Controllers
             [Authorize]
             public async Task<IActionResult> ExtendSession()
             {
-                // SA4: Extender la cookie local de acceso
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    User,
-                    new AuthenticationProperties
-                    {
-                        IsPersistent = true,
-                        ExpiresUtc = DateTime.UtcNow.AddMinutes(5)
-                    });
+            // SA4: Extender la cookie local de acceso
+            var identity = User.Identity as ClaimsIdentity;
+            if (identity == null) return Unauthorized();
 
-                return Ok(new { success = true, message = "Sesión Banco Pegasos extendida" });
-            }
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5) // Le damos 5 min más
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity),
+                authProperties);
+
+            return Ok(new { success = true, newTime = 300 });
+        }
 
         [HttpGet]
             public async Task<IActionResult> Logout()

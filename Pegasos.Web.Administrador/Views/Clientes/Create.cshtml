@@ -1,2 +1,46 @@
-﻿module Create
+﻿@model Pegasos.Web.Administrador.Models.CrearUsuarioViewModel
 
+<div class="crud-container mx-auto" style="max-width: 600px;">
+    <h3 class="text-center mb-4" style="color: var(--dorado-primario); font-family: 'Cinzel';">Crear Usuario</h3>
+
+    <form asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre Completo</label>
+                <input asp-for="NombreCompleto" class="form-control bg-transparent text-white border-secondary" required />
+                <span asp-validation-for="NombreCompleto" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                <input asp-for="Email" type="email" class="form-control bg-transparent text-white border-secondary" required />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Identificación</label>
+                <input asp-for="Identificacion" class="form-control bg-transparent text-white border-secondary" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Rol</label>
+                <select asp-for="Rol" class="form-select bg-dark text-white border-secondary">
+                    <option value="Usuario">Usuario Estándar</option>
+                    <option value="Administrador">Administrador</option>
+                    </small>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Contraseña Temporal</label>
+            <input asp-for="Password" type="password" class="form-control bg-transparent text-white border-secondary" required />
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a asp-action="Index" class="btn btn-outline-light">Cancelar</a>
+            <button type="submit" class="btn btn-warning px-5">Guardar Usuario</button>
+        </div>
+    </form>
+</div>

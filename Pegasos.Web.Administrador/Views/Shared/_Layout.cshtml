@@ -141,9 +141,30 @@
             font-size: 0.8rem;
             border-top: 1px solid rgba(197, 163, 103, 0.1);
         }
+
+        .avatar-circle {
+            background-image: url('/images/default.jpg'); /* Imagen por defecto */
+            background-size: cover;
+            background-position: center;
+            /* Si la imagen no carga, el color de fondo y la inicial  */
+            background-color: var(--vinotinto-sidebar);
+        }
     </style>
 </head>
 <body>
+
+    @{
+        // Lógica para el Avatar
+        var userClaims = User.Identity as System.Security.Claims.ClaimsIdentity;
+        var nombreCompleto = userClaims?.FindFirst("nombreCompleto")?.Value ?? User.Identity?.Name ?? "Usuario";
+        var inicial = !string.IsNullOrEmpty(nombreCompleto) ? nombreCompleto[0].ToString().ToUpper() : "P";
+
+        var avatarUrl = "";
+        if (User.Identity?.Name?.ToLower() == "sebastian")
+        {
+            avatarUrl = "/images/admin.jpg"; 
+        }
+    }
 
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -151,10 +172,26 @@
             <div class="sidebar-title">PEGASOS BANK</div>
         </div>
 
+        <div class="user-profile-sidebar text-center">
+
+            <div class="avatar-circle" style="@(!string.IsNullOrEmpty(avatarUrl) ? $"background-image: url('{avatarUrl}');" : "")">
+                @if (string.IsNullOrEmpty(avatarUrl))
+                {
+                    <span class="initials" style="font-family: 'Cinzel', serif; color: var(--dorado-primario); font-size: 1.8rem; font-weight: bold;">
+                        @inicial
+                    </span>
+                }
+            </div>
+            <div class="user-info-name" style="margin-top: 10px; font-weight: 600;">@nombreCompleto</div>
+            <div class="user-info-role" style="color: var(--dorado-primario); font-size: 0.7rem; text-transform: uppercase;">
+                @userClaims?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+            </div>
+        </div>
+
         <nav class="sidebar-menu">
             <p class="menu-section-title">Administración</p>
-            <a href="@Url.Action("Index", "Usuarios")" class="menu-item">
-                <i class="fas fa-users"></i> Usuarios (SRV6)
+            <a href="@Url.Action("Index", "Clientes")" class="menu-item">
+                <i class="fas fa-users"></i> Usuarios 
             </a>
             <a href="@Url.Action("Index", "Roles")" class="menu-item">
                 <i class="fas fa-user-tag"></i> Roles (SA7)
@@ -174,7 +211,7 @@
 
             <p class="menu-section-title" style="margin-top: 20px;">Operaciones</p>
             <a href="@Url.Action("Index", "Entidades")" class="menu-item">
-                <i class="fas fa-university"></i> Entidades (SRV10)
+                <i class="fas fa-university"></i> Entidades 
             </a>
             <a href="@Url.Action("Index", "Afiliaciones")" class="menu-item">
                 <i class="fas fa-mobile-alt"></i> Pagos Móviles
@@ -188,7 +225,7 @@
             <!-- Nota: Hay un duplicado de "Seguridad", lo mantengo como está pero podría unificarse -->
             <p class="menu-section-title" style="margin-top: 20px;">Seguridad</p>
             <a href="@Url.Action("Index", "Bitacora")" class="menu-item">
-                <i class="fas fa-history"></i> Bitácora (SRV18)
+                <i class="fas fa-history"></i> Bitácora 
             </a>
             <a href="@Url.Action("Logout", "Auth")" class="menu-item text-danger">
                 <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
@@ -217,6 +254,84 @@
         </footer>
     </div>
 
+
+
+
+    <div class="top-user-bar">
+        <div class="me-auto ms-3">
+            <span class="badge bg-danger">
+                <i class="fas fa-stopwatch me-1"></i> Sesión: <span id="timerDisplay">05:00</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="modal fade" id="sessionModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content" style="background: #1f060c; border: 1px solid var(--dorado-primario); color: white;">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-clock fa-3x mb-3" style="color: var(--dorado-primario);"></i>
+                    <h4>Tu sesión está por expirar</h4>
+                    <p>Por seguridad, tu sesión en Pegasos Bank finalizará pronto.</p>
+                    <h2 style="color: var(--dorado-primario); font-family: 'Cinzel', serif;">Aviso de Seguridad</h2>
+                    <button onclick="extendSession()" class="btn btn-warning mt-3">Continuar Trabajando</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let timeLeft = 300;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const timerElement = document.getElementById('timerDisplay');
+            const modalEl = document.getElementById('sessionModal');
+            // Verificamos que bootstrap esté cargado
+            const sessionModal = (modalEl && typeof bootstrap !== 'undefined') ? new bootstrap.Modal(modalEl) : null;
+
+            const countdown = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    window.location.href = '/Auth/Logout?expired=true';
+                } else {
+                    timeLeft--;
+                    let minutes = Math.floor(timeLeft / 60);
+                    let seconds = timeLeft % 60;
+
+                    if(timerElement) {
+                        timerElement.innerHTML = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }
+
+                    if (timeLeft === 60 && sessionModal) {
+                        sessionModal.show();
+                    }
+                }
+            }, 1000);
+        });
+
+        async function extendSession() {
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const response = await fetch('/Auth/ExtendSession', {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': token }
+                });
+
+                if (response.ok) {
+                    timeLeft = 300;
+                    console.log("Sesión extendida");
+                    const modalEl = document.getElementById('sessionModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) modalInstance.hide();
+                }
+            } catch (e) { console.error("Error al extender:", e); }
+        }
+    </script>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/session-control.js"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

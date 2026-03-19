@@ -1,2 +1,238 @@
-﻿module Index
+﻿@model IEnumerable<Pegasos.Web.Administrador.Models.UsuarioViewModel>
 
+@{
+    ViewData["Title"] = "Administración de Usuarios";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <div>
+            <h2 style="font-family: 'Cinzel', serif; color: var(--dorado-primario); text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                <i class="fas fa-user-shield me-2"></i>ADMINISTRACIÓN DE USUARIOS
+            </h2>
+            <p class="text-muted small">Gestión centralizada de accesos - Pegasos Bank</p>
+        </div>
+        @* CORRECCIÓN: Se cambió <a> por <button> y se agregaron los data-bs para el modal *@
+        <button type="button" class="btn"
+                data-bs-toggle="modal"
+                data-bs-target="#modalNuevoUsuario"
+                data-bs-backdrop="false"
+                style="background-color: var(--dorado-primario); color: #1f060c; font-weight: bold; border-radius: 0; transition: 0.3s;">
+            <i class="fas fa-plus-circle me-2"></i>NUEVO USUARIO
+        </button>
+    </div>
+
+    @* BUSCADOR *@
+    <div class="card mb-4" style="background: rgba(31, 6, 12, 0.6); border: 1px solid var(--dorado-primario);">
+        <div class="card-body">
+            <form asp-action="Index" method="get">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-secondary text-warning">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="searchString" class="form-control bg-dark text-white border-secondary"
+                           placeholder="Buscar por nombre o identificación..."
+                           value="@ViewData["CurrentFilter"]">
+                    <button class="btn btn-outline-warning" type="submit" style="border-radius: 0 4px 4px 0;">FILTRAR</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary ms-2">LIMPIAR</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* TABLA DE USUARIOS *@
+    <div class="table-responsive shadow-lg" style="border-radius: 8px; overflow: hidden;">
+        <table class="table table-hover align-middle" style="background-color: #1f060c; color: white; margin-bottom: 0;">
+            <thead style="background: linear-gradient(90deg, #2d0a12 0%, #1f060c 100%); border-bottom: 2px solid var(--dorado-primario);">
+                <tr class="text-warning small text-uppercase">
+                    <th class="ps-4">Nombre</th>
+                    <th>Email</th>
+                    <th>Identificación</th>
+                    <th>Rol</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr style="border-bottom: 1px solid rgba(197, 163, 103, 0.1); transition: 0.2s;">
+                            <td class="ps-4">
+                                <div class="fw-bold" style="color: #eee;">@item.NombreCompleto</div>
+                            </td>
+                            <td><span class="text-muted">@item.Email</span></td>
+                            <td><code class="text-warning">@item.Identificacion</code></td>
+                            <td>
+                                <span class="badge" style="background: rgba(197, 163, 103, 0.2); color: var(--dorado-primario); border: 1px solid var(--dorado-primario);">
+                                    @item.Rol
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @if (item.Activo)
+                                {
+                                    <span class="badge bg-success" style="font-size: 0.7rem;"><i class="fas fa-check-circle me-1"></i>ACTIVO</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger" style="font-size: 0.7rem;"><i class="fas fa-times-circle me-1"></i>INACTIVO</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info me-2 border-0">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                @* CORRECCIÓN: Aseguramos que pase la identificación correctamente *@
+                                <button class="btn btn-sm btn-outline-danger border-0"
+                                        onclick="confirmDelete('@item.Identificacion', '@item.NombreCompleto')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted italic">
+                            <i class="fas fa-folder-open fa-3x mb-3 d-block text-warning opacity-50"></i>
+                            No se encontraron usuarios registrados.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* MODAL PARA NUEVO USUARIO *@
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background: #1f060c; border: 2px solid var(--dorado-primario); color: white;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(197, 163, 103, 0.3);">
+                <h5 class="modal-title" id="modalLabel" style="font-family: 'Cinzel', serif; color: var(--dorado-primario);">
+                    <i class="fas fa-user-plus me-2"></i>REGISTRAR NUEVO USUARIO
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-warning">Nombre Completo</label>
+                            <input type="text" name="NombreCompleto" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-warning">Email</label>
+                            <input type="email" name="Email" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-warning">Tipo Identificación</label>
+                            <select name="TipoIdentificacion" class="form-select bg-dark text-white border-secondary">
+                                <option value="Cédula Física">Cédula Física</option>
+                                <option value="Cédula Jurídica">Cédula Jurídica</option>
+                                <option value="DIMEX">DIMEX</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-warning">Identificación</label>
+                            <input type="text" name="Identificacion" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-warning">Teléfono</label>
+                            <input type="tel" name="Telefono" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-warning">Rol del Sistema</label>
+                            <select name="Rol" class="form-select bg-dark text-white border-secondary">
+                                <option value="Administrador">Administrador</option>
+                                <option value="Cajero">Cajero</option>
+                                <option value="Cliente">Cliente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small text-warning">Contraseña Temporal</label>
+                            <input type="password" name="Password" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(197, 163, 103, 0.3);">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn btn-warning" style="background: var(--dorado-primario); font-weight: bold; color: #1f060c;">
+                        GUARDAR USUARIO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* Formulario oculto para el borrado *@
+<form id="deleteForm" method="post" asp-action="Delete">
+    <input type="hidden" id="deleteId" name="id" />
+</form>
+
+
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDelete(identificacion, nombre) {
+            Swal.fire({
+                title: '<span style="color: var(--dorado-primario); font-family: Cinzel;">¿ELIMINAR USUARIO?</span>',
+                html: `<p style="color: white;">¿Realmente desea eliminar a <b>${nombre}</b>?</p>
+                       <p class="small text-danger">Esta acción llamará al servicio por Identificación: ${identificacion}</p>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#c5a367',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'SÍ, ELIMINAR',
+                cancelButtonText: 'NO',
+                background: '#1f060c',
+                backdrop: 'rgba(0,0,0,0.8)'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('deleteId').value = identificacion;
+                    document.getElementById('deleteForm').submit();
+                }
+            })
+        }
+
+        @if (ViewBag.Error != null)
+        {
+            <text>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Operación',
+                        text: '@ViewBag.Error',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367'
+                    });
+            </text>
+        }
+    </script>
+    <style>
+        /* 1. Eliminamos CUALQUIER velo que Bootstrap intente crear */
+        .modal-backdrop {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* 2. Forzamos que el modal se posicione al frente de la plantilla */
+        #modalNuevoUsuario {
+            z-index: 99999 !important;
+            background: rgba(0, 0, 0, 0.8); /* Creamos nuestro propio velo controlado */
+        }
+
+        /* 3. Aseguramos que el contenido sea interactivo */
+        .modal-content {
+            z-index: 100000 !important;
+            position: relative;
+        }
+    </style>
+
+}
