@@ -68,58 +68,78 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                _logger.LogInformation("=== DIAGNÓSTICO DE PANTALLAS ===");
+                _logger.LogInformation("=== LISTANDO PANTALLAS ===");
                 _logger.LogInformation("BaseAddress del HttpClient: {BaseAddress}", _httpClient.BaseAddress);
 
-                // Mostrar todos los headers
-                foreach (var header in _httpClient.DefaultRequestHeaders)
-                {
-                    _logger.LogInformation("Header: {Key} = {Value}", header.Key, string.Join(",", header.Value));
-                }
+                // Usar URL directa a la API (como en Roles)
+                var apiUrl = "https://localhost:7258/api/screen";
+                _logger.LogInformation("URL: {Url}", apiUrl);
 
-                // Probar diferentes URLs
-                var urlsToTest = new[]
-                {
-            "gateway/api/screen",
-            "api/screen",
-            "screen",
-            "https://localhost:7258/screen",
-            "https://localhost:7258/api/screen"
-        };
+                var response = await _httpClient.GetAsync(apiUrl);
 
-                foreach (var testUrl in urlsToTest)
+                if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("Probando URL: {Url}", testUrl);
-                    try
+                    var json = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation("Respuesta JSON: {Json}", json);
+
+                    // Usar JsonDocument para mapear manualmente
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    var pantallas = new List<PantallaViewModel>();
+
+                    if (root.ValueKind == JsonValueKind.Array)
                     {
-                        var response = await _httpClient.GetAsync(testUrl);
-                        _logger.LogInformation("URL {Url} - StatusCode: {StatusCode}", testUrl, response.StatusCode);
-
-                        if (response.IsSuccessStatusCode)
+                        foreach (var item in root.EnumerateArray())
                         {
-                            var json = await response.Content.ReadAsStringAsync();
-                            _logger.LogInformation("✅ ÉXITO con URL {Url}: {Json}", testUrl, json);
+                            var pantalla = new PantallaViewModel();
 
-                            var pantallas = JsonSerializer.Deserialize<List<PantallaViewModel>>(json, new JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            });
+                            // Mapear ID (puede venir como iD_Pantalla, ID_Pantalla, etc.)
+                            if (item.TryGetProperty("iD_Pantalla", out var idProp))
+                                pantalla.Id = idProp.GetInt32();
+                            else if (item.TryGetProperty("ID_Pantalla", out idProp))
+                                pantalla.Id = idProp.GetInt32();
+                            else if (item.TryGetProperty("id", out idProp))
+                                pantalla.Id = idProp.GetInt32();
 
-                            return pantallas;
-                        }
-                        else
-                        {
-                            var error = await response.Content.ReadAsStringAsync();
-                            _logger.LogWarning("❌ Falló URL {Url}: {StatusCode} - {Error}", testUrl, response.StatusCode, error);
+                            // Mapear Nombre
+                            if (item.TryGetProperty("nombre", out var nombreProp))
+                                pantalla.Nombre = nombreProp.GetString() ?? "";
+                            else if (item.TryGetProperty("Nombre", out nombreProp))
+                                pantalla.Nombre = nombreProp.GetString() ?? "";
+
+                            // Mapear Descripción
+                            if (item.TryGetProperty("descripcion", out var descProp))
+                                pantalla.Descripcion = descProp.GetString() ?? "";
+                            else if (item.TryGetProperty("Descripcion", out descProp))
+                                pantalla.Descripcion = descProp.GetString() ?? "";
+
+                            // Mapear Ruta
+                            if (item.TryGetProperty("ruta", out var rutaProp))
+                                pantalla.Ruta = rutaProp.GetString() ?? "";
+                            else if (item.TryGetProperty("Ruta", out rutaProp))
+                                pantalla.Ruta = rutaProp.GetString() ?? "";
+
+                            // Mapear Estado
+                            if (item.TryGetProperty("estado", out var estadoProp))
+                                pantalla.Estado = estadoProp.GetInt32();
+                            else if (item.TryGetProperty("Estado", out estadoProp))
+                                pantalla.Estado = estadoProp.GetInt32();
+
+                            _logger.LogInformation("Pantalla mapeada - ID: {Id}, Nombre: {Nombre}", pantalla.Id, pantalla.Nombre);
+                            pantallas.Add(pantalla);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "❌ Excepción con URL {Url}", testUrl);
-                    }
-                }
 
-                return new List<PantallaViewModel>();
+                    _logger.LogInformation("Total pantallas mapeadas: {Count}", pantallas.Count);
+                    return pantallas;
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Error al listar pantallas: {StatusCode} - {Error}", response.StatusCode, error);
+                    return new List<PantallaViewModel>();
+                }
             }
             catch (Exception ex)
             {
@@ -135,17 +155,51 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var apiUrl = $"https://localhost:7258/api/screen/{id}";
-                _logger.LogInformation("URL: {Url}", apiUrl);
+                _logger.LogInformation("Obteniendo pantalla {Id} desde: {Url}", id, apiUrl);
 
                 var response = await _httpClient.GetAsync(apiUrl);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    var pantalla = JsonSerializer.Deserialize<PantallaViewModel>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    _logger.LogInformation("Respuesta JSON: {Json}", json);
+
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    var pantalla = new PantallaViewModel();
+
+                    // Mapear ID
+                    if (root.TryGetProperty("iD_Pantalla", out var idProp))
+                        pantalla.Id = idProp.GetInt32();
+                    else if (root.TryGetProperty("ID_Pantalla", out idProp))
+                        pantalla.Id = idProp.GetInt32();
+
+                    // Mapear Nombre
+                    if (root.TryGetProperty("nombre", out var nombreProp))
+                        pantalla.Nombre = nombreProp.GetString() ?? "";
+                    else if (root.TryGetProperty("Nombre", out nombreProp))
+                        pantalla.Nombre = nombreProp.GetString() ?? "";
+
+                    // Mapear Descripción
+                    if (root.TryGetProperty("descripcion", out var descProp))
+                        pantalla.Descripcion = descProp.GetString() ?? "";
+                    else if (root.TryGetProperty("Descripcion", out descProp))
+                        pantalla.Descripcion = descProp.GetString() ?? "";
+
+                    // Mapear Ruta
+                    if (root.TryGetProperty("ruta", out var rutaProp))
+                        pantalla.Ruta = rutaProp.GetString() ?? "";
+                    else if (root.TryGetProperty("Ruta", out rutaProp))
+                        pantalla.Ruta = rutaProp.GetString() ?? "";
+
+                    // Mapear Estado
+                    if (root.TryGetProperty("estado", out var estadoProp))
+                        pantalla.Estado = estadoProp.GetInt32();
+                    else if (root.TryGetProperty("Estado", out estadoProp))
+                        pantalla.Estado = estadoProp.GetInt32();
+
+                    _logger.LogInformation("Pantalla mapeada - ID: {Id}, Nombre: {Nombre}", pantalla.Id, pantalla.Nombre);
                     return pantalla;
                 }
 
@@ -257,31 +311,63 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
+                _logger.LogInformation("=== ACTUALIZANDO PANTALLA ===");
+                _logger.LogInformation("Modelo recibido - Id: {Id}, Nombre: {Nombre}, Descripción: {Descripcion}, Ruta: {Ruta}, Estado: {Estado}",
+                    model.Id, model.Nombre, model.Descripcion, model.Ruta, model.Estado);
+
+                // Crear el objeto que espera la API
+                var request = new
+                {
+                    id_Pantalla = model.Id,
+                    nombre = model.Nombre,
+                    descripcion = model.Descripcion,
+                    ruta = model.Ruta
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                _logger.LogInformation("JSON enviado: {Json}", json);
+
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var url = $"gateway/api/Screen/{model.Id}";
-                _logger.LogInformation("Actualizando pantalla {Id}: {Json}", model.Id, json);
+                var apiUrl = $"https://localhost:7258/api/screen/{model.Id}";
+                _logger.LogInformation("URL: {Url}", apiUrl);
 
-                var response = await _httpClient.PutAsync(url, content);
+                var response = await _httpClient.PutAsync(apiUrl, content);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Respuesta: {StatusCode} - {Response}", response.StatusCode, responseContent);
+                _logger.LogInformation("Código de respuesta: {StatusCode} ({(int)response.StatusCode})", response.StatusCode, response.StatusCode);
+                _logger.LogInformation("Respuesta del servidor: {Response}", responseContent);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = JsonSerializer.Deserialize<PantallaResponse>(responseContent, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    return result?.Codigo == 0;
+                    _logger.LogInformation("✅ Pantalla actualizada exitosamente");
+                    return true;
                 }
-
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    _logger.LogWarning("❌ Bad Request - Error de validación");
+                    _logger.LogWarning("Detalle: {Response}", responseContent);
+                    return false;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("❌ Pantalla no encontrada (404)");
+                    return false;
+                }
+                else
+                {
+                    _logger.LogWarning("❌ Error inesperado: {StatusCode}", response.StatusCode);
+                    return false;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "❌ HttpRequestException al actualizar pantalla {Id}", model.Id);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al actualizar pantalla {model.Id}");
+                _logger.LogError(ex, "❌ Error general al actualizar pantalla {Id}", model.Id);
                 return false;
             }
         }
