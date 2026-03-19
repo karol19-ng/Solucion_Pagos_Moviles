@@ -65,35 +65,34 @@ namespace Pegasos.Web.Administrador.Controllers
                 // "Pegasos_BancoPegasos_SecretKey_2026_CUC_ProgV_Avance2"
                 var result = await _authService.LoginAsync(model.Username, model.Password);
 
-                if (result == null )
-                {
+            if (result == null)
+            {
+                _logger.LogWarning("Login fallido para usuario {Username}: AuthService retornó null", username);
 
-                //Pruebas
-                System.Diagnostics.Debug.WriteLine($"DEBUG NEXUSPAY: Token recibido -> {result.AccessToken}");
                 RegisterFailedAttempt(username);
-                    int attempts = GetFailedAttempts(username);
-                    int remaining = 3 - attempts;
+                int attempts = GetFailedAttempts(username);
+                int remaining = 3 - attempts;
 
-                    if (remaining <= 0)
-                    {
-                        LockUser(username);
-                        model.ErrorMessage = "Usuario bloqueado. Intente en 15 minutos.";
-                    }
-                    else
-                    {
-                        model.ErrorMessage = $"Credenciales incorrectas. Intentos restantes: {remaining}";
-                    }
-                    return View(model);
+                if (remaining <= 0)
+                {
+                    LockUser(username);
+                    model.ErrorMessage = "Usuario bloqueado. Intente en 15 minutos.";
+                }
+                else
+                {
+                    model.ErrorMessage = $"Credenciales incorrectas. Intentos restantes: {remaining}";
                 }
 
-                // LOGIN EXITOSO
-                ClearAttempts(username);
+                return View(model);
+            }
 
-            // Creamos los Claims con el token que nos dio la API a través del Gateway
-           // var tokenSeguro = result.AccessToken ?? "token_temporal";
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Token recibido -> {result.AccessToken}");
+
+            // LOGIN EXITOSO
+            ClearAttempts(username);
+
             var tokenSeguro = result.AccessToken;
 
-            // DEBUG: Verifica en la consola de salida de VS si el token viene nulo desde el servicio
             if (string.IsNullOrEmpty(tokenSeguro))
             {
                 _logger.LogWarning("¡OJO! El servicio de Auth no devolvió un AccessToken.");
@@ -104,21 +103,20 @@ namespace Pegasos.Web.Administrador.Controllers
             {
                 new Claim(ClaimTypes.Name, model.Username),
     
-                // USAMOS "0" SI EL ID VIENE NULO PARA QUE NO DE ERROR
                 new Claim(ClaimTypes.NameIdentifier, result.UsuarioId != 0 ? result.UsuarioId.ToString() : "0"),    
-                // USAMOS EL NOMBRE DE USUARIO SI NO VIENE EL NOMBRE COMPLETO
                 new Claim("nombreCompleto", result.NombreCompleto ?? model.Username),
-    
-                // EL TOKEN QUE YA SABEMOS QUE SE LLAMA access_token
                 new Claim("access_token", tokenSeguro),
-
-                new Claim("refresh_token", result.RefreshToken ?? "")
+                new Claim("refresh_token", result.RefreshToken ?? ""),
+                new Claim("aud", "PegasosBankAPI"), 
+                new Claim("iss", "PegasosBankIssuer")
             };
 
             // Rol fijo o dinámico
             claims.Add(new Claim(ClaimTypes.Role, "Administrador"));
 
-                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
 
                 var authProperties = new AuthenticationProperties

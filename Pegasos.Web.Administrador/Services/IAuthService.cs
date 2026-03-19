@@ -17,7 +17,7 @@ namespace Pegasos.Web.Administrador.Services
     {
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
-        public DateTime ExpiresIn { get; set; }
+        public string ExpiresIn { get; set; }
         public int UsuarioId { get; set; }
         public string NombreCompleto { get; set; } = string.Empty;
     }
