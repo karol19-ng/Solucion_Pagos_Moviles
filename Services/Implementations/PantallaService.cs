@@ -97,6 +97,7 @@ namespace Services.Implementations
             pantalla.Nombre = request.Nombre;
             pantalla.Descripcion = request.Descripcion;
             pantalla.Ruta = request.Ruta;
+            pantalla.Estado = request.Estado;  
 
             await _context.SaveChangesAsync();
 

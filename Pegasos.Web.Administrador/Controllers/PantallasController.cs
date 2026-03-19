@@ -175,31 +175,52 @@ namespace Pegasos.Web.Administrador.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditarPantallaViewModel model)
         {
+            _logger.LogInformation("=== PROCESANDO EDICIÓN DE PANTALLA ===");
+            _logger.LogInformation("ID recibido: {Id}", id);
+            _logger.LogInformation("Modelo - Id: {ModelId}, Nombre: {Nombre}, Descripción: {Descripcion}, Ruta: {Ruta}, Estado: {Estado}",
+                model?.Id, model?.Nombre, model?.Descripcion, model?.Ruta, model?.Estado);
+
+            if (model == null)
+            {
+                _logger.LogWarning("Modelo es null");
+                return NotFound();
+            }
+
             if (id != model.Id)
             {
+                _logger.LogWarning("El ID de la URL ({UrlId}) no coincide con el ID del modelo ({ModelId})", id, model.Id);
                 return NotFound();
             }
 
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("ModelState inválido");
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                _logger.LogWarning("Errores: {Errors}", string.Join(", ", errors));
                 return View(model);
             }
 
             try
             {
+                _logger.LogInformation("Llamando a servicio para actualizar pantalla...");
                 var resultado = await _pantallaService.ActualizarAsync(model);
+
+                _logger.LogInformation("Resultado del servicio: {Resultado}", resultado);
+
                 if (resultado)
                 {
+                    _logger.LogInformation("✅ Pantalla {Id} actualizada exitosamente", id);
                     TempData["Success"] = "Pantalla actualizada exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
 
+                _logger.LogWarning("❌ No se pudo actualizar la pantalla {Id}", id);
                 ModelState.AddModelError(string.Empty, "No se pudo actualizar la pantalla");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar pantalla {Id}", id);
-                ModelState.AddModelError(string.Empty, "Error al actualizar la pantalla");
+                _logger.LogError(ex, "❌ Error al actualizar pantalla {Id}", id);
+                ModelState.AddModelError(string.Empty, "Error al actualizar la pantalla: " + ex.Message);
             }
 
             return View(model);

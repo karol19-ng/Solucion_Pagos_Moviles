@@ -1,4 +1,10 @@
-﻿@section Styles {
+﻿@model Pegasos.Web.Administrador.Models.EditarClienteCoreViewModel
+@{
+    Layout = "_Layout";  // 👈 Esto es lo más importante
+    ViewData["Title"] = "Editar Cliente";
+}
+
+@section Styles {
     <style>
         /* Estilos con la paleta del sistema */
         .form-container {
@@ -202,6 +208,16 @@
     </style>
 }
 
+<!-- DEBUG: Mostrar valores del modelo -->
+<div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0;">
+    <h5 style="color: #0f0; margin-top: 0;">Valores</h5>
+    <p><strong>ID:</strong> @Model.Id</p>
+    <p><strong>TipoIdentificacion:</strong> "@Model.TipoIdentificacion"</p>
+    <p><strong>Identificacion:</strong> "@Model.Identificacion"</p>
+    <p><strong>NombreCompleto:</strong> "@Model.NombreCompleto"</p>
+    <p><strong>EstadoId:</strong> @Model.EstadoId</p>
+</div>
+
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -236,7 +252,7 @@
                         <label asp-for="TipoIdentificacion" class="form-label">
                             <i class="fas fa-id-card"></i> Tipo de Identificación <span class="required-field"></span>
                         </label>
-                        <select asp-for="TipoIdentificacion" class="form-select form-select-custom">
+                        <select asp-for="TipoIdentificacion" class="form-select form-select-custom" id="TipoIdentificacion" name="TipoIdentificacion">
                             @foreach (var tipo in ViewBag.TiposIdentificacion)
                             {
                                 <option value="@tipo">@tipo</option>
@@ -250,6 +266,7 @@
                             <i class="fas fa-hashtag"></i> Número de Identificación <span class="required-field"></span>
                         </label>
                         <input asp-for="Identificacion" class="form-control form-control-custom"
+                               id="Identificacion" name="Identificacion"
                                placeholder="Ej: 123456789" />
                         <span asp-validation-for="Identificacion" class="text-danger" id="identificacionError"></span>
                     </div>
@@ -259,6 +276,7 @@
                             <i class="fas fa-user"></i> Nombre Completo <span class="required-field"></span>
                         </label>
                         <input asp-for="NombreCompleto" class="form-control form-control-custom"
+                               id="NombreCompleto" name="NombreCompleto"
                                placeholder="Ej: Juan Pérez González" />
                         <span asp-validation-for="NombreCompleto" class="text-danger" id="nombreError"></span>
                     </div>
@@ -267,7 +285,7 @@
                         <label asp-for="EstadoId" class="form-label">
                             <i class="fas fa-toggle-on"></i> Estado del Cliente
                         </label>
-                        <select asp-for="EstadoId" class="form-select form-select-custom">
+                        <select asp-for="EstadoId" class="form-select form-select-custom" id="EstadoId" name="EstadoId">
                             <option value="1">Activo - Cliente habilitado para operaciones</option>
                             <option value="2">Inactivo - Cliente bloqueado/deshabilitado</option>
                         </select>
@@ -358,17 +376,33 @@
                 }
             });
 
+                    // Antes de enviar el formulario
+        $('#editForm').submit(function(e) {
+            console.log('=== DATOS DEL FORMULARIO ===');
+            console.log('ID:', $('#Id').val());
+            console.log('TipoIdentificacion:', $('#TipoIdentificacion').val());
+            console.log('Identificacion:', $('#Identificacion').val());
+            console.log('NombreCompleto:', $('#NombreCompleto').val());
+            console.log('EstadoId:', $('#EstadoId').val());
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            console.log('Token:', token ? 'Presente' : 'No encontrado');
+
+            // Mostrar indicador de carga
+            $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...');
+        });
+
             // Mostrar mensajes de TempData
         @if (TempData["Success"] != null)
         {
             <text>
-                    alert('@TempData["Success"]');
+                        alert('@TempData["Success"]');
             </text>
         }
         @if (TempData["Error"] != null)
         {
             <text>
-                    alert('Error: @TempData["Error"]');
+                        alert('Error: @TempData["Error"]');
             </text>
         }
         });

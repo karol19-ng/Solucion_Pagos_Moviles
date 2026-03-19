@@ -72,45 +72,40 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                // 🔴 CAMBIO IMPORTANTE: Usar la ruta del Gateway 1
                 var url = "gateway/api/CoreClient";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    _logger.LogDebug("Respuesta exitosa de Gateway 1");
+                    _logger.LogInformation("Respuesta JSON: {Json}", json);
 
                     var result = JsonSerializer.Deserialize<ClienteCoreResponse>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    if (result?.Clientes != null)
+                    {
+                        _logger.LogInformation("=== CLIENTES RECIBIDOS ===");
+                        foreach (var c in result.Clientes)
+                        {
+                            _logger.LogInformation("Cliente - ID: {Id}, Nombre: {Nombre}, Identificacion: {Identificacion}",
+                                c.Id, c.NombreCompleto, c.Identificacion);
+                        }
+                    }
+
                     return result?.Clientes ?? new List<ClienteCoreViewModel>();
                 }
 
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Gateway 1: Token no autorizado (401). Detalle: {Error}", error);
-                    throw new UnauthorizedAccessException($"Token rechazado por Gateway 1: {error}");
-                }
-
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning("Gateway 1: Ruta no encontrada - 404. Verificar configuración de Ocelot");
-                }
-
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning("Error al listar clientes: {StatusCode} - {Error}",
-                    response.StatusCode, errorContent);
                 return new List<ClienteCoreViewModel>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar clientes");
-                throw;
+                return new List<ClienteCoreViewModel>();
             }
         }
 
@@ -120,19 +115,50 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var url = $"gateway/api/CoreClient/{id}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("=== OBTENIENDO CLIENTE POR ID ===");
+                _logger.LogInformation("ID solicitado: {Id}", id);
+                _logger.LogInformation("BaseAddress del HttpClient: {BaseAddress}", _httpClient.BaseAddress);
 
-                var response = await _httpClient.GetAsync(url);
-
-                if (response.IsSuccessStatusCode)
+                // Probar diferentes formatos de URL
+                var urlsToTest = new[]
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(json, new JsonSerializerOptions
+            $"gateway/api/CoreClient/{id}",
+            $"api/CoreClient/{id}",
+            $"CoreClient/{id}",
+            $"https://localhost:7258/api/CoreClient/{id}",
+            $"https://localhost:7258/CoreClient/{id}"
+        };
+
+                foreach (var testUrl in urlsToTest)
+                {
+                    _logger.LogInformation("Probando URL: {Url}", testUrl);
+                    try
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    return result?.Cliente;
+                        var response = await _httpClient.GetAsync(testUrl);
+                        _logger.LogInformation("URL {Url} - StatusCode: {StatusCode}", testUrl, response.StatusCode);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var json = await response.Content.ReadAsStringAsync();
+                            _logger.LogInformation("✅ ÉXITO con URL {Url}: {Json}", testUrl, json);
+
+                            var result = JsonSerializer.Deserialize<ClienteCoreResponse>(json, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                            return result?.Cliente;
+                        }
+                        else
+                        {
+                            var error = await response.Content.ReadAsStringAsync();
+                            _logger.LogWarning("❌ Falló URL {Url}: {StatusCode} - {Error}", testUrl, response.StatusCode, error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "❌ Excepción con URL {Url}", testUrl);
+                    }
                 }
 
                 return null;
@@ -140,7 +166,7 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cliente {id}");
-                throw;
+                return null;
             }
         }
 
@@ -225,18 +251,37 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                _logger.LogInformation("=== ACTUALIZANDO CLIENTE ===");
+                _logger.LogInformation("Modelo recibido - Id: {Id}, Nombre: {Nombre}, Identificacion: {Identificacion}, TipoId: {TipoId}, EstadoId: {EstadoId}",
+                    model.Id, model.NombreCompleto, model.Identificacion, model.TipoIdentificacion, model.EstadoId);
 
+                // Crear el objeto que espera la API
+                var request = new
+                {
+                    id = model.Id,
+                    tipoIdentificacion = model.TipoIdentificacion,
+                    identificacion = model.Identificacion,
+                    nombreCompleto = model.NombreCompleto,
+                    estadoId = model.EstadoId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                _logger.LogInformation("JSON enviado: {Json}", json);
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var url = $"gateway/api/CoreClient/{model.Id}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+
+                _logger.LogInformation("URL: {Url}", url);
 
                 var response = await _httpClient.PutAsync(url, content);
 
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta: {Response}", responseContent);
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(responseJson, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(responseContent, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -248,7 +293,7 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al actualizar cliente {model.Id}");
-                throw;
+                return false;
             }
         }
 

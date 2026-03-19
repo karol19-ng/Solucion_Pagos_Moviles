@@ -137,12 +137,19 @@ namespace Pegasos.Web.Administrador.Controllers
         {
             try
             {
+                _logger.LogInformation("=== EDITANDO CLIENTE ===");
+                _logger.LogInformation("ID recibido: {Id}", id);
+
                 var cliente = await _clienteService.ObtenerPorIdAsync(id);
+
                 if (cliente == null)
                 {
+                    _logger.LogWarning("Cliente con ID {Id} no encontrado en el servicio", id);
                     TempData["Error"] = "Cliente no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
+
+                _logger.LogInformation("Cliente encontrado: {Nombre}", cliente.NombreCompleto);
 
                 var model = new EditarClienteCoreViewModel
                 {
@@ -155,6 +162,7 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
                     ?? new List<string>();
+
                 return View(model);
             }
             catch (Exception ex)
@@ -170,24 +178,47 @@ namespace Pegasos.Web.Administrador.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditarClienteCoreViewModel model)
         {
-            if (id != model.Id)
+            _logger.LogInformation("=== PROCESANDO EDICIÓN DE CLIENTE ===");
+            _logger.LogInformation("ID recibido: {Id}", id);
+            _logger.LogInformation("Model - Id: {ModelId}, Nombre: {Nombre}, Identificacion: {Identificacion}, TipoId: {TipoId}, EstadoId: {EstadoId}",
+                model?.Id, model?.NombreCompleto, model?.Identificacion, model?.TipoIdentificacion, model?.EstadoId);
+
+            if (model == null)
             {
+                _logger.LogWarning("Modelo es null");
                 return NotFound();
             }
 
-            // 🔴 VALIDACIÓN MANUAL ANTES DE ModelState.IsValid
+            if (id != model.Id)
+            {
+                _logger.LogWarning("El ID de la URL ({UrlId}) no coincide con el ID del modelo ({ModelId})", id, model.Id);
+                return NotFound();
+            }
+
+            // Validaciones manuales
             if (string.IsNullOrWhiteSpace(model.Identificacion))
             {
+                _logger.LogWarning("Identificación vacía");
                 ModelState.AddModelError("Identificacion", "La identificación es requerida");
             }
 
             if (string.IsNullOrWhiteSpace(model.NombreCompleto))
             {
+                _logger.LogWarning("Nombre completo vacío");
                 ModelState.AddModelError("NombreCompleto", "El nombre completo es requerido");
             }
 
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("ModelState inválido. Errores: {ErrorCount}", ModelState.ErrorCount);
+                foreach (var state in ModelState)
+                {
+                    foreach (var error in state.Value.Errors)
+                    {
+                        _logger.LogWarning("Error en {Key}: {ErrorMessage}", state.Key, error.ErrorMessage);
+                    }
+                }
+
                 ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
                     ?? new List<string>();
                 return View(model);
@@ -198,15 +229,17 @@ namespace Pegasos.Web.Administrador.Controllers
                 var resultado = await _clienteService.ActualizarAsync(model);
                 if (resultado)
                 {
+                    _logger.LogInformation("✅ Cliente {Id} actualizado exitosamente", id);
                     TempData["Success"] = "Cliente actualizado exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
 
+                _logger.LogWarning("❌ No se pudo actualizar el cliente {Id}", id);
                 ModelState.AddModelError(string.Empty, "No se pudo actualizar el cliente");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar cliente {Id}", id);
+                _logger.LogError(ex, "❌ Error al actualizar cliente {Id}", id);
                 ModelState.AddModelError(string.Empty, "Error al actualizar el cliente");
             }
 
