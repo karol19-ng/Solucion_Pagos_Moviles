@@ -383,16 +383,16 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 if (exito)
                 {
-                    return Content($"✅ Cuenta creada exitosamente. ID: {cuentaId}");
+                    return Content($"Cuenta creada exitosamente. ID: {cuentaId}");
                 }
                 else
                 {
-                    return Content($"❌ Falló la creación: {mensaje}");
+                    return Content($"Falló la creación: {mensaje}");
                 }
             }
             catch (Exception ex)
             {
-                return Content($"❌ Error: {ex.Message}");
+                return Content($"Error: {ex.Message}");
             }
         }
     }

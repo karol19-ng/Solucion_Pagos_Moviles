@@ -208,7 +208,6 @@ namespace Pegasos.Web.Administrador.Services
                 throw;
             }
         }
-
         // Crear cuenta
         public async Task<(bool Exito, string Mensaje, int? CuentaId)> CrearAsync(CrearCuentaCoreViewModel model)
         {
@@ -223,12 +222,11 @@ namespace Pegasos.Web.Administrador.Services
 
                 AgregarTokenAlHeader();
 
-                // Crear objeto para enviar al API
+                // Crear objeto para enviar al API - SOLO EL CAMPO CORRECTO
                 var requestModel = new
                 {
-                    clienteId = cliente.Id,
-                    //tipoCuenta = model.TipoCuenta
-                    // El número de cuenta se autogenera en el backend
+                    identificacionCliente = cliente.Id  // ← ÚNICO CAMPO REQUERIDO
+                                                        // El número de cuenta se autogenera en el backend
                 };
 
                 var json = JsonSerializer.Serialize(requestModel);
@@ -236,7 +234,7 @@ namespace Pegasos.Web.Administrador.Services
 
                 _logger.LogInformation("=== INICIANDO CREACIÓN DE CUENTA ===");
                 _logger.LogInformation("JSON enviado: {Json}", json);
-                _logger.LogInformation("Cliente ID: {ClienteId}, Tipo: {Tipo}", cliente.Id); //, model.TipoCuenta);
+                _logger.LogInformation("Cliente ID: {ClienteId}", cliente.Id);
 
                 var response = await _httpClient.PostAsync("gateway/api/CoreAccount", content);
 
