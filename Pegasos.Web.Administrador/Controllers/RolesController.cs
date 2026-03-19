@@ -202,7 +202,6 @@ namespace Pegasos.Web.Administrador.Controllers
             return View(model);
         }
 
-        // POST: Roles/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)

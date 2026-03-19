@@ -252,9 +252,9 @@ namespace Services.Implementations
 
                 var eliminado = System.Text.Json.JsonSerializer.Serialize(await GetByIdAsync(id));
 
-                // Eliminar primero las relaciones
-                var pantallas = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
-                _context.RolPorPantallas.RemoveRange(pantallas);
+                // Primero eliminar las relaciones en Rol_Por_Pantalla
+                var pantallasRelacionadas = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
+                _context.RolPorPantallas.RemoveRange(pantallasRelacionadas);
 
                 // Luego eliminar el rol
                 _context.Roles.Remove(rol);
@@ -266,7 +266,7 @@ namespace Services.Implementations
                 {
                     Usuario = usuarioEjecutor,
                     Accion = "ELIMINAR_ROL",
-                    Descripcion = $"Eliminado: {eliminado}",
+                    Descripcion = $"Rol eliminado ID:{id}",
                     Servicio = "/rol",
                     Resultado = "OK"
                 });

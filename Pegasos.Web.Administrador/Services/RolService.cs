@@ -68,7 +68,6 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                // Usar URL directa a la API como en PantallaService
                 var apiUrl = "https://localhost:7258/rol";
                 _logger.LogInformation("Listando roles desde: {Url}", apiUrl);
 
@@ -77,14 +76,59 @@ namespace Pegasos.Web.Administrador.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    _logger.LogInformation("Respuesta: {Json}", json);
+                    _logger.LogInformation("Respuesta JSON: {Json}", json);
 
-                    var roles = JsonSerializer.Deserialize<List<RolViewModel>>(json, new JsonSerializerOptions
+                    // Usar JsonDocument para mapear manualmente
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    var roles = new List<RolViewModel>();
+
+                    if (root.ValueKind == JsonValueKind.Array)
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        foreach (var item in root.EnumerateArray())
+                        {
+                            var rol = new RolViewModel
+                            {
+                                // Mapear explícitamente ID_Rol a Id
+                                Id = item.TryGetProperty("iD_Rol", out var idProp) ? idProp.GetInt32() :
+                                     item.TryGetProperty("ID_Rol", out idProp) ? idProp.GetInt32() : 0,
+                                Nombre = item.TryGetProperty("nombre", out var nombreProp) ? nombreProp.GetString() ?? "" :
+                                         item.TryGetProperty("Nombre", out nombreProp) ? nombreProp.GetString() ?? "" : ""
+                            };
 
-                    return roles ?? new List<RolViewModel>();
+                            // Mapear pantallas si existen
+                            if (item.TryGetProperty("pantallas", out var pantallasProp) ||
+                                item.TryGetProperty("Pantallas", out pantallasProp))
+                            {
+                                if (pantallasProp.ValueKind == JsonValueKind.Array)
+                                {
+                                    foreach (var p in pantallasProp.EnumerateArray())
+                                    {
+                                        var pantalla = new PantallaAsignadaViewModel
+                                        {
+                                            Id = p.TryGetProperty("iD_Pantalla", out var pid) ? pid.GetInt32() :
+                                                 p.TryGetProperty("ID_Pantalla", out pid) ? pid.GetInt32() : 0,
+                                            Nombre = p.TryGetProperty("nombre", out var pnombre) ? pnombre.GetString() ?? "" :
+                                                     p.TryGetProperty("Nombre", out pnombre) ? pnombre.GetString() ?? "" : "",
+                                            Asignada = true
+                                        };
+                                        rol.Pantallas.Add(pantalla);
+                                    }
+                                }
+                            }
+
+                            roles.Add(rol);
+                        }
+                    }
+
+                    _logger.LogInformation("Roles mapeados: {Count}", roles.Count);
+                    foreach (var rol in roles)
+                    {
+                        _logger.LogInformation("Rol mapeado - ID: {Id}, Nombre: {Nombre}", rol.Id, rol.Nombre);
+                    }
+
+                    return roles;
                 }
                 else
                 {
@@ -245,19 +289,59 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var apiUrl = $"https://localhost:7258/rol/{id}";
-                _logger.LogInformation("Eliminando rol {Id} desde: {Url}", id, apiUrl);
+                _logger.LogInformation("=== ELIMINANDO ROL ===");
+                _logger.LogInformation("URL: {Url}", apiUrl);
+                _logger.LogInformation("ID: {Id}", id);
 
                 var response = await _httpClient.DeleteAsync(apiUrl);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
-                _logger.LogInformation("Respuesta: {Response}", responseContent);
+                _logger.LogInformation("StatusCode: {StatusCode} ({(int)response.StatusCode})", response.StatusCode, response.StatusCode);
+                _logger.LogInformation("Respuesta completa: {Response}", responseContent);
 
-                return response.IsSuccessStatusCode;
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("✅ Rol eliminado exitosamente");
+
+                    // Intentar parsear la respuesta
+                    try
+                    {
+                        var jsonDoc = JsonDocument.Parse(responseContent);
+                        _logger.LogInformation("Respuesta parseada correctamente");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("No se pudo parsear JSON: {Message}", ex.Message);
+                    }
+
+                    return true;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("❌ Rol no encontrado (404)");
+                    return false;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    _logger.LogWarning("❌ Bad Request (400) - Posiblemente tiene dependencias");
+                    _logger.LogWarning("Detalle: {Response}", responseContent);
+                    return false;
+                }
+                else
+                {
+                    _logger.LogWarning("❌ Error inesperado: {StatusCode}", response.StatusCode);
+                    _logger.LogWarning("Detalle: {Response}", responseContent);
+                    return false;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "❌ HttpRequestException al eliminar rol {Id}", id);
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al eliminar rol {id}");
+                _logger.LogError(ex, "❌ Error general al eliminar rol {Id}", id);
                 return false;
             }
         }
