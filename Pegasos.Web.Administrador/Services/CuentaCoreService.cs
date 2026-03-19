@@ -213,20 +213,45 @@ namespace Pegasos.Web.Administrador.Services
         {
             try
             {
-                // Primero verificar que el cliente existe
-                var cliente = await _clienteService.ObtenerPorIdentificacionAsync(model.ClienteIdentificacion);
+                ClienteCoreViewModel? cliente = null;
+
+                // Intentar buscar por identificación primero
+                if (!string.IsNullOrWhiteSpace(model.ClienteIdentificacion))
+                {
+                    // Si es un número puro, podría ser ID o identificación
+                    if (int.TryParse(model.ClienteIdentificacion, out int clienteId))
+                    {
+                        // Buscar por ID primero (para IDs como 100)
+                        cliente = await _clienteService.ObtenerPorIdAsync(clienteId);
+
+                        // Si no encuentra por ID, buscar por identificación
+                        if (cliente == null)
+                        {
+                            cliente = await _clienteService.ObtenerPorIdentificacionAsync(model.ClienteIdentificacion);
+                        }
+                    }
+                    else
+                    {
+                        // Si no es número, buscar por identificación directamente
+                        cliente = await _clienteService.ObtenerPorIdentificacionAsync(model.ClienteIdentificacion);
+                    }
+                }
+
                 if (cliente == null)
                 {
-                    return (false, "El cliente no existe en el sistema", null);
+                    _logger.LogWarning("Cliente no encontrado con el valor: {Valor}", model.ClienteIdentificacion);
+                    return (false, $"El cliente con identificación/ID {model.ClienteIdentificacion} no existe en el sistema", null);
                 }
+
+                _logger.LogInformation("Cliente encontrado: ID={ClienteId}, Nombre={Nombre}, Identificación={Identificacion}",
+                    cliente.Id, cliente.NombreCompleto, cliente.Identificacion);
 
                 AgregarTokenAlHeader();
 
-                // Crear objeto para enviar al API - SOLO EL CAMPO CORRECTO
+                // Crear objeto para enviar al API - Usar el ID del cliente
                 var requestModel = new
                 {
-                    identificacionCliente = cliente.Id  // ← ÚNICO CAMPO REQUERIDO
-                                                        // El número de cuenta se autogenera en el backend
+                    identificacionCliente = cliente.Id  // Enviar el ID del cliente (100, 101, etc.)
                 };
 
                 var json = JsonSerializer.Serialize(requestModel);
@@ -234,7 +259,7 @@ namespace Pegasos.Web.Administrador.Services
 
                 _logger.LogInformation("=== INICIANDO CREACIÓN DE CUENTA ===");
                 _logger.LogInformation("JSON enviado: {Json}", json);
-                _logger.LogInformation("Cliente ID: {ClienteId}", cliente.Id);
+                _logger.LogInformation("Cliente ID: {ClienteId}, Nombre: {Nombre}", cliente.Id, cliente.NombreCompleto);
 
                 var response = await _httpClient.PostAsync("gateway/api/CoreAccount", content);
 
@@ -378,5 +403,7 @@ namespace Pegasos.Web.Administrador.Services
                 return new List<string> { "CORRIENTE", "AHORROS" };
             }
         }
+
+
     }
 }
