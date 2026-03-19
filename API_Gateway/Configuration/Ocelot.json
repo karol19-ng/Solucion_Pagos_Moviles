@@ -131,6 +131,62 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
+    // PANTALLAS - LISTAR Y CREAR (GET y POST)
+    {
+      "DownstreamPathTemplate": "/screen",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen",
+      "UpstreamHttpMethod": [ "GET", "POST" ]
+    },
+
+    // PANTALLAS - OBTENER POR ID, ACTUALIZAR, ELIMINAR
+    {
+      "DownstreamPathTemplate": "/screen/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/screen/{id}",
+      "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ]
+    },
+
+    // ROLES - LISTAR Y CREAR (GET y POST)
+    {
+      "DownstreamPathTemplate": "/rol",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/rol",
+      "UpstreamHttpMethod": [ "GET", "POST" ]
+    },
+
+    // ROLES - OBTENER POR ID, ACTUALIZAR, ELIMINAR
+    {
+      "DownstreamPathTemplate": "/rol/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/rol/{id}",
+      "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ]
+    },
+
     // RUTA GENÉRICA
     {
       "DownstreamPathTemplate": "/api/{everything}",

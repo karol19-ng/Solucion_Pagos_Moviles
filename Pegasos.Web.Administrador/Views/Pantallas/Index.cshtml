@@ -1,324 +1,542 @@
-﻿@using Pegasos.Web.Administrador.Models
-@model PantallaViewModel
+﻿@model IEnumerable<Pegasos.Web.Administrador.Models.PantallaViewModel>
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "Administración de Pantallas";
 }
 
-<link rel="stylesheet" href="~/css/screen-management.css" />
+@Html.AntiForgeryToken()
 
-<div class="screen-container">
-    <!-- Header con título y botón nuevo -->
-    <div class="screen-header">
-        <h1 class="screen-title">
-            <i class="fas fa-table me-2"></i>Gestión de Pantallas
+@section Styles {
+    <style>
+        /* Mismos estilos que ClientesCore */
+        .page-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+            .page-header h1 {
+                color: var(--dorado-primario);
+                font-size: 1.8rem;
+                font-weight: 600;
+                margin: 0;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .page-header i {
+                margin-right: 15px;
+                color: var(--dorado-primario);
+                font-size: 2rem;
+            }
+
+        .btn-primary-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 10px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+            .btn-primary-custom:hover {
+                background: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(197, 163, 103, 0.3);
+            }
+
+            .btn-primary-custom i {
+                margin-right: 8px;
+            }
+
+        #dynamicNotification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-left: 10px;
+        }
+
+            .close-btn:hover {
+                opacity: 1;
+            }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-custom {
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--dorado-primario);
+            background: rgba(31, 6, 12, 0.8);
+            color: white;
+        }
+
+        .alert-success-custom {
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger-custom {
+            border-left: 4px solid #dc3545;
+        }
+
+        .search-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+
+            .search-box:focus {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                outline: none;
+            }
+
+        .btn-search {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+            .btn-search:hover {
+                background: #d4b574;
+                transform: translateY(-2px);
+            }
+
+        .btn-clear {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            padding: 10px 20px;
+            border-radius: 6px;
+        }
+
+            .btn-clear:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+            }
+
+        .table-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .table-custom thead th {
+                background: rgba(31, 6, 12, 0.8);
+                color: var(--dorado-primario);
+                padding: 12px 15px;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.85rem;
+                border-bottom: 2px solid var(--dorado-primario);
+            }
+
+            .table-custom tbody tr {
+                border-bottom: 1px solid rgba(197, 163, 103, 0.1);
+                transition: all 0.3s ease;
+            }
+
+                .table-custom tbody tr:hover {
+                    background: rgba(197, 163, 103, 0.1);
+                }
+
+            .table-custom tbody td {
+                padding: 12px 15px;
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+        .badge-success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #28a745;
+        }
+
+        .badge-danger {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #dc3545;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-action-warning {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+        }
+
+        .btn-action-danger {
+            background: #dc3545;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .pagination-custom {
+            margin-top: 25px;
+        }
+
+        .page-link {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            margin: 0 3px;
+            border-radius: 4px !important;
+            transition: all 0.3s ease;
+        }
+
+            .page-link:hover {
+                background: var(--dorado-primario);
+                border-color: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+            }
+
+        .page-item.active .page-link {
+            background: var(--dorado-primario);
+            border-color: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            font-weight: 600;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+            .no-data i {
+                font-size: 3rem;
+                margin-bottom: 15px;
+                color: rgba(197, 163, 103, 0.3);
+            }
+    </style>
+}
+
+<div class="container-fluid mt-4">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <h1>
+            <i class="fas fa-desktop"></i>
+            Administración de Pantallas
         </h1>
-        <button type="button" class="btn-accion" onclick="abrirModalCrear()">
-            <i class="fas fa-plus me-2"></i>Nueva Pantalla
-        </button>
+        <a href="/Pantallas/Create" class="btn-primary-custom">
+            <i class="fas fa-plus-circle"></i>
+            Nueva Pantalla
+        </a>
     </div>
 
-    <!-- Mensajes de éxito/error -->
-    @if (TempData["Exito"] != null)
+    @if (TempData["Success"] != null)
     {
-        <div class="screen-alert screen-alert-success">
-            <i class="fas fa-check-circle me-2"></i>@TempData["Exito"]
+        <div class="alert-custom alert-success-custom alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
-
     @if (TempData["Error"] != null)
     {
-        <div class="screen-alert screen-alert-error">
-            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+        <div class="alert-custom alert-danger-custom alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <!-- Buscador -->
-    <div class="screen-search">
-        <div class="input-group">
-            <input type="text"
-                   class="form-control"
-                   id="buscador"
-                   placeholder="Buscar por nombre de pantalla..."
-                   value="@Model.FiltroNombre"
-                   onkeyup="filtrarTabla()" />
-            <button class="btn-search" type="button" onclick="filtrarTabla()">
-                <i class="fas fa-search"></i>
-            </button>
-            @if (!string.IsNullOrEmpty(Model.FiltroNombre))
-            {
-                <a href="@Url.Action("Index")" class="btn-search" style="border-radius: 0;">
-                    <i class="fas fa-times"></i>
-                </a>
-            }
+    <div class="search-container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" id="searchTerm" class="form-control search-box"
+                           placeholder="Buscar por nombre...">
+                    <button class="btn-search" type="button" id="searchButton">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                    <button class="btn-clear" type="button" id="clearButton">
+                        <i class="fas fa-times me-2"></i>Limpiar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Tabla de pantallas -->
-    @if (Model.Pantallas.Any())
-    {
+    <div class="table-container">
         <div class="table-responsive">
-            <table class="screen-table" id="tablaPantallas">
+            <table class="table-custom">
                 <thead>
                     <tr>
+                        <th>ID</th>
                         <th>Nombre</th>
-                        <th>Ruta</th>
                         <th>Descripción</th>
-                        <th style="width: 120px;">Acciones</th>
+                        <th>Ruta</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach (var pantalla in Model.Pantallas)
+                <tbody id="pantallasTableBody">
+                    @if (Model != null && Model.Any())
                     {
-                        <tr data-nombre="@pantalla.Nombre.ToLower()">
-                            <td>
-                                <i class="fas fa-window me-2" style="color: var(--dorado-primario);"></i>
-                                @pantalla.Nombre
-                            </td>
-                            <td><code>@pantalla.Ruta</code></td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(pantalla.Descripcion))
-                                {
-                                    <span class="screen-badge">@pantalla.Descripcion</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">-</span>
-                                }
-                            </td>
-                            <td>
-                                <button class="btn-accion me-1"
-                                        onclick="abrirModalEditar(@pantalla.ID_Pantalla, '@pantalla.Nombre', '@pantalla.Ruta', '@Html.Raw(pantalla.Descripcion?.Replace("'", "\\'"))')"
-                                        title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-accion btn-accion-danger"
-                                        onclick="confirmarEliminar(@pantalla.ID_Pantalla, '@pantalla.Nombre')"
-                                        title="Eliminar">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                        @foreach (var pantalla in Model)
+                        {
+                            <tr>
+                                <td>#@pantalla.Id</td>
+                                <td>@pantalla.Nombre</td>
+                                <td>@pantalla.Descripcion</td>
+                                <td>@pantalla.Ruta</td>
+                                <td>
+                                    @if (pantalla.Estado == 1)
+                                    {
+                                        <span class="badge-success">ACTIVO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">INACTIVO</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@pantalla.Id"
+                                       class="btn-action btn-action-warning"
+                                       title="Editar pantalla">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn-action btn-action-danger delete-btn"
+                                            onclick="confirmarEliminacion(@pantalla.Id, '@Html.Raw(pantalla.Nombre?.Replace("'", "\\'"))')"
+                                            title="Eliminar pantalla">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="no-data">
+                                <i class="fas fa-desktop-slash"></i>
+                                No hay pantallas registradas en el sistema
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
-    }
-    else
-    {
-        <div class="text-center py-5">
-            <i class="fas fa-table fa-4x mb-3" style="color: rgba(197, 163, 103, 0.3);"></i>
-            <p style="color: rgba(255, 255, 255, 0.5);">No hay pantallas registradas</p>
-        </div>
-    }
-</div>
 
-<!-- Modal Crear/Editar -->
-<div class="screen-modal" id="modalPantalla" style="display: none;">
-    <div class="screen-modal-content">
-        <div class="screen-modal-header">
-            <h3 class="screen-modal-title" id="modalTitulo">Crear Pantalla</h3>
-            <button type="button" class="btn-accion" onclick="cerrarModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <form method="post" id="formPantalla">
-            @Html.AntiForgeryToken()
-            <input type="hidden" id="pantallaId" name="ID_Pantalla" value="0" />
-
-            <div class="screen-form-group">
-                <label class="screen-form-label" for="nombre">
-                    <i class="fas fa-tag me-2"></i>Nombre *
-                </label>
-                <input type="text"
-                       class="screen-form-control"
-                       id="nombre"
-                       name="Nombre"
-                       required
-                       maxlength="100"
-                       placeholder="Ej: Gestión de Usuarios" />
-                <span class="text-danger" id="errorNombre" style="font-size: 0.85rem;"></span>
-            </div>
-
-            <div class="screen-form-group">
-                <label class="screen-form-label" for="ruta">
-                    <i class="fas fa-link me-2"></i>Ruta *
-                </label>
-                <input type="text"
-                       class="screen-form-control"
-                       id="ruta"
-                       name="Ruta"
-                       required
-                       maxlength="200"
-                       placeholder="Ej: /Usuario/Index" />
-                <span class="text-danger" id="errorRuta" style="font-size: 0.85rem;"></span>
-            </div>
-
-            <div class="screen-form-group">
-                <label class="screen-form-label" for="descripcion">
-                    <i class="fas fa-align-left me-2"></i>Descripción
-                </label>
-                <textarea class="screen-form-control"
-                          id="descripcion"
-                          name="Descripcion"
-                          rows="3"
-                          maxlength="255"
-                          placeholder="Descripción opcional..."></textarea>
-            </div>
-
-            <div class="text-end" style="margin-top: 2rem;">
-                <button type="button" class="btn-accion me-2" onclick="cerrarModal()">
-                    Cancelar
-                </button>
-                <button type="submit" class="btn-accion" id="btnGuardar">
-                    <i class="fas fa-save me-2"></i>Guardar
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal Confirmar Eliminar -->
-<div class="screen-modal" id="modalEliminar" style="display: none;">
-    <div class="screen-modal-content">
-        <div class="screen-modal-header">
-            <h3 class="screen-modal-title">Confirmar Eliminación</h3>
-            <button type="button" class="btn-accion" onclick="cerrarModalEliminar()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div class="text-center py-4">
-            <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: #dc3545;"></i>
-            <p>¿Está seguro que desea eliminar la pantalla</p>
-            <p><strong id="pantallaEliminarNombre" style="color: var(--dorado-primario);"></strong>?</p>
-            <p class="text-muted small">Esta acción no se puede deshacer.</p>
-        </div>
-
-        <form method="post" action="@Url.Action("Delete", "Screen")" id="formEliminar">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="id" id="pantallaEliminarId" value="" />
-            <div class="text-end">
-                <button type="button" class="btn-accion me-2" onclick="cerrarModalEliminar()">
-                    Cancelar
-                </button>
-                <button type="submit" class="btn-accion btn-accion-danger">
-                    <i class="fas fa-trash me-2"></i>Eliminar
-                </button>
-            </div>
-        </form>
+        @if (ViewBag.TotalPaginas > 1)
+        {
+            <nav class="pagination-custom">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(ViewBag.PaginaActual == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual - 1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPaginas; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.PaginaActual == ViewBag.TotalPaginas ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual + 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // Filtrar tabla en tiempo real
-        function filtrarTabla() {
-            const filtro = document.getElementById('buscador').value.toLowerCase();
-            const filas = document.querySelectorAll('#tablaPantallas tbody tr');
+        function showNotification(type, message) {
+            let notification = $('#dynamicNotification');
+            if (notification.length === 0) {
+                $('body').append('<div id="dynamicNotification" class="notification"></div>');
+                notification = $('#dynamicNotification');
+            }
 
-            filas.forEach(fila => {
-                const nombre = fila.getAttribute('data-nombre') || '';
-                if (nombre.includes(filtro)) {
-                    fila.style.display = '';
-                } else {
-                    fila.style.display = 'none';
+            notification.removeClass('notification-success notification-error');
+            if (type === 'success') {
+                notification.addClass('notification-success');
+            } else {
+                notification.addClass('notification-error');
+            }
+
+            notification.html('<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle') + ' me-2"></i>' + message + '<span class="close-btn" onclick="$(this).parent().fadeOut()">&times;</span>');
+            notification.fadeIn(300);
+
+            setTimeout(function() {
+                notification.fadeOut(300);
+            }, 5000);
+        }
+
+        function confirmarEliminacion(id, nombre) {
+            if (confirm('¿Está seguro que desea eliminar la pantalla ' + nombre + '? Esta acción no se puede deshacer.')) {
+
+                var btn = $(`button[onclick*="confirmarEliminacion(${id}"]`);
+                var originalHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+                var token = $('input[name="__RequestVerificationToken"]').first().val();
+
+                $.ajax({
+                    url: '/Pantallas/Delete/' + id,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token,
+                        id: id
+                    },
+                    success: function(response) {
+                        btn.prop('disabled', false).html(originalHtml);
+
+                        if (response.success) {
+                            showNotification('success', response.message);
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            showNotification('error', response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        showNotification('error', 'Error al eliminar: ' + error);
+                    }
+                });
+            }
+        }
+
+        $(document).ready(function() {
+            $('#searchTerm').on('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    buscarPantallas();
                 }
             });
-        }
 
-        // Abrir modal para crear
-        function abrirModalCrear() {
-            document.getElementById('modalTitulo').textContent = 'Crear Pantalla';
-            document.getElementById('pantallaId').value = '0';
-            document.getElementById('nombre').value = '';
-            document.getElementById('ruta').value = '';
-            document.getElementById('descripcion').value = '';
-            document.getElementById('formPantalla').action = '@Url.Action("Create", "Screen")';
+            $('#searchButton').click(buscarPantallas);
+            $('#clearButton').click(limpiarBusqueda);
 
-            // Limpiar errores
-            document.getElementById('errorNombre').textContent = '';
-            document.getElementById('errorRuta').textContent = '';
+            function buscarPantallas() {
+                var termino = $('#searchTerm').val();
+                if (termino.length < 2 && termino.length > 0) return;
 
-            document.getElementById('modalPantalla').style.display = 'flex';
-        }
+                $('#searchButton').html('<i class="fas fa-spinner fa-spin me-2"></i>Buscando...').prop('disabled', true);
 
-        // Abrir modal para editar
-        function abrirModalEditar(id, nombre, ruta, descripcion) {
-            document.getElementById('modalTitulo').textContent = 'Editar Pantalla';
-            document.getElementById('pantallaId').value = id;
-            document.getElementById('nombre').value = nombre;
-            document.getElementById('ruta').value = ruta;
-            document.getElementById('descripcion').value = descripcion || '';
-            document.getElementById('formPantalla').action = '@Url.Action("Edit", "Screen")/' + id;
+                $.get('@Url.Action("Buscar", "Pantallas")', { termino: termino }, function(data) {
+                    var tbody = $('#pantallasTableBody');
+                    tbody.empty();
 
-            // Limpiar errores
-            document.getElementById('errorNombre').textContent = '';
-            document.getElementById('errorRuta').textContent = '';
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, pantalla) {
+                            var estadoBadge = pantalla.estado == 1 ? 'badge-success' : 'badge-danger';
+                            var estadoTexto = pantalla.estado == 1 ? 'ACTIVO' : 'INACTIVO';
+                            var nombreSeguro = (pantalla.nombre || '').replace(/'/g, "\\'");
 
-            document.getElementById('modalPantalla').style.display = 'flex';
-        }
-
-        // Cerrar modal
-        function cerrarModal() {
-            document.getElementById('modalPantalla').style.display = 'none';
-        }
-
-        // Confirmar eliminación
-        function confirmarEliminar(id, nombre) {
-            document.getElementById('pantallaEliminarId').value = id;
-            document.getElementById('pantallaEliminarNombre').textContent = nombre;
-            document.getElementById('modalEliminar').style.display = 'flex';
-        }
-
-        // Cerrar modal de eliminación
-        function cerrarModalEliminar() {
-            document.getElementById('modalEliminar').style.display = 'none';
-        }
-
-        // Validación del lado del cliente
-        document.getElementById('formPantalla').addEventListener('submit', function(e) {
-            let valido = true;
-            const nombre = document.getElementById('nombre').value.trim();
-            const ruta = document.getElementById('ruta').value.trim();
-
-            document.getElementById('errorNombre').textContent = '';
-            document.getElementById('errorRuta').textContent = '';
-
-            if (!nombre) {
-                document.getElementById('errorNombre').textContent = 'El nombre es obligatorio';
-                valido = false;
+                            var row = '<tr>' +
+                                '<td>#' + pantalla.id + '</td>' +
+                                '<td>' + (pantalla.nombre || '') + '</td>' +
+                                '<td>' + (pantalla.descripcion || '') + '</td>' +
+                                '<td>' + (pantalla.ruta || '') + '</td>' +
+                                '<td><span class="' + estadoBadge + '">' + estadoTexto + '</span></td>' +
+                                '<td>' +
+                                '<a href="/Pantallas/Edit/' + pantalla.id + '" class="btn-action btn-action-warning"><i class="fas fa-edit"></i></a> ' +
+                                '<button type="button" class="btn-action btn-action-danger delete-btn" onclick="confirmarEliminacion(' + pantalla.id + ', \'' + nombreSeguro + '\')"><i class="fas fa-trash-alt"></i></button>' +
+                                '</td>' +
+                                '</tr>';
+                            tbody.append(row);
+                        });
+                    } else {
+                        tbody.append('<tr><td colspan="6" class="no-data"><i class="fas fa-search"></i> No se encontraron pantallas con el término "' + termino + '"</td></tr>');
+                    }
+                }).always(function() {
+                    $('#searchButton').html('<i class="fas fa-search me-2"></i>Buscar').prop('disabled', false);
+                });
             }
 
-            if (!ruta) {
-                document.getElementById('errorRuta').textContent = 'La ruta es obligatoria';
-                valido = false;
-            }
-
-            if (!valido) {
-                e.preventDefault();
+            function limpiarBusqueda() {
+                $('#searchTerm').val('');
+                location.reload();
             }
         });
-
-        // Cerrar modales con Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                cerrarModal();
-                cerrarModalEliminar();
-            }
-        });
-
-        // Cerrar modales haciendo clic fuera
-        window.onclick = function(event) {
-            const modalPantalla = document.getElementById('modalPantalla');
-            const modalEliminar = document.getElementById('modalEliminar');
-
-            if (event.target === modalPantalla) {
-                cerrarModal();
-            }
-            if (event.target === modalEliminar) {
-                cerrarModalEliminar();
-            }
-        }
     </script>
 }

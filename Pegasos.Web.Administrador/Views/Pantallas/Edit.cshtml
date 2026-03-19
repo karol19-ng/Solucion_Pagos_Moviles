@@ -1,2 +1,365 @@
-﻿module Edit
+﻿@model Pegasos.Web.Administrador.Models.EditarPantallaViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Editar Pantalla";
+}
 
+@section Styles {
+    <style>
+        .form-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid var(--dorado-primario);
+            border-radius: 8px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+            .form-header h4 {
+                margin: 0;
+                font-size: 1.5rem;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .form-header i {
+                margin-right: 10px;
+                color: var(--dorado-primario);
+                font-size: 1.8rem;
+            }
+
+            .form-header .estado-badge {
+                display: inline-block;
+                padding: 5px 15px;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                margin-left: 15px;
+            }
+
+        .estado-activo {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        .estado-inactivo {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            color: var(--dorado-primario);
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+            .form-label i {
+                margin-right: 8px;
+                color: var(--dorado-primario);
+            }
+
+        .form-control-custom, .form-select-custom {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+            .form-control-custom:focus, .form-select-custom:focus {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(197, 163, 103, 0.1);
+            }
+
+            .form-control-custom::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+                font-style: italic;
+            }
+
+        select.form-select-custom option {
+            background: var(--vinotinto-sidebar);
+            color: white;
+        }
+
+        .text-danger {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+            color: #dc3545 !important;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(197, 163, 103, 0.2);
+        }
+
+        .btn-secondary-custom {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+            .btn-secondary-custom:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                transform: translateY(-2px);
+            }
+
+        .btn-warning-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 12px 35px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+            .btn-warning-custom:hover {
+                background: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(197, 163, 103, 0.3);
+            }
+
+            .btn-warning-custom i, .btn-secondary-custom i {
+                margin-right: 8px;
+            }
+
+        .info-box {
+            background: rgba(197, 163, 103, 0.1);
+            border-left: 4px solid var(--dorado-primario);
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+            .info-box i {
+                color: var(--dorado-primario);
+                margin-right: 10px;
+                font-size: 1.2rem;
+            }
+
+        .validation-summary-errors {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+        }
+
+        .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+    </style>
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <div class="form-header">
+                    <h4>
+                        <i class="fas fa-desktop"></i>
+                        Editar Pantalla #@Model.Id
+                        @if (Model.Estado == 1)
+                        {
+                            <span class="estado-badge estado-activo">ACTIVO</span>
+                        }
+                        else
+                        {
+                            <span class="estado-badge estado-inactivo">INACTIVO</span>
+                        }
+                    </h4>
+                </div>
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Modo Edición:</strong> Está modificando los datos de la pantalla.
+                </div>
+
+                <form asp-action="Edit" method="post" id="editForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="Nombre" class="form-label">
+                            <i class="fas fa-tag"></i> Nombre <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Nombre" class="form-control form-control-custom" />
+                        <span asp-validation-for="Nombre" class="text-danger" id="nombreError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Descripcion" class="form-label">
+                            <i class="fas fa-align-left"></i> Descripción <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Descripcion" class="form-control form-control-custom" />
+                        <span asp-validation-for="Descripcion" class="text-danger" id="descripcionError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Ruta" class="form-label">
+                            <i class="fas fa-link"></i> Ruta <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Ruta" class="form-control form-control-custom" />
+                        <span asp-validation-for="Ruta" class="text-danger" id="rutaError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Estado" class="form-label">
+                            <i class="fas fa-toggle-on"></i> Estado
+                        </label>
+                        <select asp-for="Estado" class="form-select form-select-custom">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+
+                    <div class="btn-container">
+                        <a asp-action="Index" class="btn-secondary-custom">
+                            <i class="fas fa-arrow-left"></i> Regresar al Listado
+                        </a>
+                        <button type="submit" class="btn-warning-custom">
+                            <i class="fas fa-save"></i> Actualizar Pantalla
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            $('#Nombre').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#nombreError').text('El nombre es requerido');
+                } else {
+                    $('#nombreError').text('');
+                }
+            });
+
+            $('#Descripcion').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#descripcionError').text('La descripción es requerida');
+                } else {
+                    $('#descripcionError').text('');
+                }
+            });
+
+            $('#Ruta').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#rutaError').text('La ruta es requerida');
+                } else {
+                    $('#rutaError').text('');
+                }
+            });
+
+            $('#editForm').submit(function(e) {
+                var nombre = $('#Nombre').val();
+                var descripcion = $('#Descripcion').val();
+                var ruta = $('#Ruta').val();
+                var errores = [];
+
+                if (!nombre || nombre.trim() === '') {
+                    errores.push('El nombre es requerido');
+                    $('#nombreError').text('El nombre es requerido');
+                }
+
+                if (!descripcion || descripcion.trim() === '') {
+                    errores.push('La descripción es requerida');
+                    $('#descripcionError').text('La descripción es requerida');
+                }
+
+                if (!ruta || ruta.trim() === '') {
+                    errores.push('La ruta es requerida');
+                    $('#rutaError').text('La ruta es requerida');
+                }
+
+                if (errores.length > 0) {
+                    alert('Por favor complete todos los campos requeridos:\n- ' + errores.join('\n- '));
+                    e.preventDefault();
+                    return false;
+                }
+
+                return true;
+            });
+
+            var formModified = false;
+
+            $('input, select').on('change', function() {
+                formModified = true;
+            });
+
+            $('input').on('keyup', function() {
+                formModified = true;
+            });
+
+            $('a[asp-action="Index"]').click(function(e) {
+                if (formModified) {
+                    if (!confirm('¿Tiene cambios sin guardar. ¿Está seguro que desea salir?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            });
+
+        @if (TempData["Success"] != null)
+        {
+            <text>
+                    alert('@TempData["Success"]');
+            </text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>
+                    alert('Error: @TempData["Error"]');
+            </text>
+        }
+        });
+    </script>
+}
