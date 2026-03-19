@@ -54,7 +54,10 @@ namespace API_Gateway.Middleware
             // Rutas públicas rápidas
             if (path.Contains("swagger") || path.Contains("login"))
             {
-                _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value);
+                foreach (var header in context.Request.Headers)
+                {
+                    _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value.ToString());
+                }
             }
 
             // Verificar si es ruta pública
