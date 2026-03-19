@@ -40,7 +40,6 @@ namespace Solucion_Pagos_Moviles.Controllers
                 var usuario = User.Identity?.Name ?? "Sistema";
 
                 var clientes = await _context.ClientesBanco
-                    .Include(c => c.ID_Estado) // Si necesitas incluir el estado
                     .Select(c => new ClienteDTO
                     {
                         Id = c.ID_Cliente,
@@ -51,12 +50,12 @@ namespace Solucion_Pagos_Moviles.Controllers
                     })
                     .ToListAsync();
 
-                // Registrar en bitácora
+                // 🔴 MODIFICADO: No guardar la lista completa en bitácora
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
                     Usuario = usuario,
                     Accion = "CONSULTA",
-                    Descripcion = "El usuario consulta todos los clientes del core",
+                    Descripcion = $"El usuario consulta todos los clientes del core. Total: {clientes.Count} registros",
                     Servicio = "/core/client",
                     Resultado = "OK"
                 });
@@ -72,11 +71,14 @@ namespace Solucion_Pagos_Moviles.Controllers
             {
                 _logger.LogError(ex, "Error al listar clientes");
 
+                // Mensaje más corto para evitar truncamiento
+                var errorMessage = ex.Message.Length > 200 ? ex.Message.Substring(0, 200) + "..." : ex.Message;
+
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
                     Usuario = User.Identity?.Name ?? "Sistema",
                     Accion = "ERROR",
-                    Descripcion = $"Error al listar clientes: {ex.Message}",
+                    Descripcion = $"Error al listar clientes: {errorMessage}",
                     Servicio = "/core/client",
                     Resultado = "ERROR"
                 });
@@ -205,6 +207,7 @@ namespace Solucion_Pagos_Moviles.Controllers
             }
         }
 
+
         // POST: api/coreclient
         [HttpPost]
         public async Task<ActionResult<ClienteResponse>> Crear([FromBody] CrearClienteRequest request)
@@ -212,6 +215,10 @@ namespace Solucion_Pagos_Moviles.Controllers
             try
             {
                 var usuario = User.Identity?.Name ?? "Sistema";
+
+                _logger.LogInformation("=== INTENTANDO CREAR CLIENTE (Solución 2 - ID Manual) ===");
+                _logger.LogInformation("Usuario: {Usuario}", usuario);
+                _logger.LogInformation("Request: {@Request}", request);
 
                 // Validaciones
                 if (request == null)
@@ -256,6 +263,7 @@ namespace Solucion_Pagos_Moviles.Controllers
 
                 if (existe)
                 {
+                    _logger.LogWarning("Cliente duplicado: {Identificacion}", request.Identificacion);
                     return Conflict(new ClienteResponse
                     {
                         Codigo = -1,
@@ -263,17 +271,34 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // Crear nuevo cliente
+                // 🔴 SOLUCIÓN 2: Generar ID manualmente
+                // Obtener el máximo ID actual
+                var maxId = await _context.ClientesBanco
+                    .OrderByDescending(c => c.ID_Cliente)
+                    .Select(c => (int?)c.ID_Cliente)
+                    .FirstOrDefaultAsync();
+
+                // Si no hay registros, empezar desde 1
+                int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
+
+                _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
+
+                // Crear nuevo cliente con ID manual
                 var nuevoCliente = new ClienteBanco
                 {
+                    ID_Cliente = nuevoId,  // Asignar ID manualmente
                     Tipo_Identificacion = request.TipoIdentificacion,
                     Identificacion = request.Identificacion,
                     Nombre_Completo = request.NombreCompleto,
                     ID_Estado = 1 // Asumiendo que 1 = Activo
                 };
 
+                _logger.LogInformation("Cliente a insertar: {@Cliente}", nuevoCliente);
+
                 _context.ClientesBanco.Add(nuevoCliente);
-                await _context.SaveChangesAsync();
+
+                var saveResult = await _context.SaveChangesAsync();
+                _logger.LogInformation("SaveChangesAsync result: {SaveResult}", saveResult);
 
                 // Registrar en bitácora
                 var jsonRegistro = System.Text.Json.JsonSerializer.Serialize(nuevoCliente);
@@ -295,6 +320,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                     EstadoId = nuevoCliente.ID_Estado
                 };
 
+                _logger.LogInformation("Cliente creado exitosamente con ID: {Id}", nuevoCliente.ID_Cliente);
+
                 return CreatedAtAction(nameof(ObtenerPorId), new { id = nuevoCliente.ID_Cliente }, new ClienteResponse
                 {
                     Codigo = 0,
@@ -305,14 +332,22 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear cliente");
+                _logger.LogError("Mensaje: {Message}", ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("InnerException: {InnerMessage}", ex.InnerException.Message);
+                }
 
                 return StatusCode(500, new ClienteResponse
                 {
                     Codigo = -1,
-                    Descripcion = "Error interno del servidor"
+                    Descripcion = "Error interno del servidor: " + ex.Message
                 });
             }
         }
+
 
         // PUT: api/coreclient/{id}
         [HttpPut("{id}")]

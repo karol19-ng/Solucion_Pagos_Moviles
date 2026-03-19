@@ -1,4 +1,6 @@
-﻿namespace Pegasos.Web.Administrador.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Pegasos.Web.Administrador.Models
 {
     public class ClienteCoreViewModel
     {
@@ -12,8 +14,15 @@
 
     public class CrearClienteCoreViewModel
     {
+        [Required(ErrorMessage = "El tipo de identificación es requerido")]
         public string TipoIdentificacion { get; set; } = "FISICA";
+
+        [Required(ErrorMessage = "La identificación es requerida")]
+        [Display(Name = "Número de Identificación")]
         public string Identificacion { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El nombre completo es requerido")]
+        [Display(Name = "Nombre Completo")]
         public string NombreCompleto { get; set; } = string.Empty;
     }
 

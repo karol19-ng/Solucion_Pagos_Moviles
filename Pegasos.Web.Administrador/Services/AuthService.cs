@@ -28,37 +28,50 @@ namespace Pegasos.Web.Administrador.Services
             {
                 _httpClient.DefaultRequestHeaders.Clear();
 
-                // 1. CREAMOS EL JSON MANUALMENTE (Exactamente como lo pones en Swagger)
-                // Usamos minúsculas porque Swagger suele ser case-insensitive o usa camelCase
                 var jsonManual = $"{{\"usuario\":\"{username}\",\"password\":\"{password}\"}}";
-
-                // 2. Definimos el contenido con el Header exacto
                 var content = new StringContent(jsonManual, Encoding.UTF8, "application/json");
 
-                _logger.LogInformation("Enviando JSON Crudo: {json}", jsonManual);
+                _logger.LogInformation("Enviando login para usuario: {Username}", username);
 
-                // 3. Enviamos al puerto 5200 (Gateway) ya que dices que ya no da problemas
                 var response = await _httpClient.PostAsync("auth/login", content);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var responseJson = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<AuthResult>(responseJson, new JsonSerializerOptions
+                    _logger.LogInformation("Respuesta del login recibida: {Response}", responseJson);
+
+                    var options = new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = null // No cambiar nombres
+                    };
+
+                    var result = JsonSerializer.Deserialize<AuthResult>(responseJson, options);
+
+                    if (result != null)
+                    {
+                        _logger.LogInformation("Token recibido: {TokenPresent} - Longitud: {Length}",
+                            string.IsNullOrEmpty(result.access_token) ? "VACÍO" : "OK",
+                            result.access_token?.Length ?? 0);
+
+                        _logger.LogInformation("UsuarioID recibido: {UsuarioId}", result.usuarioID);
+                    }
+
+                    return result;
                 }
 
                 var error = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning("Respuesta final del Micro: {Error}", error);
+                _logger.LogWarning("Login fallido - StatusCode: {StatusCode}, Error: {Error}",
+                    response.StatusCode, error);
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error de conexión");
+                _logger.LogError(ex, "Error de conexión en login");
                 return null;
             }
         }
+
         public async Task<bool> ExtendSessionAsync(string accessToken)
         {
             try

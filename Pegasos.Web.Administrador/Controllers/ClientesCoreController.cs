@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pegasos.Web.Administrador.Models;
 using Pegasos.Web.Administrador.Services;
@@ -19,7 +20,7 @@ namespace Pegasos.Web.Administrador.Controllers
             _logger = logger;
         }
 
-        // GET: ClientesCore
+        // GET: ClientesCore - Listar todos (con paginación)
         public async Task<IActionResult> Index(int pagina = 1)
         {
             try
@@ -41,6 +42,11 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 return View(clientes);
             }
+            catch (UnauthorizedAccessException)
+            {
+                TempData["Error"] = "Sesión expirada. Por favor inicie sesión nuevamente.";
+                return RedirectToAction("Login", "Auth");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error en Index de clientes core");
@@ -49,73 +55,117 @@ namespace Pegasos.Web.Administrador.Controllers
             }
         }
 
-        // GET: ClientesCore/Create
+        // GET: ClientesCore/Create - Mostrar formulario de creación
         public async Task<IActionResult> Create()
         {
-            ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
-                ?? new List<string>();
-            return View();
+            try
+            {
+                // Cargar los tipos de identificación para el dropdown
+                ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
+                    ?? new List<string> { "FISICA", "JURIDICA", "DIMEX", "NITE" };
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar formulario de creación");
+                TempData["Error"] = "Error al cargar el formulario";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
-        // POST: ClientesCore/Create
+        // POST: ClientesCore/Create - Procesar creación
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CrearClienteCoreViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
-                    ?? new List<string>();
-                return View(model);
-            }
-
             try
             {
+                // Log para ver qué datos llegan
+                _logger.LogInformation("Intentando crear cliente - Identificacion: {Identificacion}, Nombre: {Nombre}",
+                    model?.Identificacion, model?.NombreCompleto);
+
+                // Validaciones manuales
+                if (model == null)
+                {
+                    _logger.LogWarning("Modelo es null");
+                    ModelState.AddModelError(string.Empty, "Datos no válidos");
+                    ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync();
+                    return View(model);
+                }
+
+                if (string.IsNullOrWhiteSpace(model.Identificacion))
+                {
+                    ModelState.AddModelError("Identificacion", "La identificación es requerida");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.NombreCompleto))
+                {
+                    ModelState.AddModelError("NombreCompleto", "El nombre completo es requerido");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("ModelState inválido");
+                    ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync();
+                    return View(model);
+                }
+
                 var resultado = await _clienteService.CrearAsync(model);
                 if (resultado)
                 {
-                    TempData["Success"] = "Cliente creado exitosamente";
+                    _logger.LogInformation("Cliente creado exitosamente");
+                    TempData["Success"] = "Cliente creado exitosamente"; // ✅ Mensaje de éxito
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError(string.Empty, "No se pudo crear el cliente. Verifique que la identificación no esté duplicada.");
+                _logger.LogWarning("No se pudo crear el cliente");
+                TempData["Error"] = "No se pudo crear el cliente. Verifique que la identificación no esté duplicada."; // ❌ Mensaje de error
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear cliente");
-                ModelState.AddModelError(string.Empty, "Error al crear el cliente");
+                TempData["Error"] = "Error al crear el cliente: " + ex.Message; // ❌ Mensaje de error
             }
 
-            ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
-                ?? new List<string>();
+            ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync();
             return View(model);
         }
 
-        // GET: ClientesCore/Edit/5
+        // GET: ClientesCore/Edit/5 - Mostrar formulario de edición
         public async Task<IActionResult> Edit(int id)
         {
-            var cliente = await _clienteService.ObtenerPorIdAsync(id);
-            if (cliente == null)
+            try
             {
-                TempData["Error"] = "Cliente no encontrado";
+                var cliente = await _clienteService.ObtenerPorIdAsync(id);
+                if (cliente == null)
+                {
+                    TempData["Error"] = "Cliente no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var model = new EditarClienteCoreViewModel
+                {
+                    Id = cliente.Id,
+                    TipoIdentificacion = cliente.TipoIdentificacion,
+                    Identificacion = cliente.Identificacion,
+                    NombreCompleto = cliente.NombreCompleto,
+                    EstadoId = cliente.EstadoId ?? 1
+                };
+
+                ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
+                    ?? new List<string>();
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar cliente para editar {Id}", id);
+                TempData["Error"] = "Error al cargar el cliente";
                 return RedirectToAction(nameof(Index));
             }
-
-            var model = new EditarClienteCoreViewModel
-            {
-                Id = cliente.Id,
-                TipoIdentificacion = cliente.TipoIdentificacion,
-                Identificacion = cliente.Identificacion,
-                NombreCompleto = cliente.NombreCompleto,
-                EstadoId = cliente.EstadoId ?? 1
-            };
-
-            ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
-                ?? new List<string>();
-            return View(model);
         }
 
-        // POST: ClientesCore/Edit/5
+        // POST: ClientesCore/Edit/5 - Procesar edición
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditarClienteCoreViewModel model)
@@ -123,6 +173,17 @@ namespace Pegasos.Web.Administrador.Controllers
             if (id != model.Id)
             {
                 return NotFound();
+            }
+
+            // 🔴 VALIDACIÓN MANUAL ANTES DE ModelState.IsValid
+            if (string.IsNullOrWhiteSpace(model.Identificacion))
+            {
+                ModelState.AddModelError("Identificacion", "La identificación es requerida");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.NombreCompleto))
+            {
+                ModelState.AddModelError("NombreCompleto", "El nombre completo es requerido");
             }
 
             if (!ModelState.IsValid)
@@ -154,7 +215,7 @@ namespace Pegasos.Web.Administrador.Controllers
             return View(model);
         }
 
-        // POST: ClientesCore/Delete/5
+        // POST: ClientesCore/Delete/5 - Eliminar cliente
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -180,7 +241,8 @@ namespace Pegasos.Web.Administrador.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: ClientesCore/Buscar
+        // GET: ClientesCore/Buscar - Búsqueda en tiempo real
+        [HttpGet]
         public async Task<IActionResult> Buscar(string termino)
         {
             try
@@ -191,8 +253,8 @@ namespace Pegasos.Web.Administrador.Controllers
                 {
                     termino = termino.ToLower();
                     todos = todos.Where(c =>
-                        c.NombreCompleto.ToLower().Contains(termino) ||
-                        c.Identificacion.Contains(termino)
+                        (c.NombreCompleto?.ToLower()?.Contains(termino) ?? false) ||
+                        (c.Identificacion?.Contains(termino) ?? false)
                     ).ToList();
                 }
 
@@ -204,5 +266,58 @@ namespace Pegasos.Web.Administrador.Controllers
                 return Json(new List<ClienteCoreViewModel>());
             }
         }
+
+        // GET: ClientesCore/Detalles/5 - Ver detalles de un cliente (opcional, si quieres añadir)
+        public async Task<IActionResult> Detalles(int id)
+        {
+            try
+            {
+                var cliente = await _clienteService.ObtenerPorIdAsync(id);
+                if (cliente == null)
+                {
+                    TempData["Error"] = "Cliente no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(cliente);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener detalles del cliente {Id}", id);
+                TempData["Error"] = "Error al cargar los detalles";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> TestCreate()
+        {
+            try
+            {
+                var model = new CrearClienteCoreViewModel
+                {
+                    TipoIdentificacion = "FISICA",
+                    Identificacion = "TEST" + DateTime.Now.Ticks,
+                    NombreCompleto = "Cliente de Prueba"
+                };
+
+                _logger.LogInformation("Probando creación directa");
+                var resultado = await _clienteService.CrearAsync(model);
+
+                if (resultado)
+                {
+                    return Content("✅ Cliente creado exitosamente");
+                }
+                else
+                {
+                    return Content("❌ Falló la creación");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content($"❌ Error: {ex.Message}");
+            }
+        }
+
     }
 }
