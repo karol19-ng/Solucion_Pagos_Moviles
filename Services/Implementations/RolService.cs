@@ -30,68 +30,11 @@ namespace Services.Implementations
 
         public async Task<List<RolResponse>> GetAllAsync()
         {
-            try
+            var roles = await _context.Roles.ToListAsync();
+            var response = new List<RolResponse>();
+
+            foreach (var rol in roles)
             {
-                _logger.LogInformation("=== OBTENIENDO TODOS LOS ROLES ===");
-
-                var roles = await _context.Roles.ToListAsync();
-                _logger.LogInformation("Roles encontrados en BD: {Count}", roles.Count);
-
-                var response = new List<RolResponse>();
-
-                foreach (var rol in roles)
-                {
-                    _logger.LogDebug("Procesando rol ID: {Id}, Nombre: {Nombre}", rol.ID_Rol, rol.Nombre);
-
-                    var pantallas = await _context.RolPorPantallas
-                        .Where(rp => rp.ID_Rol == rol.ID_Rol)
-                        .Select(rp => rp.ID_Pantalla)
-                        .ToListAsync();
-
-                    _logger.LogDebug("Rol {Id} tiene {Count} pantallas asignadas", rol.ID_Rol, pantallas.Count);
-
-                    var pantallasDetalle = await _context.TablaPantallas
-                        .Where(p => pantallas.Contains(p.ID_Pantalla))
-                        .Select(p => new PantallaResponse
-                        {
-                            ID_Pantalla = p.ID_Pantalla,
-                            Nombre = p.Nombre,
-                            Descripcion = p.Descripcion,
-                            Ruta = p.Ruta
-                        })
-                        .ToListAsync();
-
-                    response.Add(new RolResponse
-                    {
-                        ID_Rol = rol.ID_Rol,
-                        Nombre = rol.Nombre,
-                        Pantallas = pantallasDetalle
-                    });
-                }
-
-                _logger.LogInformation("GetAllAsync completado. Total roles: {Count}", response.Count);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en GetAllAsync: {Message}", ex.Message);
-                throw; // Re-lanzar la excepción para que el controlador la maneje
-            }
-        }
-
-        public async Task<RolResponse> GetByIdAsync(int id)
-        {
-            try
-            {
-                _logger.LogInformation("=== OBTENIENDO ROL POR ID {Id} ===", id);
-
-                var rol = await _context.Roles.FindAsync(id);
-                if (rol == null)
-                {
-                    _logger.LogWarning("Rol {Id} no encontrado", id);
-                    return null;
-                }
-
                 var pantallas = await _context.RolPorPantallas
                     .Where(rp => rp.ID_Rol == rol.ID_Rol)
                     .Select(rp => rp.ID_Pantalla)
@@ -108,18 +51,46 @@ namespace Services.Implementations
                     })
                     .ToListAsync();
 
-                return new RolResponse
+                response.Add(new RolResponse
                 {
                     ID_Rol = rol.ID_Rol,
                     Nombre = rol.Nombre,
+                    Descripcion = rol.Descripcion ?? "",  // ✅ Incluir Descripcion
                     Pantallas = pantallasDetalle
-                };
+                });
             }
-            catch (Exception ex)
+
+            return response;
+        }
+
+        public async Task<RolResponse> GetByIdAsync(int id)
+        {
+            var rol = await _context.Roles.FindAsync(id);
+            if (rol == null) return null;
+
+            var pantallas = await _context.RolPorPantallas
+                .Where(rp => rp.ID_Rol == rol.ID_Rol)
+                .Select(rp => rp.ID_Pantalla)
+                .ToListAsync();
+
+            var pantallasDetalle = await _context.TablaPantallas
+                .Where(p => pantallas.Contains(p.ID_Pantalla))
+                .Select(p => new PantallaResponse
+                {
+                    ID_Pantalla = p.ID_Pantalla,
+                    Nombre = p.Nombre,
+                    Descripcion = p.Descripcion,
+                    Ruta = p.Ruta
+                })
+                .ToListAsync();
+
+            return new RolResponse
             {
-                _logger.LogError(ex, "Error en GetByIdAsync para ID {Id}", id);
-                throw;
-            }
+                ID_Rol = rol.ID_Rol,
+                Nombre = rol.Nombre,
+                Descripcion = rol.Descripcion ?? "",  // ✅ Incluir Descripcion
+                Pantallas = pantallasDetalle
+            };
         }
 
         public async Task<RolResponse> CreateAsync(RolRequest request, string usuarioEjecutor)

@@ -158,14 +158,68 @@ namespace Pegasos.Web.Administrador.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    var rol = JsonSerializer.Deserialize<RolViewModel>(json, new JsonSerializerOptions
+                    _logger.LogInformation("Respuesta JSON: {Json}", json);
+
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    var rol = new RolViewModel();
+
+                    // Mapear ID_Rol
+                    if (root.TryGetProperty("iD_Rol", out var idProp))
+                        rol.Id = idProp.GetInt32();
+                    else if (root.TryGetProperty("ID_Rol", out idProp))
+                        rol.Id = idProp.GetInt32();
+
+                    // Mapear Nombre
+                    if (root.TryGetProperty("nombre", out var nombreProp))
+                        rol.Nombre = nombreProp.GetString() ?? "";
+                    else if (root.TryGetProperty("Nombre", out nombreProp))
+                        rol.Nombre = nombreProp.GetString() ?? "";
+
+                    // ✅ MAPEAR DESCRIPCION
+                    if (root.TryGetProperty("descripcion", out var descProp))
+                        rol.Descripcion = descProp.GetString() ?? "";
+                    else if (root.TryGetProperty("Descripcion", out descProp))
+                        rol.Descripcion = descProp.GetString() ?? "";
+
+                    // Mapear Pantallas
+                    if (root.TryGetProperty("pantallas", out var pantallasProp) ||
+                        root.TryGetProperty("Pantallas", out pantallasProp))
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        if (pantallasProp.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in pantallasProp.EnumerateArray())
+                            {
+                                var pantalla = new PantallaAsignadaViewModel();
+
+                                if (item.TryGetProperty("iD_Pantalla", out var pid))
+                                    pantalla.Id = pid.GetInt32();
+                                else if (item.TryGetProperty("ID_Pantalla", out pid))
+                                    pantalla.Id = pid.GetInt32();
+
+                                if (item.TryGetProperty("nombre", out var pnombre))
+                                    pantalla.Nombre = pnombre.GetString() ?? "";
+                                else if (item.TryGetProperty("Nombre", out pnombre))
+                                    pantalla.Nombre = pnombre.GetString() ?? "";
+
+                                pantalla.Asignada = true;
+                                rol.Pantallas.Add(pantalla);
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation("Rol mapeado - ID: {Id}, Nombre: {Nombre}, Descripción: {Descripcion}, Pantallas: {Count}",
+                        rol.Id, rol.Nombre, rol.Descripcion, rol.Pantallas.Count);
+
                     return rol;
                 }
-
-                return null;
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Error al obtener rol: {StatusCode} - {Error}", response.StatusCode, error);
+                    return null;
+                }
             }
             catch (Exception ex)
             {
@@ -200,68 +254,50 @@ namespace Pegasos.Web.Administrador.Services
                     {
                         foreach (var item in root.EnumerateArray())
                         {
-                            // Mapear correctamente iD_Pantalla a Id
                             int id = 0;
                             if (item.TryGetProperty("iD_Pantalla", out var idProp))
-                            {
                                 id = idProp.GetInt32();
-                            }
                             else if (item.TryGetProperty("ID_Pantalla", out idProp))
-                            {
                                 id = idProp.GetInt32();
-                            }
 
                             string nombre = "";
                             if (item.TryGetProperty("nombre", out var nombreProp))
-                            {
                                 nombre = nombreProp.GetString() ?? "";
-                            }
                             else if (item.TryGetProperty("Nombre", out nombreProp))
-                            {
                                 nombre = nombreProp.GetString() ?? "";
-                            }
 
                             string descripcion = "";
                             if (item.TryGetProperty("descripcion", out var descProp))
-                            {
                                 descripcion = descProp.GetString() ?? "";
-                            }
                             else if (item.TryGetProperty("Descripcion", out descProp))
-                            {
                                 descripcion = descProp.GetString() ?? "";
-                            }
 
-                            var pantalla = new PantallaAsignadaViewModel
+                            pantallas.Add(new PantallaAsignadaViewModel
                             {
                                 Id = id,
                                 Nombre = nombre,
                                 Descripcion = descripcion,
                                 Asignada = false
-                            };
-
-                            _logger.LogDebug("Pantalla mapeada - ID: {Id}, Nombre: {Nombre}", pantalla.Id, pantalla.Nombre);
-                            pantallas.Add(pantalla);
+                            });
                         }
                     }
 
                     _logger.LogInformation("Pantallas mapeadas: {Count}", pantallas.Count);
 
-                    // Si hay un rolId, obtener sus pantallas
-                    List<int> pantallasDelRol = new List<int>();
+                    // Si hay un rolId, obtener sus pantallas asignadas
                     if (rolId > 0)
                     {
                         var rol = await ObtenerPorIdAsync(rolId);
                         if (rol != null && rol.Pantallas != null)
                         {
-                            pantallasDelRol = rol.Pantallas.Select(p => p.Id).ToList();
-                            _logger.LogInformation("Pantallas del rol {RolId}: {Pantallas}", rolId, string.Join(",", pantallasDelRol));
-                        }
-                    }
+                            var pantallasAsignadas = rol.Pantallas.Select(p => p.Id).ToList();
+                            _logger.LogInformation("Pantallas asignadas al rol {RolId}: {Pantallas}", rolId, string.Join(",", pantallasAsignadas));
 
-                    // Marcar las asignadas
-                    foreach (var pantalla in pantallas)
-                    {
-                        pantalla.Asignada = rolId > 0 ? pantallasDelRol.Contains(pantalla.Id) : false;
+                            foreach (var pantalla in pantallas)
+                            {
+                                pantalla.Asignada = pantallasAsignadas.Contains(pantalla.Id);
+                            }
+                        }
                     }
 
                     return pantallas;
@@ -348,23 +384,35 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
+                // Filtrar IDs válidos (mayores a 0)
+                var pantallasValidas = model.PantallasSeleccionadas?.Where(id => id > 0).ToList() ?? new List<int>();
+
+                var request = new
+                {
+                    id_Rol = model.Id,
+                    nombre = model.Nombre,
+                    descripcion = model.Descripcion ?? "",
+                    pantallas = pantallasValidas
+                };
+
+                var json = JsonSerializer.Serialize(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var apiUrl = $"https://localhost:7258/rol/{model.Id}";
-                _logger.LogInformation("Actualizando rol {Id}: {Json}", model.Id, json);
+                _logger.LogInformation("=== ACTUALIZANDO ROL ===");
+                _logger.LogInformation("JSON enviado: {Json}", json);
 
+                var apiUrl = $"https://localhost:7258/rol/{model.Id}";
                 var response = await _httpClient.PutAsync(apiUrl, content);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("StatusCode: {StatusCode}", response.StatusCode);
                 _logger.LogInformation("Respuesta: {Response}", responseContent);
 
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al actualizar rol {model.Id}");
+                _logger.LogError(ex, "Error al actualizar rol {Id}", model.Id);
                 return false;
             }
         }

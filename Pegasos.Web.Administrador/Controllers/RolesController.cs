@@ -127,16 +127,24 @@ namespace Pegasos.Web.Administrador.Controllers
         }
 
         // GET: Roles/Edit/5
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             try
             {
+                _logger.LogInformation("=== CARGANDO ROL PARA EDITAR ===");
+                _logger.LogInformation("ID recibido: {Id}", id);
+
                 var rol = await _rolService.ObtenerPorIdAsync(id);
                 if (rol == null)
                 {
+                    _logger.LogWarning("Rol con ID {Id} no encontrado", id);
                     TempData["Error"] = "Rol no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
+
+                _logger.LogInformation("Rol encontrado - Nombre: {Nombre}, Descripción: {Descripcion}",
+                    rol.Nombre, rol.Descripcion);
 
                 var pantallas = await _rolService.ObtenerPantallasConAsignacionAsync(id);
 
@@ -144,11 +152,16 @@ namespace Pegasos.Web.Administrador.Controllers
                 {
                     Id = rol.Id,
                     Nombre = rol.Nombre,
+                    Descripcion = rol.Descripcion ?? "",
                     PantallasSeleccionadas = pantallas?
                         .Where(p => p.Asignada)
                         .Select(p => p.Id)
                         .ToList() ?? new List<int>()
                 };
+
+                // Log para verificar que el modelo tiene los datos
+                _logger.LogInformation("Modelo creado - Nombre: {Nombre}, Descripción: {Descripcion}",
+                    model.Nombre, model.Descripcion);
 
                 ViewBag.Pantallas = pantallas ?? new List<PantallaAsignadaViewModel>();
                 return View(model);
@@ -173,6 +186,14 @@ namespace Pegasos.Web.Administrador.Controllers
 
             try
             {
+                _logger.LogInformation("=== ACTUALIZANDO ROL {Id} ===", id);
+                _logger.LogInformation("Nombre: {Nombre}, Descripción: {Descripcion}", model.Nombre, model.Descripcion);
+
+                if (model.PantallasSeleccionadas != null)
+                {
+                    _logger.LogInformation("Pantallas seleccionadas: {Pantallas}", string.Join(",", model.PantallasSeleccionadas));
+                }
+
                 if (string.IsNullOrWhiteSpace(model.Nombre))
                 {
                     ModelState.AddModelError("Nombre", "El nombre es requerido");
