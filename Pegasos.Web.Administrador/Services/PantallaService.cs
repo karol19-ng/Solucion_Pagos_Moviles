@@ -312,16 +312,17 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 _logger.LogInformation("=== ACTUALIZANDO PANTALLA ===");
-                _logger.LogInformation("Modelo recibido - Id: {Id}, Nombre: {Nombre}, Descripción: {Descripcion}, Ruta: {Ruta}, Estado: {Estado}",
+                _logger.LogInformation("Modelo - Id: {Id}, Nombre: {Nombre}, Descripción: {Descripcion}, Ruta: {Ruta}, Estado: {Estado}",
                     model.Id, model.Nombre, model.Descripcion, model.Ruta, model.Estado);
 
-                // Crear el objeto que espera la API
+                // Crear el objeto con TODOS los campos
                 var request = new
                 {
                     id_Pantalla = model.Id,
                     nombre = model.Nombre,
                     descripcion = model.Descripcion,
-                    ruta = model.Ruta
+                    ruta = model.Ruta,
+                    estado = model.Estado  // ← ESTO ES LO QUE FALTA
                 };
 
                 var json = JsonSerializer.Serialize(request);
@@ -335,39 +336,23 @@ namespace Pegasos.Web.Administrador.Services
                 var response = await _httpClient.PutAsync(apiUrl, content);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Código de respuesta: {StatusCode} ({(int)response.StatusCode})", response.StatusCode, response.StatusCode);
-                _logger.LogInformation("Respuesta del servidor: {Response}", responseContent);
+                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta: {Response}", responseContent);
 
                 if (response.IsSuccessStatusCode)
                 {
                     _logger.LogInformation("✅ Pantalla actualizada exitosamente");
                     return true;
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                {
-                    _logger.LogWarning("❌ Bad Request - Error de validación");
-                    _logger.LogWarning("Detalle: {Response}", responseContent);
-                    return false;
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning("❌ Pantalla no encontrada (404)");
-                    return false;
-                }
                 else
                 {
-                    _logger.LogWarning("❌ Error inesperado: {StatusCode}", response.StatusCode);
+                    _logger.LogWarning("❌ Error al actualizar: {StatusCode}", response.StatusCode);
                     return false;
                 }
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "❌ HttpRequestException al actualizar pantalla {Id}", model.Id);
-                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error general al actualizar pantalla {Id}", model.Id);
+                _logger.LogError(ex, $"Error al actualizar pantalla {model.Id}");
                 return false;
             }
         }
