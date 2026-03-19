@@ -11,7 +11,7 @@
         }
       ],
       "UpstreamPathTemplate": "/gateway/bitacora/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "UpstreamHttpMethod": [ "GET", "POST" ]
 
     },
 
@@ -26,7 +26,7 @@
         }
       ],
       "UpstreamPathTemplate": "/gateway/auth/register",
-      "UpstreamHttpMethod": [ "POST" ],
+      "UpstreamHttpMethod": [ "POST" ]
 
     },
 
@@ -41,7 +41,7 @@
         }
       ],
       "UpstreamPathTemplate": "/gateway/auth/cancel-subscription",
-      "UpstreamHttpMethod": [ "POST" ],
+      "UpstreamHttpMethod": [ "POST" ]
 
     },
 
@@ -56,7 +56,7 @@
         }
       ],
       "UpstreamPathTemplate": "/gateway/transactions/route",
-      "UpstreamHttpMethod": [ "POST" ],
+      "UpstreamHttpMethod": [ "POST" ]
 
     },
 
@@ -71,7 +71,7 @@
         }
       ],
       "UpstreamPathTemplate": "/gateway/accounts/balance",
-      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamHttpMethod": [ "GET" ]
 
     },
 
@@ -86,8 +86,49 @@
         }
       ],
       "UpstreamPathTemplate": "/gateway/accounts/transactions",
-      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamHttpMethod": [ "GET" ]
 
+    },
+
+    {
+      "DownstreamPathTemplate": "/api/CoreClient/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258 // Puerto de Solucion_Pagos_Moviles
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreClient/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // CORECLIENT (sin parámetros)
+    {
+      "DownstreamPathTemplate": "/api/CoreClient",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreClient",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // TIPOS DE IDENTIFICACIÓN
+    {
+      "DownstreamPathTemplate": "/api/CoreClient/tipos-identificacion",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreClient/tipos-identificacion",
+      "UpstreamHttpMethod": [ "GET" ]
     },
 
     // RUTA GENÉRICA
@@ -101,7 +142,7 @@
         }
       ],
       "UpstreamPathTemplate": "/gateway/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
 
     }
   ],

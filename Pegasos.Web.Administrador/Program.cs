@@ -24,6 +24,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
     });
 
+// 🔴 NUEVO: Configurar sesión para guardar el token JWT
+builder.Services.AddDistributedMemoryCache(); // Almacenamiento en memoria para la sesión
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(5); // La sesión expira a los 5 minutos también
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Name = "NexusPay.Admin.SessionState";
+});
+
 builder.Services.AddControllersWithViews();
 
 // IMPORTANTE: Agregar IHttpContextAccessor para que funcione ScreenService
@@ -38,11 +48,20 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// 🔴 NUEVO: Registrar IScreenService con su propio HttpClient
+// Registrar IScreenService con su propio HttpClient
 builder.Services.AddHttpClient<IScreenService, ScreenService>(client =>
 {
     var baseUrl = builder.Configuration["GatewayUrl"] ?? "http://localhost:5200/";
     client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar ClienteCoreService
+builder.Services.AddHttpClient<IClienteCoreService, ClienteCoreService>(client =>
+{
+    // Esta URL debe ser la del GATEWAY 1 (puerto 7096)
+    client.BaseAddress = new Uri("https://localhost:7096/");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
@@ -60,7 +79,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// IMPORTANTE: Auth antes de endpoints
+// 🔴 NUEVO: Importante - Session debe ir antes de Authentication
+app.UseSession(); // HABILITAR SESIÓN
+
 app.UseAuthentication();
 app.UseAuthorization();
 
