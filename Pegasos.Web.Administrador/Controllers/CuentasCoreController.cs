@@ -336,6 +336,53 @@ namespace Pegasos.Web.Administrador.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ValidarCliente(string valor)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(valor))
+                {
+                    return Json(new { existe = false, mensaje = "Debe ingresar un valor" });
+                }
+
+                ClienteCoreViewModel? cliente = null;
+
+                // Buscar por ID si es numérico
+                if (int.TryParse(valor, out int id))
+                {
+                    cliente = await _clienteService.ObtenerPorIdAsync(id);
+                }
+
+                // Si no encontró por ID, buscar por identificación
+                if (cliente == null)
+                {
+                    cliente = await _clienteService.ObtenerPorIdentificacionAsync(valor);
+                }
+
+                if (cliente != null)
+                {
+                    return Json(new
+                    {
+                        existe = true,
+                        cliente = new
+                        {
+                            cliente.Id,
+                            cliente.NombreCompleto,
+                            cliente.Identificacion
+                        },
+                        mensaje = $"✓ Cliente encontrado: {cliente.NombreCompleto}"
+                    });
+                }
+
+                return Json(new { existe = false, mensaje = $"❌ No existe cliente con identificación/ID '{valor}'" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validando cliente");
+                return Json(new { existe = false, mensaje = "Error al validar cliente" });
+            }
+        }
         // GET: CuentasCore/Detalles/5 - Ver detalles de una cuenta
         public async Task<IActionResult> Detalles(int id)
         {

@@ -208,64 +208,54 @@ namespace Pegasos.Web.Administrador.Services
                 throw;
             }
         }
-        // Crear cuenta
+
         public async Task<(bool Exito, string Mensaje, int? CuentaId)> CrearAsync(CrearCuentaCoreViewModel model)
         {
             try
             {
+                // Validación adicional
+                if (model == null || string.IsNullOrWhiteSpace(model.ClienteIdentificacion))
+                {
+                    return (false, "Debe proporcionar una identificación de cliente", null);
+                }
+
                 ClienteCoreViewModel? cliente = null;
 
-                // Intentar buscar por identificación primero
-                if (!string.IsNullOrWhiteSpace(model.ClienteIdentificacion))
+                // Intentar buscar por ID si es numérico
+                if (int.TryParse(model.ClienteIdentificacion, out int clienteId))
                 {
-                    // Si es un número puro, podría ser ID o identificación
-                    if (int.TryParse(model.ClienteIdentificacion, out int clienteId))
-                    {
-                        // Buscar por ID primero (para IDs como 100)
-                        cliente = await _clienteService.ObtenerPorIdAsync(clienteId);
+                    cliente = await _clienteService.ObtenerPorIdAsync(clienteId);
+                }
 
-                        // Si no encuentra por ID, buscar por identificación
-                        if (cliente == null)
-                        {
-                            cliente = await _clienteService.ObtenerPorIdentificacionAsync(model.ClienteIdentificacion);
-                        }
-                    }
-                    else
-                    {
-                        // Si no es número, buscar por identificación directamente
-                        cliente = await _clienteService.ObtenerPorIdentificacionAsync(model.ClienteIdentificacion);
-                    }
+                // Si no encuentra por ID, buscar por identificación
+                if (cliente == null)
+                {
+                    cliente = await _clienteService.ObtenerPorIdentificacionAsync(model.ClienteIdentificacion);
                 }
 
                 if (cliente == null)
                 {
-                    _logger.LogWarning("Cliente no encontrado con el valor: {Valor}", model.ClienteIdentificacion);
-                    return (false, $"El cliente con identificación/ID {model.ClienteIdentificacion} no existe en el sistema", null);
+                    _logger.LogWarning("Cliente no encontrado: {Valor}", model.ClienteIdentificacion);
+                    return (false, $"El cliente con identificación/ID '{model.ClienteIdentificacion}' no existe. Verifique el valor e intente nuevamente.", null);
                 }
 
-                _logger.LogInformation("Cliente encontrado: ID={ClienteId}, Nombre={Nombre}, Identificación={Identificacion}",
-                    cliente.Id, cliente.NombreCompleto, cliente.Identificacion);
+                _logger.LogInformation("Cliente encontrado: ID={ClienteId}, Nombre={Nombre}",
+                    cliente.Id, cliente.NombreCompleto);
 
                 AgregarTokenAlHeader();
 
-                // Crear objeto para enviar al API - Usar el ID del cliente
                 var requestModel = new
                 {
-                    identificacionCliente = cliente.Id  // Enviar el ID del cliente (100, 101, etc.)
+                    identificacionCliente = cliente.Id
                 };
 
                 var json = JsonSerializer.Serialize(requestModel);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                _logger.LogInformation("=== INICIANDO CREACIÓN DE CUENTA ===");
-                _logger.LogInformation("JSON enviado: {Json}", json);
-                _logger.LogInformation("Cliente ID: {ClienteId}, Nombre: {Nombre}", cliente.Id, cliente.NombreCompleto);
+                _logger.LogInformation("Enviando solicitud de creación de cuenta para cliente ID: {ClienteId}", cliente.Id);
 
                 var response = await _httpClient.PostAsync("gateway/api/CoreAccount", content);
-
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
-                _logger.LogInformation("Respuesta del servidor: {ResponseContent}", responseContent);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -277,7 +267,7 @@ namespace Pegasos.Web.Administrador.Services
                     if (result?.Codigo == 0)
                     {
                         _logger.LogInformation("Cuenta creada exitosamente. ID: {CuentaId}", result.Cuenta?.Id);
-                        return (true, "Cuenta creada exitosamente", result.Cuenta?.Id);
+                        return (true, "✅ Cuenta creada exitosamente", result.Cuenta?.Id);
                     }
                     else
                     {
@@ -286,15 +276,25 @@ namespace Pegasos.Web.Administrador.Services
                 }
                 else
                 {
-                    _logger.LogWarning("Error en creación. StatusCode: {StatusCode}", response.StatusCode);
-                    _logger.LogWarning("Detalle: {Error}", responseContent);
-                    return (false, $"Error del servidor: {response.StatusCode}", null);
+                    _logger.LogWarning("Error en creación. StatusCode: {StatusCode}, Respuesta: {Response}",
+                        response.StatusCode, responseContent);
+
+                    // Manejar diferentes códigos de error
+                    var mensajeError = response.StatusCode switch
+                    {
+                        System.Net.HttpStatusCode.BadRequest => "Datos inválidos. Verifique la información.",
+                        System.Net.HttpStatusCode.Conflict => "Ya existe una cuenta con esos datos.",
+                        System.Net.HttpStatusCode.NotFound => "El recurso no existe.",
+                        _ => $"Error del servidor: {response.StatusCode}"
+                    };
+
+                    return (false, mensajeError, null);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear cuenta");
-                return (false, $"Error al crear cuenta: {ex.Message}", null);
+                return (false, $"Error inesperado: {ex.Message}", null);
             }
         }
 
