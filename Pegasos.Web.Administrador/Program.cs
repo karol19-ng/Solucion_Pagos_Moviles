@@ -66,6 +66,30 @@ builder.Services.AddHttpClient<IClienteCoreService, ClienteCoreService>(client =
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+// REGISTRAR CuentaCoreService - NUEVO
+builder.Services.AddHttpClient<ICuentaCoreService, CuentaCoreService>(client =>
+{
+    // La misma URL del GATEWAY 1 (puerto 7096)
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar ParametroService
+builder.Services.AddHttpClient<IParametroService, ParametroService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Registrar EntidadService
+builder.Services.AddHttpClient<IEntidadService, EntidadService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 // Después de los otros AddHttpClient
 builder.Services.AddHttpClient<IPantallaService, PantallaService>(client =>
 {

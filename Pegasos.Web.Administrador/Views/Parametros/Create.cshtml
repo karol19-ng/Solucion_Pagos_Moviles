@@ -1,2 +1,405 @@
-﻿module Create
+﻿@model Pegasos.Web.Administrador.Models.CrearParametroViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Crear Nuevo Parámetro";
+}
 
+@section Styles {
+    <style>
+        .form-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid var(--dorado-primario);
+            border-radius: 8px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .form-header h4 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .form-header i {
+            margin-right: 10px;
+            color: var(--dorado-primario);
+            font-size: 1.8rem;
+        }
+
+        .info-box {
+            background: rgba(197, 163, 103, 0.1);
+            border-left: 4px solid var(--dorado-primario);
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+        .info-box i {
+            color: var(--dorado-primario);
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            color: var(--dorado-primario);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-label i {
+            margin-right: 8px;
+            color: var(--dorado-primario);
+        }
+
+        .form-control-custom, .form-select-custom {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control-custom:focus, .form-select-custom:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            box-shadow: 0 0 0 3px rgba(197, 163, 103, 0.1);
+            outline: none;
+        }
+
+        .form-control-custom::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
+        select.form-select-custom option {
+            background: var(--vinotinto-sidebar);
+            color: white;
+        }
+
+        .text-danger {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+            color: #dc3545 !important;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(197, 163, 103, 0.2);
+        }
+
+        .btn-secondary-custom {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-secondary-custom:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 12px 35px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(197, 163, 103, 0.3);
+        }
+
+        .btn-primary-custom i, .btn-secondary-custom i {
+            margin-right: 8px;
+        }
+
+        .validation-summary-errors {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+        }
+
+        .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 400px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .notification .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .notification .close-btn:hover {
+            opacity: 1;
+        }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+}
+
+<div id="successNotification" class="notification notification-success" style="display: none;">
+    <i class="fas fa-check-circle"></i>
+    <span id="successMessage"></span>
+    <span class="close-btn" onclick="this.parentElement.style.display='none'">&times;</span>
+</div>
+
+<div id="errorNotification" class="notification notification-error" style="display: none;">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="errorMessage"></span>
+    <span class="close-btn" onclick="this.parentElement.style.display='none'">&times;</span>
+</div>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <div class="form-header">
+                    <h4>
+                        <i class="fas fa-sliders-h"></i>
+                        Crear Nuevo Parámetro
+                    </h4>
+                </div>
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Información:</strong> Los parámetros son valores de configuración global del sistema.
+                </div>
+
+                <form asp-action="Create" method="post" id="createForm">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="Id" class="form-label">
+                            <i class="fas fa-hashtag"></i> ID del Parámetro <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Id" class="form-control form-control-custom"
+                               id="Id" name="Id"
+                               placeholder="Ej: COMISION, TIMEOUT_SESION, MONTO_MAX_DIARIO"
+                               value="@Model?.Id" />
+                        <span asp-validation-for="Id" class="text-danger" id="idError"></span>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Use mayúsculas y sin espacios (Ej: COMISION_TRANSACCION)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Valor" class="form-label">
+                            <i class="fas fa-dollar-sign"></i> Valor <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Valor" class="form-control form-control-custom"
+                               id="Valor" name="Valor"
+                               placeholder="Ej: 24, 0.02, 500000, 300" />
+                        <span asp-validation-for="Valor" class="text-danger" id="valorError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="EstadoId" class="form-label">
+                            <i class="fas fa-toggle-on"></i> Estado
+                        </label>
+                        <select asp-for="EstadoId" class="form-select form-select-custom">
+                            <option value="1" selected>Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+
+                    <div class="btn-container">
+                        <a asp-action="Index" class="btn-secondary-custom">
+                            <i class="fas fa-arrow-left"></i> Regresar al Listado
+                        </a>
+                        <button type="submit" class="btn-primary-custom" id="btnGuardar">
+                            <i class="fas fa-save"></i> Guardar Parámetro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function showNotification(type, message) {
+            if (type === 'success') {
+                $('#successMessage').text(message);
+                $('#successNotification').fadeIn(300);
+                setTimeout(function() {
+                    $('#successNotification').fadeOut(300);
+                }, 5000);
+            } else {
+                $('#errorMessage').text(message);
+                $('#errorNotification').fadeIn(300);
+                setTimeout(function() {
+                    $('#errorNotification').fadeOut(300);
+                }, 5000);
+            }
+        }
+
+        $(document).ready(function() {
+        @if (TempData["Success"] != null)
+        {
+            <text>
+                    showNotification('success', '@TempData["Success"]');
+            </text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>
+                    showNotification('error', '@TempData["Error"]');
+            </text>
+        }
+
+            $('form').attr('novalidate', 'novalidate');
+
+            // Validación en tiempo real
+            $('#Id').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#idError').text('El ID del parámetro es requerido').show();
+                } else {
+                    // Validar formato (solo mayúsculas, números y guiones bajos)
+                    var formatoValido = /^[A-Z0-9_]+$/.test(valor);
+                    if (!formatoValido) {
+                        $('#idError').text('Solo mayúsculas, números y guiones bajos').show();
+                    } else {
+                        $('#idError').text('').hide();
+                    }
+                }
+            });
+
+            $('#Valor').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#valorError').text('El valor es requerido').show();
+                } else {
+                    $('#valorError').text('').hide();
+                }
+            });
+
+            // Validación al enviar el formulario
+            $('#createForm').on('submit', function(e) {
+                var id = $('#Id').val();
+                var valor = $('#Valor').val();
+                var errores = [];
+
+                $('.text-danger').text('').hide();
+
+                // Validar ID
+                if (!id || id.trim() === '') {
+                    errores.push('El ID del parámetro es requerido');
+                    $('#idError').text('El ID del parámetro es requerido').show();
+                } else {
+                    var formatoValido = /^[A-Z0-9_]+$/.test(id);
+                    if (!formatoValido) {
+                        errores.push('El ID solo puede contener mayúsculas, números y guiones bajos');
+                        $('#idError').text('Solo mayúsculas, números y guiones bajos').show();
+                    }
+                }
+
+                // Validar valor
+                if (!valor || valor.trim() === '') {
+                    errores.push('El valor es requerido');
+                    $('#valorError').text('El valor es requerido').show();
+                }
+
+                if (errores.length > 0) {
+                    showNotification('error', 'Por favor complete todos los campos requeridos:\n- ' + errores.join('\n- '));
+                    e.preventDefault();
+                    return false;
+                }
+
+                $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...');
+                return true;
+            });
+        });
+    </script>
+}

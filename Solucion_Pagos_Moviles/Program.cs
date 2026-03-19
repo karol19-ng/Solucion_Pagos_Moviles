@@ -50,12 +50,15 @@ builder.Services.AddSwaggerGen(options =>
 
 
 // DbContexts
-builder.Services.AddDbContext<PagosMovilesDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("PagosMovilesConnection")));
-
+// Para Core Bancario
 builder.Services.AddDbContext<CoreBancarioDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CoreBancarioConnection")));
 
+// Para Pagos Móviles
+builder.Services.AddDbContext<PagosMovilesDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("PagosMovilesConnection")));
+
+// Para Bitácora
 builder.Services.AddDbContext<BitacoraDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("BitacoraConnection")));
 

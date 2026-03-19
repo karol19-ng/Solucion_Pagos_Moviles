@@ -53,7 +53,7 @@ namespace Services.Implementations
             }
 
             // Verificar si teléfono ya está afiliado
-            var existente = await _context.Afiliaciones
+            var existente = await _context.Afiliacion
                 .FirstOrDefaultAsync(a => a.Telefono == request.Numero_Telefono);
 
             if (existente != null && existente.ID_Estado == 4) // Habilitado
@@ -98,7 +98,7 @@ namespace Services.Implementations
                 Fecha_Afiliacion = DateTime.Now
             };
 
-            _context.Afiliaciones.Add(afiliacion);
+            _context.Afiliacion.Add(afiliacion);
             await _context.SaveChangesAsync();
 
             await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
@@ -132,7 +132,7 @@ namespace Services.Implementations
                 };
             }
 
-            var afiliacion = await _context.Afiliaciones
+            var afiliacion = await _context.Afiliacion
                 .FirstOrDefaultAsync(a => a.Telefono == request.Numero_Telefono);
 
             if (afiliacion == null || afiliacion.ID_Estado != 4)
@@ -171,7 +171,7 @@ namespace Services.Implementations
             if (string.IsNullOrWhiteSpace(request.Telefono) || string.IsNullOrWhiteSpace(request.Identificacion))
                 throw new ArgumentException("Debe enviar los datos completos y válidos");
 
-            var afiliacion = await _context.Afiliaciones
+            var afiliacion = await _context.Afiliacion
                 .FirstOrDefaultAsync(a => a.Telefono == request.Telefono && a.ID_Estado == 4);
 
             if (afiliacion == null)
@@ -194,7 +194,7 @@ namespace Services.Implementations
             if (string.IsNullOrWhiteSpace(request.Telefono) || string.IsNullOrWhiteSpace(request.Identificacion))
                 throw new ArgumentException("Todos los datos son requeridos");
 
-            var afiliacion = await _context.Afiliaciones
+            var afiliacion = await _context.Afiliacion
                 .FirstOrDefaultAsync(a => a.Telefono == request.Telefono && a.ID_Estado == 4);
 
             if (afiliacion == null)

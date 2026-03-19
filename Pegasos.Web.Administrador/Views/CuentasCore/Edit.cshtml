@@ -1,7 +1,7 @@
-﻿@model Pegasos.Web.Administrador.Models.EditarParametroViewModel
+﻿@model Pegasos.Web.Administrador.Models.EditarCuentaCoreViewModel
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Editar Parámetro";
+    ViewData["Title"] = "Editar Cuenta";
 }
 
 @section Styles {
@@ -14,7 +14,6 @@
             backdrop-filter: blur(5px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-
         .form-header {
             background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
             border: 1px solid var(--dorado-primario);
@@ -22,43 +21,27 @@
             padding: 20px 25px;
             border-radius: 8px;
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-
-            .form-header h4 {
-                margin: 0;
-                font-size: 1.5rem;
-                font-weight: 600;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            }
-
-            .form-header i {
-                margin-right: 10px;
-                color: var(--dorado-primario);
-                font-size: 1.8rem;
-            }
-
-            .form-header .estado-badge {
-                display: inline-block;
-                padding: 5px 15px;
-                border-radius: 4px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                margin-left: 15px;
-            }
-
+        .form-header h4 { margin: 0; font-size: 1.5rem; }
+        .form-header i { margin-right: 10px; font-size: 1.8rem; }
+        .form-header .estado-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 15px;
+        }
         .estado-activo {
             background: rgba(40, 167, 69, 0.2);
             color: #28a745;
             border: 1px solid #28a745;
         }
-
         .estado-inactivo {
             background: rgba(220, 53, 69, 0.2);
             color: #dc3545;
             border: 1px solid #dc3545;
         }
-
         .info-box {
             background: rgba(197, 163, 103, 0.1);
             border-left: 4px solid var(--dorado-primario);
@@ -66,73 +49,35 @@
             margin-bottom: 25px;
             border-radius: 4px;
         }
-
-            .info-box i {
-                color: var(--dorado-primario);
-                margin-right: 10px;
-                font-size: 1.2rem;
-            }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
+        .info-box i { color: var(--dorado-primario); margin-right: 10px; }
+        .form-group { margin-bottom: 25px; }
         .form-label {
             color: var(--dorado-primario);
             font-weight: 600;
             margin-bottom: 8px;
             font-size: 0.95rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
-
-            .form-label i {
-                margin-right: 8px;
-                color: var(--dorado-primario);
-            }
-
+        .form-label i { margin-right: 8px; }
         .form-control-custom, .form-select-custom {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(197, 163, 103, 0.3);
             color: white;
             padding: 12px 15px;
             border-radius: 6px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
         }
-
-            .form-control-custom:focus, .form-select-custom:focus {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: var(--dorado-primario);
-                color: white;
-                box-shadow: 0 0 0 3px rgba(197, 163, 103, 0.1);
-                outline: none;
-            }
-
-            .form-control-custom::placeholder {
-                color: rgba(255, 255, 255, 0.5);
-                font-style: italic;
-            }
-
+        .form-control-custom:focus, .form-select-custom:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            outline: none;
+        }
         select.form-select-custom option {
             background: var(--vinotinto-sidebar);
             color: white;
         }
-
-        .text-danger {
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: block;
-            color: #dc3545 !important;
-        }
-
-        .text-muted {
-            color: rgba(255, 255, 255, 0.5) !important;
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: block;
-        }
-
+        .text-danger { font-size: 0.85rem; margin-top: 5px; display: block; color: #dc3545 !important; }
+        .text-muted { color: rgba(255, 255, 255, 0.5) !important; font-size: 0.85rem; margin-top: 5px; }
         .btn-container {
             display: flex;
             justify-content: space-between;
@@ -140,7 +85,6 @@
             padding-top: 20px;
             border-top: 2px solid rgba(197, 163, 103, 0.2);
         }
-
         .btn-secondary-custom {
             background: transparent;
             border: 1px solid rgba(197, 163, 103, 0.3);
@@ -151,14 +95,12 @@
             transition: all 0.3s ease;
             text-decoration: none;
         }
-
-            .btn-secondary-custom:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: var(--dorado-primario);
-                color: white;
-                transform: translateY(-2px);
-            }
-
+        .btn-secondary-custom:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            transform: translateY(-2px);
+        }
         .btn-warning-custom {
             background: transparent;
             border: 2px solid var(--dorado-primario);
@@ -167,20 +109,13 @@
             border-radius: 6px;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-
-            .btn-warning-custom:hover {
-                background: var(--dorado-primario);
-                color: var(--vinotinto-sidebar);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(197, 163, 103, 0.3);
-            }
-
-            .btn-warning-custom i, .btn-secondary-custom i {
-                margin-right: 8px;
-            }
-
+        .btn-warning-custom:hover {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            transform: translateY(-2px);
+        }
+        .btn-warning-custom i, .btn-secondary-custom i { margin-right: 8px; }
         .validation-summary-errors {
             background: rgba(220, 53, 69, 0.1);
             border: 1px solid #dc3545;
@@ -189,14 +124,12 @@
             border-radius: 6px;
             margin-bottom: 25px;
         }
-
         .required-field::after {
             content: "*";
             color: #dc3545;
             margin-left: 4px;
             font-weight: bold;
         }
-
         .readonly-field {
             background: rgba(255, 255, 255, 0.02) !important;
             border: 1px solid rgba(197, 163, 103, 0.1) !important;
@@ -213,56 +146,74 @@
                 <div class="form-header">
                     <h4>
                         <i class="fas fa-edit me-2"></i>
-                        Editar Parámetro: @Model.Id
+                        Editar Cuenta #@Model.Id
                         @if (Model.EstadoId == 1)
                         {
-                            <span class="estado-badge estado-activo">ACTIVO</span>
+                            <span class="estado-badge estado-activo">ACTIVA</span>
                         }
                         else
                         {
-                            <span class="estado-badge estado-inactivo">INACTIVO</span>
+                            <span class="estado-badge estado-inactivo">INACTIVA</span>
                         }
                     </h4>
                 </div>
 
                 <div class="info-box">
                     <i class="fas fa-info-circle"></i>
-                    <strong>Modo Edición:</strong> Está modificando los datos del parámetro.
+                    <strong>Cuenta:</strong> @ViewBag.CuentaInfo?.NumeroCuenta |
+                    <strong>Cliente:</strong> @ViewBag.CuentaInfo?.ClienteNombre (@ViewBag.CuentaInfo?.ClienteIdentificacion) |
+                    <strong>Saldo:</strong> ₡@ViewBag.CuentaInfo?.Saldo.ToString("N2")
                 </div>
 
                 <form asp-action="Edit" method="post" id="editForm">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="TipoCuenta" id="TipoCuentaHidden" />
 
                     <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
 
                     <div class="form-group">
-                        <label asp-for="Id" class="form-label">
-                            <i class="fas fa-hashtag"></i> ID del Parámetro <span class="required-field"></span>
+                        <label class="form-label">
+                            <i class="fas fa-hashtag"></i> Número de Cuenta
                         </label>
-                        <input asp-for="Id" class="form-control form-control-custom readonly-field"
-                               readonly disabled placeholder="El ID no se puede modificar" />
-                        <small class="text-muted">El ID del parámetro no se puede modificar.</small>
+                        <input type="text" class="form-control form-control-custom readonly-field"
+                               value="@ViewBag.CuentaInfo?.NumeroCuenta" readonly disabled />
                     </div>
 
                     <div class="form-group">
-                        <label asp-for="Valor" class="form-label">
-                            <i class="fas fa-dollar-sign"></i> Valor <span class="required-field"></span>
+                        <label class="form-label">
+                            <i class="fas fa-id-card"></i> Identificación del Cliente
                         </label>
-                        <input asp-for="Valor" class="form-control form-control-custom"
-                               id="Valor" name="Valor"
-                               placeholder="Ej: 24, 0.02, 500000, 300" />
-                        <span asp-validation-for="Valor" class="text-danger" id="valorError"></span>
+                        <input type="text" class="form-control form-control-custom readonly-field"
+                               value="@ViewBag.CuentaInfo?.ClienteIdentificacion" readonly disabled />
+                        <small class="text-muted">No es posible cambiar el cliente dueño de la cuenta.</small>
+                    </div>
+
+                    <!-- CAMPO FICTICIO: Tipo de Cuenta (solo visual) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i> Tipo de Cuenta <span class="required-field"></span>
+                        </label>
+                        <select class="form-select form-select-custom" id="TipoCuentaVisual">
+                            <option value="">-- Seleccione un tipo --</option>
+                            <option value="CORRIENTE">CORRIENTE</option>
+                            <option value="AHORROS">AHORROS</option>
+                        </select>
+                        <span class="text-danger" id="tipoCuentaVisualError"></span>
+                        <small class="text-muted">Este campo es solo informativo y no se guarda en la base de datos.</small>
                     </div>
 
                     <div class="form-group">
                         <label asp-for="EstadoId" class="form-label">
-                            <i class="fas fa-toggle-on"></i> Estado
+                            <i class="fas fa-toggle-on"></i> Estado de la Cuenta
                         </label>
                         <select asp-for="EstadoId" class="form-select form-select-custom">
-                            <option value="1">Activo</option>
-                            <option value="0">Inactivo</option>
+                            <option value="1">Activo - Cuenta habilitada para operaciones</option>
+                            <option value="2">Inactivo - Cuenta bloqueada/deshabilitada</option>
                         </select>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Las cuentas inactivas no pueden realizar operaciones.
+                        </small>
                     </div>
 
                     <div class="btn-container">
@@ -270,7 +221,7 @@
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
                         <button type="submit" class="btn-warning-custom">
-                            <i class="fas fa-save"></i> Actualizar Parámetro
+                            <i class="fas fa-save"></i> Actualizar Cuenta
                         </button>
                     </div>
                 </form>
@@ -283,22 +234,26 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function() {
-            $('#Valor').on('input', function() {
+            // Sincronizar el campo visual con el campo oculto
+            $('#TipoCuentaVisual').on('change', function() {
                 var valor = $(this).val();
-                if (!valor || valor.trim() === '') {
-                    $('#valorError').text('El valor es requerido');
+                $('#TipoCuentaHidden').val(valor);
+                
+                if (!valor || valor === '') {
+                    $('#tipoCuentaVisualError').text('El tipo de cuenta es requerido');
                 } else {
-                    $('#valorError').text('');
+                    $('#tipoCuentaVisualError').text('');
                 }
             });
 
+            // Validación al enviar el formulario
             $('#editForm').submit(function(e) {
-                var valor = $('#Valor').val();
+                var tipoCuenta = $('#TipoCuentaVisual').val();
                 var errores = [];
 
-                if (!valor || valor.trim() === '') {
-                    errores.push('El valor es requerido');
-                    $('#valorError').text('El valor es requerido');
+                if (!tipoCuenta || tipoCuenta === '') {
+                    errores.push('El tipo de cuenta es requerido');
+                    $('#tipoCuentaVisualError').text('El tipo de cuenta es requerido');
                 }
 
                 if (errores.length > 0) {
@@ -307,18 +262,16 @@
                     return false;
                 }
 
+                // Sincronizar antes de enviar
+                $('#TipoCuentaHidden').val(tipoCuenta);
+                
                 return true;
             });
 
+            // Confirmar cambios antes de salir
             var formModified = false;
-
-            $('input, select').on('change', function() {
-                formModified = true;
-            });
-
-            $('input').on('keyup', function() {
-                formModified = true;
-            });
+            $('input, select').on('change', function() { formModified = true; });
+            $('input').on('keyup', function() { formModified = true; });
 
             $('a[asp-action="Index"]').click(function(e) {
                 if (formModified) {
@@ -328,19 +281,6 @@
                     }
                 }
             });
-
-        @if (TempData["Success"] != null)
-        {
-                <text>
-                            alert('@TempData["Success"]');
-                </text>
-        }
-        @if (TempData["Error"] != null)
-        {
-                <text>
-                            alert('Error: @TempData["Error"]');
-                </text>
-        }
         });
     </script>
 }
