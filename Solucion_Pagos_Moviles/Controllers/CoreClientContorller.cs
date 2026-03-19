@@ -480,12 +480,17 @@ namespace Solucion_Pagos_Moviles.Controllers
             {
                 var usuario = User.Identity?.Name ?? "Sistema";
 
+                _logger.LogInformation("=== INTENTANDO ELIMINAR CLIENTE ===");
+                _logger.LogInformation("ID a eliminar: {Id}", id);
+                _logger.LogInformation("Usuario: {Usuario}", usuario);
+
                 // Buscar cliente existente
                 var clienteExistente = await _context.ClientesBanco
                     .FirstOrDefaultAsync(c => c.ID_Cliente == id);
 
                 if (clienteExistente == null)
                 {
+                    _logger.LogWarning("Cliente con ID {Id} no encontrado", id);
                     return NotFound(new ClienteResponse
                     {
                         Codigo = -1,
@@ -493,16 +498,24 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
+                _logger.LogInformation("Cliente encontrado: {@Cliente}", clienteExistente);
+
                 // Verificar si tiene cuentas asociadas
                 var tieneCuentas = await _context.Cuentas
                     .AnyAsync(c => c.Identificacion_Cliente == id);
 
                 if (tieneCuentas)
                 {
+                    _logger.LogWarning("Cliente {Id} tiene cuentas asociadas. No se puede eliminar.", id);
+
+                    // Contar cuántas cuentas tiene
+                    var cantidadCuentas = await _context.Cuentas
+                        .CountAsync(c => c.Identificacion_Cliente == id);
+
                     return BadRequest(new ClienteResponse
                     {
                         Codigo = -1,
-                        Descripcion = "No se puede eliminar el cliente porque tiene cuentas asociadas"
+                        Descripcion = $"No se puede eliminar el cliente porque tiene {cantidadCuentas} cuenta(s) asociada(s)"
                     });
                 }
 
@@ -518,7 +531,9 @@ namespace Solucion_Pagos_Moviles.Controllers
 
                 // Eliminar cliente
                 _context.ClientesBanco.Remove(clienteExistente);
-                await _context.SaveChangesAsync();
+                var saveResult = await _context.SaveChangesAsync();
+
+                _logger.LogInformation("SaveChangesAsync result: {SaveResult}", saveResult);
 
                 // Registrar en bitácora
                 var jsonEliminado = System.Text.Json.JsonSerializer.Serialize(clienteEliminado);
@@ -531,6 +546,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                     Resultado = "OK"
                 });
 
+                _logger.LogInformation("Cliente {Id} eliminado exitosamente", id);
+
                 return Ok(new ClienteResponse
                 {
                     Codigo = 0,
@@ -540,11 +557,18 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al eliminar cliente {id}");
+                _logger.LogError("Mensaje: {Message}", ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("InnerException: {InnerMessage}", ex.InnerException.Message);
+                }
 
                 return StatusCode(500, new ClienteResponse
                 {
                     Codigo = -1,
-                    Descripcion = "Error interno del servidor"
+                    Descripcion = "Error interno del servidor: " + ex.Message
                 });
             }
         }

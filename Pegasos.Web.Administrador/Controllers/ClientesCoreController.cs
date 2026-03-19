@@ -222,23 +222,27 @@ namespace Pegasos.Web.Administrador.Controllers
         {
             try
             {
+                _logger.LogInformation("=== INTENTANDO ELIMINAR CLIENTE ===");
+                _logger.LogInformation("ID recibido: {Id}", id);
+
                 var resultado = await _clienteService.EliminarAsync(id);
+
                 if (resultado)
                 {
-                    TempData["Success"] = "Cliente eliminado exitosamente";
+                    _logger.LogInformation("Cliente {Id} eliminado exitosamente", id);
+                    return Json(new { success = true, message = "✅ Cliente eliminado exitosamente" });
                 }
                 else
                 {
-                    TempData["Error"] = "No se pudo eliminar el cliente. Verifique que no tenga cuentas asociadas.";
+                    _logger.LogWarning("No se pudo eliminar el cliente {Id}", id);
+                    return Json(new { success = false, message = "❌ No se puede eliminar el cliente porque tiene cuentas asociadas. Primero debe eliminar las cuentas del cliente." });
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar cliente {Id}", id);
-                TempData["Error"] = "Error al eliminar el cliente";
+                return Json(new { success = false, message = "❌ Error al eliminar el cliente: " + ex.Message });
             }
-
-            return RedirectToAction(nameof(Index));
         }
 
         // GET: ClientesCore/Buscar - Búsqueda en tiempo real

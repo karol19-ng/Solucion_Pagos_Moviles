@@ -4,6 +4,7 @@
     ViewData["Title"] = "Administración de Clientes - Core Bancario";
 }
 
+@Html.AntiForgeryToken()
 
 @section Styles {
     <style>
@@ -58,7 +59,59 @@
                 font-size: 1.1rem;
             }
 
-        /* Alertas */
+        /* Notificaciones */
+        #dynamicNotification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 400px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+            margin-left: 10px;
+        }
+
+            .close-btn:hover {
+                opacity: 1;
+            }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Alertas temporales (TempData) */
         .alert-custom {
             border-radius: 6px;
             padding: 15px 20px;
@@ -235,11 +288,6 @@
             box-shadow: 0 5px 10px rgba(0,0,0,0.3);
         }
 
-        /* Formulario inline */
-        .delete-form {
-            display: inline;
-        }
-
         /* Paginación */
         .pagination-custom {
             margin-top: 25px;
@@ -300,7 +348,7 @@
         </a>
     </div>
 
-    <!-- Mensajes de notificación -->
+    <!-- Mensajes de notificación (TempData) -->
     @if (TempData["Success"] != null)
     {
         <div class="alert-custom alert-success-custom alert-dismissible fade show" role="alert">
@@ -376,16 +424,14 @@
                                        title="Editar cliente">
                                         <i class="fas fa-edit"></i>
                                     </a>
-
-                                    <!-- Formulario directo para eliminar (SIN MODAL) -->
-                                    <form asp-action="Delete" method="post" class="delete-form"
-                                          onsubmit="return confirm('¿Está seguro que desea eliminar el cliente @cliente.NombreCompleto? Esta acción no se puede deshacer.');">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@cliente.Id" />
-                                        <button type="submit" class="btn-action btn-action-danger" title="Eliminar cliente">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            class="btn-action btn-action-danger delete-btn"
+                                            onclick="confirmarEliminacion(@cliente.Id, '@Html.Raw(cliente.NombreCompleto?.Replace("'", "\\'"))')"
+                                            title="Eliminar cliente"
+                                            data-id="@cliente.Id"
+                                            data-nombre="@cliente.NombreCompleto">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -432,6 +478,89 @@
 
 @section Scripts {
     <script>
+        // Función para mostrar notificaciones
+        function showNotification(type, message) {
+            // Crear elemento de notificación si no existe
+            let notification = $('#dynamicNotification');
+            if (notification.length === 0) {
+                $('body').append('<div id="dynamicNotification" class="notification"></div>');
+                notification = $('#dynamicNotification');
+            }
+
+            // Configurar estilo según tipo
+            notification.removeClass('notification-success notification-error');
+            if (type === 'success') {
+                notification.addClass('notification-success');
+            } else {
+                notification.addClass('notification-error');
+            }
+
+            // Mostrar mensaje
+            notification.html('<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle') + ' me-2"></i>' + message + '<span class="close-btn" onclick="$(this).parent().fadeOut()">&times;</span>');
+            notification.fadeIn(300);
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(function() {
+                notification.fadeOut(300);
+            }, 5000);
+        }
+
+        function confirmarEliminacion(id, nombre) {
+            if (confirm('¿Está seguro que desea eliminar el cliente ' + nombre + '? Esta acción no se puede deshacer.')) {
+
+                // Obtener el botón que se clickeó (usando el ID del cliente)
+                var btn = $(`button[onclick*="confirmarEliminacion(${id}"]`);
+
+                // Guardar el HTML original
+                var originalHtml = btn.html();
+
+                // Mostrar indicador de carga
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+                // Obtener token antiforgery
+                var token = $('input[name="__RequestVerificationToken"]').first().val();
+
+                $.ajax({
+                    url: '/ClientesCore/Delete/' + id,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token,
+                        id: id
+                    },
+                    success: function(response) {
+                        btn.prop('disabled', false).html(originalHtml);
+
+                        if (response.success) {
+                            showNotification('success', response.message);
+                            // Recargar la tabla después de 1 segundo
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            showNotification('error', response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        btn.prop('disabled', false).html(originalHtml);
+
+                        // Intentar obtener el mensaje de error del servidor
+                        var errorMsg = 'Error al eliminar';
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.message) {
+                                errorMsg = response.message;
+                            }
+                        } catch(e) {
+                            errorMsg = 'Error al eliminar: ' + error;
+                        }
+
+                        showNotification('error', errorMsg);
+                        console.error('Error:', xhr.responseText);
+                    }
+                });
+            }
+        }
+
         $(document).ready(function() {
             // Búsqueda en tiempo real
             $('#searchTerm').on('keyup', function(e) {
@@ -458,6 +587,9 @@
                             var estadoBadge = cliente.estadoId == 1 ? 'badge-success' : 'badge-danger';
                             var estadoTexto = cliente.estadoId == 1 ? 'ACTIVO' : 'INACTIVO';
 
+                            // Escapar comillas simples para JavaScript
+                            var nombreSeguro = (cliente.nombreCompleto || '').replace(/'/g, "\\'");
+
                             var row = '<tr>' +
                                 '<td>#' + cliente.id + '</td>' +
                                 '<td>' + (cliente.tipoIdentificacion || '') + '</td>' +
@@ -466,10 +598,7 @@
                                 '<td><span class="' + estadoBadge + '">' + estadoTexto + '</span></td>' +
                                 '<td>' +
                                 '<a href="/ClientesCore/Edit/' + cliente.id + '" class="btn-action btn-action-warning" title="Editar cliente"><i class="fas fa-edit"></i></a> ' +
-                                '<form method="post" action="/ClientesCore/Delete/' + cliente.id + '" style="display: inline;" onsubmit="return confirm(\'¿Está seguro que desea eliminar el cliente ' + (cliente.nombreCompleto || '').replace(/'/g, "\\'") + '? Esta acción no se puede deshacer.\');">' +
-                                '<input type="hidden" name="id" value="' + cliente.id + '" />' +
-                                '<button type="submit" class="btn-action btn-action-danger" title="Eliminar cliente"><i class="fas fa-trash-alt"></i></button>' +
-                                '</form>' +
+                                '<button type="button" class="btn-action btn-action-danger delete-btn" onclick="confirmarEliminacion(' + cliente.id + ', \'' + nombreSeguro + '\')" title="Eliminar cliente"><i class="fas fa-trash-alt"></i></button>' +
                                 '</td>' +
                                 '</tr>';
                             tbody.append(row);
@@ -489,4 +618,3 @@
         });
     </script>
 }
-

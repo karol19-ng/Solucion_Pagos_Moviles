@@ -259,26 +259,47 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = $"gateway/api/CoreClient/{id}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("=== INTENTANDO ELIMINAR CLIENTE ===");
+                _logger.LogInformation("URL: {Url}", url);
+                _logger.LogInformation("ID: {Id}", id);
 
                 var response = await _httpClient.DeleteAsync(url);
 
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta del servidor: {ResponseContent}", responseContent);
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(responseJson, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(responseContent, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    _logger.LogInformation("Eliminación exitosa. Código: {Codigo}", result?.Codigo);
                     return result?.Codigo == 0;
                 }
+                else
+                {
+                    _logger.LogWarning("Error en eliminación. StatusCode: {StatusCode}", response.StatusCode);
+                    _logger.LogWarning("Detalle: {Error}", responseContent);
 
-                return false;
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        _logger.LogWarning("Cliente no encontrado (404)");
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        _logger.LogWarning("Bad Request - posiblemente tiene cuentas asociadas");
+                    }
+
+                    return false;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al eliminar cliente {id}");
-                throw;
+                return false;
             }
         }
 
