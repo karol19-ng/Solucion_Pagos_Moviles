@@ -24,15 +24,17 @@ namespace Pegasos.WEB.Portal.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Login(string? returnUrl = null)
+        public IActionResult Login(string? returnUrl = null, bool expired = false)
         {
             if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index", "Home");
             }
 
-            if (TempData["SessionExpired"] != null)
+            if (expired)
+            {
                 ViewBag.SessionExpired = true;
+            }
 
             ViewData["ReturnUrl"] = returnUrl;
             return View(new LoginPortalViewModel());
@@ -45,10 +47,12 @@ namespace Pegasos.WEB.Portal.Controllers
         {
             var username = model.Username;
 
+            _logger.LogInformation("Intento de login para usuario: {Username}", username);
+
             // PTL1: Verificar bloqueo por 3 intentos fallidos
             if (IsUserLockedOut(username))
             {
-                model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos).";
+                model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos). Intente en 15 minutos.";
                 return View(model);
             }
 
@@ -59,6 +63,8 @@ namespace Pegasos.WEB.Portal.Controllers
                 RegisterFailedAttempt(username);
                 int attempts = GetFailedAttempts(username);
                 int remaining = 3 - attempts;
+
+                _logger.LogWarning("Login fallido para usuario: {Username}. Intentos: {Attempts}", username, attempts);
 
                 if (remaining <= 0)
                 {
@@ -75,16 +81,59 @@ namespace Pegasos.WEB.Portal.Controllers
             // Login exitoso
             ClearAttempts(username);
 
-            // Obtener nombre del token si es posible
-            var nombreCompleto = GetNombreDesdeToken(result.access_token);
+            // Decodificar el token JWT para extraer información del usuario
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(result.access_token);
 
+            _logger.LogInformation("=== CLAIMS DISPONIBLES EN EL TOKEN ===");
+            foreach (var claim in jwtToken.Claims)
+            {
+                _logger.LogInformation("Claim Type: {Type}, Value: {Value}", claim.Type, claim.Value);
+            }
+
+            // Extraer nombre completo
+            var nombreCompleto = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == "nombreCompleto" ||
+                c.Type == "NombreCompleto" ||
+                c.Type == "name" ||
+                c.Type == "unique_name" ||
+                c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value ?? username;
+
+            // Extraer identificación
+            var identificacion = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == "identificacion" ||
+                c.Type == "Identificacion" ||
+                c.Type == "id" ||
+                c.Type == "Id" ||
+                c.Type == "ID" ||
+                c.Type == "nameid" ||
+                c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value ?? "";
+
+            var email = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == "email" ||
+                c.Type == "Email" ||
+                c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value ?? "";
+
+            var usuarioId = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == "nameid" ||
+                c.Type == "sub")?.Value ?? "";
+
+            _logger.LogInformation("=== INFORMACIÓN EXTRAÍDA ===");
+            _logger.LogInformation("Nombre: {Nombre}", nombreCompleto);
+            _logger.LogInformation("Identificación: {Identificacion}", identificacion);
+            _logger.LogInformation("Email: {Email}", email);
+            _logger.LogInformation("UsuarioId: {UsuarioId}", usuarioId);
+
+            // Crear claims para la cookie de autenticación
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, model.Username),
-                new Claim(ClaimTypes.NameIdentifier, model.Username),
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.NameIdentifier, usuarioId),
                 new Claim("nombreCompleto", nombreCompleto),
                 new Claim("access_token", result.access_token),
                 new Claim("refresh_token", result.refresh_token ?? ""),
+                new Claim("identificacion", identificacion),
+                new Claim("email", email),
                 new Claim(ClaimTypes.Role, "Cliente")
             };
 
@@ -111,41 +160,17 @@ namespace Pegasos.WEB.Portal.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        private string GetNombreDesdeToken(string token)
-        {
-            try
-            {
-                var handler = new JwtSecurityTokenHandler();
-                var jsonToken = handler.ReadJwtToken(token);
-                // Intentar diferentes posibles claims donde pueda venir el nombre
-                var nombreClaim = jsonToken.Claims.FirstOrDefault(c =>
-                    c.Type == "nombre" ||
-                    c.Type == "name" ||
-                    c.Type == "unique_name" ||
-                    c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
-
-                return nombreClaim?.Value ?? "Cliente";
-            }
-            catch
-            {
-                return "Cliente";
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        // LOGOUT
+        [HttpGet]
         public async Task<IActionResult> Logout(bool expired = false)
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            if (expired)
-                TempData["SessionExpired"] = true;
-            return RedirectToAction("Login");
-        }
 
-        [HttpGet]
-        public async Task<IActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (expired)
+            {
+                TempData["SessionExpired"] = true;
+            }
+
             return RedirectToAction("Login");
         }
 
@@ -172,7 +197,8 @@ namespace Pegasos.WEB.Portal.Controllers
             return Ok(new { success = true, message = "Sesión extendida" });
         }
 
-        #region Helpers de Seguridad
+        #region Helpers de Seguridad (PTL1)
+
         private bool IsUserLockedOut(string username)
         {
             if (LoginAttempts.TryGetValue(username, out var data))
@@ -204,6 +230,7 @@ namespace Pegasos.WEB.Portal.Controllers
 
         private void ClearAttempts(string username) =>
             LoginAttempts.Remove(username);
+
         #endregion
     }
 }

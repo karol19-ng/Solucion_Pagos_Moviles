@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pegasos.WEB.Portal.Models;
 using Pegasos.WEB.Portal.Models.ViewModels;
+using System.Security.Claims;
 
 namespace Pegasos.WEB.Portal.Controllers
 {
@@ -17,29 +18,20 @@ namespace Pegasos.WEB.Portal.Controllers
 
         public IActionResult Index()
         {
-            // PTL2: Página de bienvenida
-            var model = new DashboardViewModel
+            // Obtener el nombre completo del usuario desde los claims
+            var nombreCompleto = User.FindFirst("nombreCompleto")?.Value ??
+                                 User.FindFirst(ClaimTypes.Name)?.Value ??
+                                 "Cliente";
+
+            var model = new BienvenidaViewModel
             {
-                NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Cliente",
-                Email = User.Identity?.Name ?? "",
-                Rol = "Cliente",
+                NombreCompleto = nombreCompleto,
                 FechaIngreso = DateTime.Now,
-                HoraIngreso = DateTime.Now.ToString("HH:mm"),
-                CuentasAsociadas = new List<CuentaAsociadaViewModel>
-                {
-                    // Estos datos vendrían del servicio de consultas
-                    new CuentaAsociadaViewModel
-                    {
-                        NumeroCuenta = "CR123456789",
-                        Telefono = "8888-5555",
-                        Saldo = 150000,
-                        Activa = true
-                    }
-                }
+                HoraIngreso = DateTime.Now.ToString("HH:mm")
             };
 
-            ViewData["WelcomeTitle"] = $"¡Bienvenido, {model.NombreCompleto}!";
-            ViewData["PageTitle"] = "Inicio - Portal Cliente";
+            _logger.LogInformation("Página de bienvenida mostrada para: {Nombre}", nombreCompleto);
+            ViewData["PageTitle"] = "Bienvenido - Portal Cliente";
 
             return View(model);
         }

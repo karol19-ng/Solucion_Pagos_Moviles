@@ -1,190 +1,81 @@
-﻿/**
- * SA4: Control de sesión por inactividad
- * Configuración: 5 minutos = 300,000 ms
- */
+﻿let sessionTimer;
+let timeLeft = 300;
+let timerDisplay = document.getElementById('timerDisplay');
 
-(function () {
-    'use strict';
+function iniciarContadorSesion(minutos, logoutUrl) {
+    timeLeft = minutos * 60;
+    actualizarDisplay();
 
-    // Configuración
-    const SESSION_DURATION = 5 * 60 * 1000; // 5 minutos
-    const WARNING_BEFORE = 30 * 1000; // Advertir 30 seg antes
-    const CHECK_INTERVAL = 1000; // Revisar cada segundo
-
-    // Elementos DOM
-    const timeoutModal = document.getElementById('sessionTimeoutModal');
-    const expiredModal = document.getElementById('sessionExpiredModal');
-    const countdownEl = document.getElementById('countdownSeconds');
-    const timerEl = document.getElementById('sessionTimer');
-    const indicatorEl = document.getElementById('sessionIndicator');
-
-    // Estado
-    let lastActivity = Date.now();
-    let warningShown = false;
-    let checkIntervalId = null;
-
-    /**
-     * Inicializar control de sesión
-     */
-    function init() {
-        // Solo si hay sesión activa
-        if (!document.querySelector('.nexus-user-menu')) {
-            return;
-        }
-
-        // Eventos que resetean el timer
-        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-        events.forEach(event => {
-            document.addEventListener(event, resetTimer, true);
-        });
-
-        // Iniciar revisión periódica
-        checkIntervalId = setInterval(checkSession, CHECK_INTERVAL);
-
-        // Mostrar tiempo inicial
-        updateTimerDisplay(SESSION_DURATION);
+    if (sessionTimer) {
+        clearInterval(sessionTimer);
     }
 
-    /**
-     * Resetear timer por actividad
-     */
-    function resetTimer() {
-        lastActivity = Date.now();
+    sessionTimer = setInterval(function () {
+        timeLeft--;
+        actualizarDisplay();
 
-        if (warningShown) {
-            hideWarning();
+        if (timeLeft <= 0) {
+            clearInterval(sessionTimer);
+
+            // Mostrar mensaje simple
+            const mensaje = document.createElement('div');
+            mensaje.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            `;
+
+            mensaje.innerHTML = `
+                <div style="
+                    background: #2b0811;
+                    border: 2px solid #c5a367;
+                    border-radius: 10px;
+                    padding: 30px;
+                    text-align: center;
+                    max-width: 350px;
+                ">
+                    <i class="fas fa-clock" style="font-size: 40px; color: #c5a367; margin-bottom: 15px;"></i>
+                    <p style="color: white; font-size: 16px; margin-bottom: 20px;">
+                        Su sesión ha expirado por inactividad.
+                    </p>
+                    <button onclick="window.location.href='${logoutUrl}?expired=true'" 
+                            style="
+                                background: linear-gradient(135deg, #c5a367 0%, #8e6d31 100%);
+                                border: none;
+                                padding: 10px 25px;
+                                border-radius: 5px;
+                                color: #1a050a;
+                                font-weight: bold;
+                                cursor: pointer;
+                                width: 100%;
+                            ">
+                        Aceptar
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(mensaje);
         }
+    }, 1000);
+
+    $(document).on('mousemove keydown click scroll', function () {
+        timeLeft = 300;
+        actualizarDisplay();
+    });
+}
+
+function actualizarDisplay() {
+    if (timerDisplay) {
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        timerDisplay.textContent = minutes.toString().padStart(2, '0') + ':' +
+            seconds.toString().padStart(2, '0');
     }
-
-    /**
-     * Verificar estado de sesión
-     */
-    function checkSession() {
-        const elapsed = Date.now() - lastActivity;
-        const remaining = SESSION_DURATION - elapsed;
-
-        // Actualizar display
-        updateTimerDisplay(Math.max(0, remaining));
-
-        // Mostrar advertencia
-        if (remaining <= WARNING_BEFORE && remaining > 0 && !warningShown) {
-            showWarning(Math.ceil(remaining / 1000));
-        }
-
-        // Sesión expirada
-        if (remaining <= 0) {
-            sessionExpired();
-        }
-    }
-
-    /**
-     * Mostrar modal de advertencia
-     */
-    function showWarning(seconds) {
-        warningShown = true;
-
-        if (timeoutModal) {
-            timeoutModal.style.display = 'flex';
-            updateCountdown(seconds);
-
-            // Contador regresivo en el modal
-            const countdownInterval = setInterval(() => {
-                seconds--;
-                updateCountdown(seconds);
-
-                if (seconds <= 0 || !warningShown) {
-                    clearInterval(countdownInterval);
-                }
-            }, 1000);
-        }
-    }
-
-    /**
-     * Ocultar advertencia
-     */
-    function hideWarning() {
-        warningShown = false;
-        if (timeoutModal) {
-            timeoutModal.style.display = 'none';
-        }
-    }
-
-    /**
-     * Sesión expirada - logout forzado
-     */
-    function sessionExpired() {
-        clearInterval(checkIntervalId);
-        hideWarning();
-
-        if (expiredModal) {
-            expiredModal.style.display = 'flex';
-        }
-
-        // Llamar logout después de mostrar modal
-        setTimeout(() => {
-            window.location.href = '/Auth/Logout?expired=true';
-        }, 3000);
-    }
-
-    /**
-     * Extender sesión (llamada desde botón)
-     */
-    window.extendSession = function () {
-        hideWarning();
-        resetTimer();
-
-        // Llamada AJAX para renovar cookie en servidor
-        fetch('/Auth/ExtendSession', {
-            method: 'POST',
-            headers: {
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '',
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
-        })
-            .then(response => {
-                if (!response.ok) {
-                    console.warn('No se pudo extender la sesión en servidor');
-                }
-            })
-            .catch(err => {
-                console.error('Error extendiendo sesión:', err);
-            });
-    };
-
-    /**
-     * Actualizar display del timer
-     */
-    function updateTimerDisplay(ms) {
-        if (!timerEl) return;
-
-        const totalSeconds = Math.floor(ms / 1000);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-
-        timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-        // Cambiar color si queda poco tiempo
-        if (totalSeconds < 60) {
-            indicatorEl?.classList.add('nexus-session-warning');
-        } else {
-            indicatorEl?.classList.remove('nexus-session-warning');
-        }
-    }
-
-    /**
-     * Actualizar countdown del modal
-     */
-    function updateCountdown(seconds) {
-        if (countdownEl) {
-            countdownEl.textContent = seconds;
-        }
-    }
-
-    // Iniciar cuando DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
+}

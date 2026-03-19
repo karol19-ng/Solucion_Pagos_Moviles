@@ -205,6 +205,21 @@
 <body>
     <div class="login-card">
         <img src="/images/logo_pegasos.png" alt="Logo Banco Pegasos" class="brand-logo">
+        @if (TempData["SessionExpired"] != null && (bool)TempData["SessionExpired"])
+        {
+            <div style="
+                background: rgba(255, 165, 0, 0.2);
+                color: #ffb347;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                border: 1px solid orange;
+                text-align: center;
+                ">
+                <i class="fas fa-clock me-2"></i>
+                Su sesión ha expirado por inactividad. Por favor, inicie sesión nuevamente.
+            </div>
+        }
         <h1 class="bank-title">BANCO PEGASOS</h1>
         <p class="bank-slogan">Su socio financiero</p>
         <div class="badge-cliente">PORTAL CLIENTES</div>
