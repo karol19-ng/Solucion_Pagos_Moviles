@@ -131,6 +131,78 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
+    // ===== NUEVAS RUTAS PARA CUENTAS CORE (SA11) =====
+
+    // COREACCOUNT (con parámetros)
+    {
+      "DownstreamPathTemplate": "/api/CoreAccount/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreAccount/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // COREACCOUNT (sin parámetros)
+    {
+      "DownstreamPathTemplate": "/api/CoreAccount",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreAccount",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // CUENTAS POR CLIENTE (por identificación)
+    {
+      "DownstreamPathTemplate": "/api/CoreAccount/cliente/{identificacion}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreAccount/cliente/{identificacion}",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+
+    // CUENTAS POR CLIENTE (por ID)
+    {
+      "DownstreamPathTemplate": "/api/CoreAccount/cliente-id/{clienteId}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreAccount/cliente-id/{clienteId}",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+
+    // TIPOS DE CUENTA
+    {
+      "DownstreamPathTemplate": "/api/CoreAccount/tipos-cuenta",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7258
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/api/CoreAccount/tipos-cuenta",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+
     // RUTA GENÉRICA
     {
       "DownstreamPathTemplate": "/api/{everything}",
@@ -143,7 +215,6 @@
       ],
       "UpstreamPathTemplate": "/gateway/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-
     }
   ],
   "GlobalConfiguration": {

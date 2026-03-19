@@ -1,0 +1,234 @@
+﻿@model Pegasos.Web.Administrador.Models.CrearCuentaCoreViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Crear Nueva Cuenta";
+}
+
+@section Styles {
+    <style>
+        /* Mantén todos los estilos existentes */
+        .form-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid var(--dorado-primario);
+            border-radius: 8px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .form-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: rgba(197, 163, 103, 0.1);
+            border-left: 4px solid var(--dorado-primario);
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+        .form-group { margin-bottom: 25px; }
+        .form-label {
+            color: var(--dorado-primario);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-label i { margin-right: 8px; }
+        .form-control-custom, .form-select-custom {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+        }
+        .form-control-custom:focus, .form-select-custom:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            outline: none;
+        }
+        select.form-select-custom option {
+            background: var(--vinotinto-sidebar);
+            color: white;
+        }
+        .text-danger { font-size: 0.85rem; margin-top: 5px; display: block; color: #dc3545 !important; }
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(197, 163, 103, 0.2);
+        }
+        .btn-secondary-custom {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-secondary-custom:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .btn-primary-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 12px 35px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary-custom:hover {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            transform: translateY(-2px);
+        }
+        .btn-primary-custom i, .btn-secondary-custom i { margin-right: 8px; }
+        .validation-summary-errors {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+        }
+        .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+    </style>
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <div class="form-header">
+                    <h4><i class="fas fa-credit-card me-2"></i>Crear Nueva Cuenta</h4>
+                </div>
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Información:</strong> Complete los datos para crear una nueva cuenta.
+                </div>
+
+                <form asp-action="Create" method="post" id="createForm">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="ClienteIdentificacion" class="form-label">
+                            <i class="fas fa-id-card"></i> Identificación del Cliente <span class="required-field"></span>
+                        </label>
+                        <input asp-for="ClienteIdentificacion" class="form-control form-control-custom"
+                               id="ClienteIdentificacion" name="ClienteIdentificacion"
+                               placeholder="Ej: 123456789"
+                               value="@Model?.ClienteIdentificacion" />
+                        <span asp-validation-for="ClienteIdentificacion" class="text-danger" id="clienteIdentificacionError"></span>
+                    </div>
+
+                    <!-- CAMPO FICTICIO: Tipo de Cuenta (solo visual, no tiene name) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i> Tipo de Cuenta <span class="required-field"></span>
+                        </label>
+                        <select class="form-select form-select-custom" id="TipoCuentaVisual">
+                            <option value="">-- Seleccione un tipo --</option>
+                            <option value="CORRIENTE">CORRIENTE</option>
+                            <option value="AHORROS">AHORROS</option>
+                        </select>
+                        <span class="text-danger" id="tipoCuentaVisualError"></span>
+                        <small class="text-muted">Este campo es solo informativo y no se guarda en la base de datos.</small>
+                    </div>
+
+                    <!-- Campo oculto para mantener compatibilidad con el modelo (opcional) -->
+                    <input type="hidden" asp-for="TipoCuenta" id="TipoCuentaHidden" />
+
+                    <div class="btn-container">
+                        <a asp-action="Index" class="btn-secondary-custom">
+                            <i class="fas fa-arrow-left"></i> Regresar al Listado
+                        </a>
+                        <button type="submit" class="btn-primary-custom" id="btnGuardar">
+                            <i class="fas fa-save"></i> Guardar Cuenta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Sincronizar el campo visual con el campo oculto
+            $('#TipoCuentaVisual').on('change', function() {
+                var valor = $(this).val();
+                $('#TipoCuentaHidden').val(valor);
+                
+                // Validación visual
+                if (!valor || valor === '') {
+                    $('#tipoCuentaVisualError').text('El tipo de cuenta es requerido').show();
+                } else {
+                    $('#tipoCuentaVisualError').text('').hide();
+                }
+            });
+
+            // Validación en tiempo real para identificación
+            $('#ClienteIdentificacion').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#clienteIdentificacionError').text('La identificación del cliente es requerida').show();
+                } else {
+                    $('#clienteIdentificacionError').text('').hide();
+                }
+            });
+
+            // Validación al enviar el formulario
+            $('#createForm').on('submit', function(e) {
+                var identificacion = $('#ClienteIdentificacion').val();
+                var tipoCuenta = $('#TipoCuentaVisual').val();
+                var errores = [];
+
+                $('.text-danger').text('').hide();
+
+                if (!identificacion || identificacion.trim() === '') {
+                    errores.push('La identificación del cliente es requerida');
+                    $('#clienteIdentificacionError').text('La identificación del cliente es requerida').show();
+                }
+
+                if (!tipoCuenta || tipoCuenta === '') {
+                    errores.push('El tipo de cuenta es requerido');
+                    $('#tipoCuentaVisualError').text('El tipo de cuenta es requerido').show();
+                }
+
+                if (errores.length > 0) {
+                    alert('Por favor complete todos los campos requeridos:\n- ' + errores.join('\n- '));
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Sincronizar antes de enviar
+                $('#TipoCuentaHidden').val(tipoCuenta);
+                
+                $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...');
+                return true;
+            });
+        });
+    </script>
+}

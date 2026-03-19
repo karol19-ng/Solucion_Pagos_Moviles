@@ -2,6 +2,7 @@ using API_Gateway.Middleware;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using System.Text;
+using System.Text.Json.Nodes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,7 @@ builder.Services.AddAuthentication("GatewayAuth")  // ← Especificar esquema po
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidateAudience = true,    
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
