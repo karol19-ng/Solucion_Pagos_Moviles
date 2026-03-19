@@ -79,8 +79,10 @@ namespace Pegasos.Web.Administrador.Controllers
             try
             {
                 _logger.LogInformation("=== RECIBIDA PETICIÓN CREATE ROL ===");
-                _logger.LogInformation("Nombre: {Nombre}, Pantallas: {Pantallas}",
-                    model?.Nombre, model?.PantallasSeleccionadas != null ? string.Join(",", model.PantallasSeleccionadas) : "ninguna");
+                _logger.LogInformation("Nombre: {Nombre}, Descripción: {Descripcion}, Pantallas: {Pantallas}",
+                    model?.Nombre,
+                    model?.Descripcion,
+                    model?.PantallasSeleccionadas != null ? string.Join(",", model.PantallasSeleccionadas) : "ninguna");
 
                 if (model == null)
                 {

@@ -1,2 +1,509 @@
-﻿module Create
+﻿@model Pegasos.Web.Administrador.Models.CrearRolViewModel
+@using Pegasos.Web.Administrador.Models
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Crear Nuevo Rol";
+}
 
+@section Styles {
+    <style>
+        /* Estilos con la paleta del sistema */
+        .form-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid var(--dorado-primario);
+            border-radius: 8px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+            .form-header h4 {
+                margin: 0;
+                font-size: 1.5rem;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .form-header i {
+                margin-right: 10px;
+                color: var(--dorado-primario);
+                font-size: 1.8rem;
+            }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            color: var(--dorado-primario);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+            .form-label i {
+                margin-right: 8px;
+                color: var(--dorado-primario);
+            }
+
+        .form-control-custom {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+            .form-control-custom:focus {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                box-shadow: 0 0 0 3px rgba(197, 163, 103, 0.1);
+                outline: none;
+            }
+
+            .form-control-custom::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+                font-style: italic;
+            }
+
+        .text-danger {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+            color: #dc3545 !important;
+        }
+
+        /* Estilos para la lista de pantallas */
+        .pantallas-container {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pantalla-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(197, 163, 103, 0.1);
+            transition: all 0.3s ease;
+        }
+
+            .pantalla-item:last-child {
+                border-bottom: none;
+            }
+
+            .pantalla-item:hover {
+                background: rgba(197, 163, 103, 0.1);
+            }
+
+        .pantalla-checkbox {
+            margin-right: 10px;
+            accent-color: var(--dorado-primario);
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .pantalla-label {
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .pantalla-nombre {
+            font-weight: 600;
+            color: var(--dorado-primario);
+            min-width: 120px;
+        }
+
+        .pantalla-descripcion {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 10px;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(197, 163, 103, 0.2);
+        }
+
+        .btn-secondary-custom {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+            .btn-secondary-custom:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                transform: translateY(-2px);
+            }
+
+        .btn-primary-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 12px 35px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+            .btn-primary-custom:hover {
+                background: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(197, 163, 103, 0.3);
+            }
+
+            .btn-primary-custom i, .btn-secondary-custom i {
+                margin-right: 8px;
+            }
+
+        /* Validation summary */
+        .validation-summary-errors {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+        }
+
+            .validation-summary-errors ul {
+                margin: 0;
+                padding-left: 20px;
+            }
+
+        /* Required field indicator */
+        .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+
+        /* Mensajes de notificación */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 400px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .notification .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+            .notification .close-btn:hover {
+                opacity: 1;
+            }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Selector de pantallas */
+        .select-all-container {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(197, 163, 103, 0.1);
+            border-radius: 6px;
+        }
+
+        .select-all-checkbox {
+            margin-right: 10px;
+            accent-color: var(--dorado-primario);
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .select-all-label {
+            color: var(--dorado-primario);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .contador-seleccionadas {
+            float: right;
+            color: var(--dorado-primario);
+            font-size: 0.9rem;
+        }
+    </style>
+}
+
+<!-- Mensajes de notificación -->
+<div id="successNotification" class="notification notification-success" style="display: none;">
+    <i class="fas fa-check-circle"></i>
+    <span id="successMessage"></span>
+    <span class="close-btn" onclick="this.parentElement.style.display='none'">&times;</span>
+</div>
+
+<div id="errorNotification" class="notification notification-error" style="display: none;">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="errorMessage"></span>
+    <span class="close-btn" onclick="this.parentElement.style.display='none'">&times;</span>
+</div>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <div class="form-header">
+                    <h4>
+                        <i class="fas fa-user-tag"></i>
+                        Crear Nuevo Rol
+                    </h4>
+                </div>
+
+                <form asp-action="Create" method="post" id="createForm">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="Nombre" class="form-label">
+                            <i class="fas fa-tag"></i> Nombre del Rol <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Nombre" class="form-control form-control-custom"
+                               id="Nombre" name="Nombre"
+                               placeholder="Ej: Administrador, Usuario, Supervisor" />
+                        <span asp-validation-for="Nombre" class="text-danger" id="nombreError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Descripcion" class="form-label">
+                            <i class="fas fa-align-left"></i> Descripción
+                        </label>
+                        <input asp-for="Descripcion" class="form-control form-control-custom"
+                               id="Descripcion" name="Descripcion"
+                               placeholder="Ej: Rol con permisos de administración" />
+                        <span asp-validation-for="Descripcion" class="text-danger" id="descripcionError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-desktop"></i> Pantallas Asignadas
+                        </label>
+
+                        <div class="select-all-container">
+                            <label class="select-all-label">
+                                <input type="checkbox" id="selectAll" class="select-all-checkbox">
+                                Seleccionar todas las pantallas
+                            </label>
+                            <span class="contador-seleccionadas" id="contadorPantallas">0 seleccionadas</span>
+                        </div>
+
+                        <div class="pantallas-container">
+                            @{
+    var pantallas = ViewBag.Pantallas as List<PantallaAsignadaViewModel>;
+}
+@if (pantallas != null && pantallas.Any())
+{
+    @foreach (var pantalla in pantallas)
+    {
+        <div class="pantalla-item">
+            <label class="pantalla-label">
+                <input type="checkbox" 
+                       name="PantallasSeleccionadas" 
+                       value="@pantalla.Id"   
+                       class="pantalla-checkbox"
+                       data-nombre="@pantalla.Nombre"
+                       @(pantalla.Asignada ? "checked" : "")/>
+                <span class="pantalla-nombre">@pantalla.Nombre</span>
+                <span class="pantalla-descripcion">@pantalla.Descripcion</span>
+            </label>
+        </div>
+    }
+}
+                            else
+                            {
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-info-circle"></i>
+                                    No hay pantallas disponibles para asignar
+                                </div>
+                            }
+                        </div>
+                        <span class="text-danger" id="pantallasError"></span>
+                    </div>
+
+                    <div class="btn-container">
+                        <a asp-action="Index" class="btn-secondary-custom">
+                            <i class="fas fa-arrow-left"></i> Regresar al Listado
+                        </a>
+                        <button type="submit" class="btn-primary-custom" id="btnGuardar">
+                            <i class="fas fa-save"></i> Guardar Rol
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function showNotification(type, message) {
+            if (type === 'success') {
+                $('#successMessage').text(message);
+                $('#successNotification').fadeIn(300);
+                setTimeout(function() {
+                    $('#successNotification').fadeOut(300);
+                }, 5000);
+            } else {
+                $('#errorMessage').text(message);
+                $('#errorNotification').fadeIn(300);
+                setTimeout(function() {
+                    $('#errorNotification').fadeOut(300);
+                }, 5000);
+            }
+        }
+
+        $(document).ready(function() {
+            // Mostrar mensajes de TempData si existen
+        @if (TempData["Success"] != null)
+        {
+            <text>
+                        showNotification('success', '@TempData["Success"]');
+            </text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>
+                        showNotification('error', '@TempData["Error"]');
+            </text>
+        }
+
+            // Deshabilitar la validación automática de HTML5
+            $('form').attr('novalidate', 'novalidate');
+
+            // Función para actualizar el contador de pantallas seleccionadas
+            function actualizarContador() {
+                var seleccionadas = $('input[name="PantallasSeleccionadas"]:checked').length;
+                $('#contadorPantallas').text(seleccionadas + ' seleccionada' + (seleccionadas !== 1 ? 's' : ''));
+            }
+
+            // Seleccionar/Deseleccionar todas
+            $('#selectAll').change(function() {
+                var isChecked = $(this).prop('checked');
+                $('input[name="PantallasSeleccionadas"]').prop('checked', isChecked);
+                actualizarContador();
+            });
+
+            // Actualizar contador cuando cambia una checkbox individual
+            $('input[name="PantallasSeleccionadas"]').change(function() {
+                actualizarContador();
+
+                // Actualizar el estado de "Seleccionar todas"
+                var total = $('input[name="PantallasSeleccionadas"]').length;
+                var seleccionadas = $('input[name="PantallasSeleccionadas"]:checked').length;
+                $('#selectAll').prop('checked', total === seleccionadas);
+            });
+
+            // Validación en tiempo real
+            $('#Nombre').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#nombreError').text('El nombre del rol es requerido').show();
+                } else {
+                    $('#nombreError').text('').hide();
+                }
+            });
+
+            // Validación al enviar el formulario
+            $('#createForm').on('submit', function(e) {
+                var nombre = $('#Nombre').val();
+                var errores = [];
+
+                // Limpiar errores anteriores
+                $('.text-danger').text('').hide();
+
+                // Validar nombre
+                if (!nombre || nombre.trim() === '') {
+                    errores.push('El nombre del rol es requerido');
+                    $('#nombreError').text('El nombre del rol es requerido').show();
+                }
+
+                // Si hay errores, mostrar notificación y cancelar envío
+                if (errores.length > 0) {
+                    showNotification('error', 'Por favor complete todos los campos requeridos:\n- ' + errores.join('\n- '));
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Mostrar indicador de carga
+                $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...');
+                return true;
+            });
+
+            // Inicializar contador
+            actualizarContador();
+        });
+    </script>
+}

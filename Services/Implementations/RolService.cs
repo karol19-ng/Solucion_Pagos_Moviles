@@ -126,9 +126,8 @@ namespace Services.Implementations
         {
             try
             {
-                _logger.LogInformation("=== CREANDO NUEVO ROL ===");
-                _logger.LogInformation("Nombre: {Nombre}, Pantallas: {Pantallas}",
-                    request.Nombre, string.Join(",", request.Pantallas));
+                _logger.LogInformation("=== CREANDO ROL EN BD (ID Manual) ===");
+                _logger.LogInformation("Request: {@Request}", request);
 
                 ValidarRol(request);
 
@@ -138,30 +137,36 @@ namespace Services.Implementations
                     .Select(r => (int?)r.ID_Rol)
                     .FirstOrDefaultAsync();
 
+                // Si no hay registros, empezar desde 1
                 int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
-                _logger.LogInformation("ID asignado: {Id}", nuevoId);
+
+                _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
 
                 var rol = new Rol
                 {
-                    ID_Rol = nuevoId,
+                    ID_Rol = nuevoId,  // Asignar ID manualmente
                     Nombre = request.Nombre
                 };
 
                 _context.Roles.Add(rol);
                 await _context.SaveChangesAsync();
 
-                // Agregar pantallas
-                foreach (var pantallaId in request.Pantallas)
-                {
-                    _context.RolPorPantallas.Add(new RolPorPantalla
-                    {
-                        ID_Rol = rol.ID_Rol,
-                        ID_Pantalla = pantallaId
-                    });
-                }
-                await _context.SaveChangesAsync();
+                _logger.LogInformation("Rol guardado en BD con ID: {Id}", rol.ID_Rol);
 
-                _logger.LogInformation("Rol {Id} creado exitosamente", rol.ID_Rol);
+                // Agregar pantallas
+                if (request.Pantallas != null && request.Pantallas.Any())
+                {
+                    foreach (var pantallaId in request.Pantallas)
+                    {
+                        _context.RolPorPantallas.Add(new RolPorPantalla
+                        {
+                            ID_Rol = rol.ID_Rol,
+                            ID_Pantalla = pantallaId
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("{Count} pantallas asignadas al rol", request.Pantallas.Count);
+                }
 
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
@@ -176,7 +181,12 @@ namespace Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear rol");
+                _logger.LogError(ex, "Error al crear rol en BD");
+                _logger.LogError("Mensaje: {Message}", ex.Message);
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("InnerException: {InnerMessage}", ex.InnerException.Message);
+                }
                 throw;
             }
         }

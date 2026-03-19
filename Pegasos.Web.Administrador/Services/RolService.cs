@@ -180,7 +180,6 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                // Usar URL directa a la API como en PantallaService
                 var pantallasUrl = "https://localhost:7258/api/screen";
                 _logger.LogInformation("Obteniendo pantallas desde: {Url}", pantallasUrl);
 
@@ -189,12 +188,63 @@ namespace Pegasos.Web.Administrador.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    var pantallas = JsonSerializer.Deserialize<List<PantallaViewModel>>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    _logger.LogInformation("Respuesta pantallas: {Json}", json);
 
-                    if (pantallas == null) return new List<PantallaAsignadaViewModel>();
+                    // Usar JsonDocument para mapear manualmente
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    var pantallas = new List<PantallaAsignadaViewModel>();
+
+                    if (root.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var item in root.EnumerateArray())
+                        {
+                            // Mapear correctamente iD_Pantalla a Id
+                            int id = 0;
+                            if (item.TryGetProperty("iD_Pantalla", out var idProp))
+                            {
+                                id = idProp.GetInt32();
+                            }
+                            else if (item.TryGetProperty("ID_Pantalla", out idProp))
+                            {
+                                id = idProp.GetInt32();
+                            }
+
+                            string nombre = "";
+                            if (item.TryGetProperty("nombre", out var nombreProp))
+                            {
+                                nombre = nombreProp.GetString() ?? "";
+                            }
+                            else if (item.TryGetProperty("Nombre", out nombreProp))
+                            {
+                                nombre = nombreProp.GetString() ?? "";
+                            }
+
+                            string descripcion = "";
+                            if (item.TryGetProperty("descripcion", out var descProp))
+                            {
+                                descripcion = descProp.GetString() ?? "";
+                            }
+                            else if (item.TryGetProperty("Descripcion", out descProp))
+                            {
+                                descripcion = descProp.GetString() ?? "";
+                            }
+
+                            var pantalla = new PantallaAsignadaViewModel
+                            {
+                                Id = id,
+                                Nombre = nombre,
+                                Descripcion = descripcion,
+                                Asignada = false
+                            };
+
+                            _logger.LogDebug("Pantalla mapeada - ID: {Id}, Nombre: {Nombre}", pantalla.Id, pantalla.Nombre);
+                            pantallas.Add(pantalla);
+                        }
+                    }
+
+                    _logger.LogInformation("Pantallas mapeadas: {Count}", pantallas.Count);
 
                     // Si hay un rolId, obtener sus pantallas
                     List<int> pantallasDelRol = new List<int>();
@@ -204,18 +254,17 @@ namespace Pegasos.Web.Administrador.Services
                         if (rol != null && rol.Pantallas != null)
                         {
                             pantallasDelRol = rol.Pantallas.Select(p => p.Id).ToList();
+                            _logger.LogInformation("Pantallas del rol {RolId}: {Pantallas}", rolId, string.Join(",", pantallasDelRol));
                         }
                     }
 
-                    // Crear lista con asignación
-                    var resultado = pantallas.Select(p => new PantallaAsignadaViewModel
+                    // Marcar las asignadas
+                    foreach (var pantalla in pantallas)
                     {
-                        Id = p.Id,
-                        Nombre = p.Nombre,
-                        Asignada = rolId > 0 ? pantallasDelRol.Contains(p.Id) : false
-                    }).ToList();
+                        pantalla.Asignada = rolId > 0 ? pantallasDelRol.Contains(pantalla.Id) : false;
+                    }
 
-                    return resultado;
+                    return pantallas;
                 }
 
                 return new List<PantallaAsignadaViewModel>();
@@ -233,24 +282,62 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
+                // Crear el objeto que espera la API - usar los nombres exactos que espera el DTO
+                var request = new
+                {
+                    id_Rol = 0,  // La API generará el ID
+                    nombre = model.Nombre,
+                    descripcion = model.Descripcion ?? "",
+                    pantallas = model.PantallasSeleccionadas ?? new List<int>()
+                };
+
+                var json = JsonSerializer.Serialize(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 _logger.LogInformation("=== CREANDO ROL ===");
                 _logger.LogInformation("JSON enviado: {Json}", json);
+                _logger.LogInformation("Headers Authorization: {Auth}", _httpClient.DefaultRequestHeaders.Authorization?.ToString());
 
                 var apiUrl = "https://localhost:7258/rol";
+                _logger.LogInformation("URL: {Url}", apiUrl);
+
                 var response = await _httpClient.PostAsync(apiUrl, content);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
-                _logger.LogInformation("Respuesta: {Response}", responseContent);
+                _logger.LogInformation("StatusCode: {StatusCode} ({(int)response.StatusCode})", response.StatusCode, response.StatusCode);
+                _logger.LogInformation("Respuesta del servidor: {Response}", responseContent);
 
-                return response.IsSuccessStatusCode;
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("✅ Rol creado exitosamente");
+                    return true;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    _logger.LogWarning("❌ Bad Request - Error de validación");
+                    _logger.LogWarning("Detalle: {Response}", responseContent);
+                    return false;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    _logger.LogWarning("❌ No autorizado - Token inválido");
+                    return false;
+                }
+                else
+                {
+                    _logger.LogWarning("❌ Error inesperado: {StatusCode}", response.StatusCode);
+                    _logger.LogWarning("Detalle: {Response}", responseContent);
+                    return false;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "❌ HttpRequestException al crear rol");
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear rol");
+                _logger.LogError(ex, "❌ Error general al crear rol");
                 return false;
             }
         }

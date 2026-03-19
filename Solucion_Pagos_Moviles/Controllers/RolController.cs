@@ -63,8 +63,10 @@ namespace API_Proyecto1.Controllers
         {
             try
             {
-                _logger.LogInformation("=== CREATE ROL ===");
-                _logger.LogInformation("Request: {@Request}", request);
+                _logger.LogInformation("=== CREATE ROL EN API ===");
+                _logger.LogInformation("Request recibido: {@Request}", request);
+                _logger.LogInformation("Nombre: {Nombre}", request.Nombre);
+                _logger.LogInformation("Pantallas: {Pantallas}", string.Join(",", request.Pantallas));
 
                 var usuario = User.FindFirst(ClaimTypes.Name)?.Value ?? "Sistema";
                 var result = await _service.CreateAsync(request, usuario);
@@ -79,7 +81,7 @@ namespace API_Proyecto1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error en Create");
+                _logger.LogError(ex, "Error en Create: {Message}", ex.Message);
                 return StatusCode(500, new { codigo = -1, descripcion = ex.Message });
             }
         }
