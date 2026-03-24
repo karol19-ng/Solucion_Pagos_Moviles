@@ -76,32 +76,31 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = "gateway/api/CoreAccount";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    _logger.LogDebug("Respuesta exitosa de Gateway 1");
+                    _logger.LogInformation("Respuesta JSON recibida: {Json}", json);
 
                     var result = JsonSerializer.Deserialize<CuentaCoreResponse>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    if (result?.Cuentas != null)
+                    {
+                        _logger.LogInformation("=== CUENTAS RECIBIDAS ===");
+                        foreach (var c in result.Cuentas)
+                        {
+                            _logger.LogInformation("Cuenta - ID: {Id}, Número: {Numero}, Cliente: {Cliente}, Tipo: {Tipo}, Saldo: {Saldo}, Estado: {Estado}",
+                                c.Id, c.NumeroCuenta, c.ClienteNombre, c.TipoCuenta, c.Saldo, c.EstadoId);
+                        }
+                    }
+
                     return result?.Cuentas ?? new List<CuentaCoreViewModel>();
-                }
-
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Gateway 1: Token no autorizado (401). Detalle: {Error}", error);
-                    throw new UnauthorizedAccessException($"Token rechazado por Gateway 1: {error}");
-                }
-
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning("Gateway 1: Ruta no encontrada - 404. Verificar configuración de Ocelot");
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
@@ -112,7 +111,7 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar cuentas");
-                throw;
+                return new List<CuentaCoreViewModel>();
             }
         }
 
@@ -124,7 +123,7 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = $"gateway/api/CoreAccount/{id}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
@@ -143,7 +142,7 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cuenta {id}");
-                throw;
+                return null;
             }
         }
 
@@ -155,7 +154,7 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = $"gateway/api/CoreAccount/cliente/{identificacionCliente}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
@@ -174,7 +173,7 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cuentas por cliente {identificacionCliente}");
-                throw;
+                return new List<CuentaCoreViewModel>();
             }
         }
 
@@ -186,7 +185,7 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = $"gateway/api/CoreAccount/cliente-id/{clienteId}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
@@ -205,7 +204,7 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cuentas por cliente ID {clienteId}");
-                throw;
+                return new List<CuentaCoreViewModel>();
             }
         }
 
@@ -217,6 +216,13 @@ namespace Pegasos.Web.Administrador.Services
                 if (model == null || string.IsNullOrWhiteSpace(model.ClienteIdentificacion))
                 {
                     return (false, "Debe proporcionar una identificación de cliente", null);
+                }
+
+                // ✅ Verificar que TipoCuenta no esté vacío
+                if (string.IsNullOrWhiteSpace(model.TipoCuenta))
+                {
+                    _logger.LogWarning("❌ TipoCuenta está vacío en CrearAsync");
+                    return (false, "Debe seleccionar un tipo de cuenta", null);
                 }
 
                 ClienteCoreViewModel? cliente = null;
@@ -239,23 +245,30 @@ namespace Pegasos.Web.Administrador.Services
                     return (false, $"El cliente con identificación/ID '{model.ClienteIdentificacion}' no existe. Verifique el valor e intente nuevamente.", null);
                 }
 
-                _logger.LogInformation("Cliente encontrado: ID={ClienteId}, Nombre={Nombre}",
-                    cliente.Id, cliente.NombreCompleto);
+                _logger.LogInformation("Cliente encontrado: ID={ClienteId}, Nombre={Nombre}, Identificacion={Identificacion}",
+                    cliente.Id, cliente.NombreCompleto, cliente.Identificacion);
 
                 AgregarTokenAlHeader();
 
+                // Enviar el ID del cliente y el tipo de cuenta
                 var requestModel = new
                 {
-                    identificacionCliente = cliente.Id
+                    clienteId = cliente.Id,
+                    tipoCuenta = model.TipoCuenta.ToUpper()  // Asegurar mayúsculas
                 };
 
                 var json = JsonSerializer.Serialize(requestModel);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                _logger.LogInformation("Enviando solicitud de creación de cuenta para cliente ID: {ClienteId}", cliente.Id);
+                _logger.LogInformation("Enviando solicitud de creación de cuenta para cliente ID: {ClienteId}, Tipo: {TipoCuenta}",
+                    cliente.Id, model.TipoCuenta);
+                _logger.LogInformation("JSON enviado: {Json}", json);
 
                 var response = await _httpClient.PostAsync("gateway/api/CoreAccount", content);
                 var responseContent = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta del servidor: {Response}", responseContent);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -264,10 +277,11 @@ namespace Pegasos.Web.Administrador.Services
                         PropertyNameCaseInsensitive = true
                     });
 
-                    if (result?.Codigo == 0)
+                    if (result?.Codigo == 0 && result.Cuenta != null)
                     {
-                        _logger.LogInformation("Cuenta creada exitosamente. ID: {CuentaId}", result.Cuenta?.Id);
-                        return (true, "✅ Cuenta creada exitosamente", result.Cuenta?.Id);
+                        _logger.LogInformation("Cuenta creada exitosamente. ID: {CuentaId}, Número: {NumeroCuenta}",
+                            result.Cuenta.Id, result.Cuenta.NumeroCuenta);
+                        return (true, $"✅ Cuenta creada exitosamente. Número: {result.Cuenta.NumeroCuenta}", result.Cuenta.Id);
                     }
                     else
                     {
@@ -278,17 +292,7 @@ namespace Pegasos.Web.Administrador.Services
                 {
                     _logger.LogWarning("Error en creación. StatusCode: {StatusCode}, Respuesta: {Response}",
                         response.StatusCode, responseContent);
-
-                    // Manejar diferentes códigos de error
-                    var mensajeError = response.StatusCode switch
-                    {
-                        System.Net.HttpStatusCode.BadRequest => "Datos inválidos. Verifique la información.",
-                        System.Net.HttpStatusCode.Conflict => "Ya existe una cuenta con esos datos.",
-                        System.Net.HttpStatusCode.NotFound => "El recurso no existe.",
-                        _ => $"Error del servidor: {response.StatusCode}"
-                    };
-
-                    return (false, mensajeError, null);
+                    return (false, $"Error al crear la cuenta: {response.StatusCode} - {responseContent}", null);
                 }
             }
             catch (Exception ex)
@@ -305,18 +309,29 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
+                var requestModel = new
+                {
+                    id = model.Id,
+                    tipoCuenta = model.TipoCuenta,
+                    estadoId = model.EstadoId
+                };
+
+                var json = JsonSerializer.Serialize(requestModel);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var url = $"gateway/api/CoreAccount/{model.Id}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
+                _logger.LogInformation("JSON enviado: {Json}", json);
 
                 var response = await _httpClient.PutAsync(url, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta: {Response}", responseContent);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<CuentaCoreResponse>(responseJson, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<CuentaCoreResponse>(responseContent, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -328,7 +343,7 @@ namespace Pegasos.Web.Administrador.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al actualizar cuenta {model.Id}");
-                throw;
+                return false;
             }
         }
 
@@ -364,6 +379,16 @@ namespace Pegasos.Web.Administrador.Services
                 {
                     _logger.LogWarning("Error en eliminación. StatusCode: {StatusCode}", response.StatusCode);
                     _logger.LogWarning("Detalle: {Error}", responseContent);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        _logger.LogWarning("Cuenta no encontrada (404)");
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        _logger.LogWarning("Bad Request - posiblemente tiene movimientos asociados");
+                    }
+
                     return false;
                 }
             }
@@ -382,17 +407,20 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = "gateway/api/CoreAccount/tipos-cuenta";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<List<string>>(json, new JsonSerializerOptions
+                    var tipos = JsonSerializer.Deserialize<List<string>>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    _logger.LogInformation("Tipos de cuenta obtenidos: {Tipos}", string.Join(", ", tipos ?? new List<string>()));
+                    return tipos ?? new List<string> { "CORRIENTE", "AHORROS" };
                 }
 
                 return new List<string> { "CORRIENTE", "AHORROS" };
@@ -403,7 +431,5 @@ namespace Pegasos.Web.Administrador.Services
                 return new List<string> { "CORRIENTE", "AHORROS" };
             }
         }
-
-
     }
 }

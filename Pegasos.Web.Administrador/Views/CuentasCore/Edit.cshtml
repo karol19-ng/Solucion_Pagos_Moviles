@@ -189,18 +189,18 @@
                         <small class="text-muted">No es posible cambiar el cliente dueño de la cuenta.</small>
                     </div>
 
-                    <!-- CAMPO FICTICIO: Tipo de Cuenta (solo visual) -->
+                    <!-- Campo Tipo de Cuenta -->
                     <div class="form-group">
                         <label class="form-label">
                             <i class="fas fa-tag"></i> Tipo de Cuenta <span class="required-field"></span>
                         </label>
                         <select class="form-select form-select-custom" id="TipoCuentaVisual">
                             <option value="">-- Seleccione un tipo --</option>
-                            <option value="CORRIENTE">CORRIENTE</option>
-                            <option value="AHORROS">AHORROS</option>
+                            <option value="CORRIENTE" @(ViewBag.CuentaInfo?.TipoCuenta == "CORRIENTE" ? "selected" : "")>CORRIENTE</option>
+                            <option value="AHORROS" @(ViewBag.CuentaInfo?.TipoCuenta == "AHORROS" ? "selected" : "")>AHORROS</option>
                         </select>
                         <span class="text-danger" id="tipoCuentaVisualError"></span>
-                        <small class="text-muted">Este campo es solo informativo y no se guarda en la base de datos.</small>
+                        <small class="text-muted">Seleccione el tipo de cuenta.</small>
                     </div>
 
                     <div class="form-group">
@@ -220,7 +220,7 @@
                         <a asp-action="Index" class="btn-secondary-custom">
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
-                        <button type="submit" class="btn-warning-custom">
+                        <button type="submit" class="btn-warning-custom" id="btnActualizar">
                             <i class="fas fa-save"></i> Actualizar Cuenta
                         </button>
                     </div>
@@ -247,7 +247,9 @@
             });
 
             // Validación al enviar el formulario
-            $('#editForm').submit(function(e) {
+            $('#editForm').on('submit', function(e) {
+                e.preventDefault();
+                
                 var tipoCuenta = $('#TipoCuentaVisual').val();
                 var errores = [];
 
@@ -257,15 +259,45 @@
                 }
 
                 if (errores.length > 0) {
-                    alert('Por favor complete todos los campos requeridos:\n- ' + errores.join('\n- '));
-                    e.preventDefault();
+                    showErrorModal('Por favor complete todos los campos requeridos:\n• ' + errores.join('\n• '));
                     return false;
                 }
 
-                // Sincronizar antes de enviar
                 $('#TipoCuentaHidden').val(tipoCuenta);
                 
-                return true;
+                // Mostrar modal de carga
+                var loadingModal = showLoadingModal();
+                
+                var form = $(this);
+                var url = form.attr('action');
+                var data = form.serialize();
+                
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: data,
+                    success: function(response) {
+                        hideLoadingModal(loadingModal);
+                        if (response.success) {
+                            showSuccessModal(response.message, '/CuentasCore/Index');
+                        } else {
+                            showErrorModal(response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        hideLoadingModal(loadingModal);
+                        if (xhr.status === 502 || xhr.status === 504) {
+                            showGatewayError();
+                        } else {
+                            let errorMsg = 'Error al actualizar la cuenta';
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                if (response.message) errorMsg = response.message;
+                            } catch(e) {}
+                            showErrorModal(errorMsg);
+                        }
+                    }
+                });
             });
 
             // Confirmar cambios antes de salir
@@ -275,10 +307,15 @@
 
             $('a[asp-action="Index"]').click(function(e) {
                 if (formModified) {
-                    if (!confirm('¿Tiene cambios sin guardar. ¿Está seguro que desea salir?')) {
-                        e.preventDefault();
-                        return false;
-                    }
+                    e.preventDefault();
+                    showConfirmModal(
+                        '¿Tiene cambios sin guardar. ¿Está seguro que desea salir?',
+                        function() {
+                            window.location.href = $(this).attr('href');
+                        }.bind(this),
+                        '',
+                        'Sí, Salir'
+                    );
                 }
             });
         });
