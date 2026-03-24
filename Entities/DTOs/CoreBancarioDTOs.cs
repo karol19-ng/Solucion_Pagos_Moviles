@@ -33,7 +33,7 @@ namespace Entities.DTOs
         public string Identificacion { get; set; } = null!;
         public string NombreCompleto { get; set; } = null!;
         public string Telefono { get; set; } = null!;
-        public DateTime Fecha_Nacimiento { get; set; }
+        public DateTime FechaNacimiento { get; set; }
         public int? EstadoId { get; set; }
         public string EstadoDescripcion { get; set; } = null!;
     }

@@ -37,30 +37,50 @@ namespace Solucion_Pagos_Moviles.Controllers
         {
             try
             {
-                var usuario = User.Identity?.Name ?? "Sistema";
+                _logger.LogInformation("=== LISTANDO CLIENTES ===");
 
-                var clientes = await _context.ClientesBanco
-                    .Select(c => new ClienteDTO
+                // Probar una consulta simple primero
+                var count = await _context.ClientesBanco.CountAsync();
+                _logger.LogInformation("Total clientes en BD: {Count}", count);
+
+                // Obtener un cliente de prueba sin usar el DTO
+                var primerCliente = await _context.ClientesBanco.FirstOrDefaultAsync();
+                if (primerCliente != null)
+                {
+                    _logger.LogInformation("Primer cliente - ID: {Id}, Nombre: {Nombre}",
+                        primerCliente.ID_Cliente, primerCliente.Nombre_Completo);
+
+                    // Intentar acceder a Telefono y FechaNacimiento
+                    try
+                    {
+                        var telefono = primerCliente.Telefono;
+                        var fechaNac = primerCliente.Fecha_Nacimiento;
+                        _logger.LogInformation("Telefono: {Telefono}, FechaNac: {FechaNac}", telefono, fechaNac);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al acceder a Telefono/FechaNacimiento");
+                    }
+                }
+
+                // Intentar la consulta completa
+                var clientes = new List<ClienteDTO>();
+
+                foreach (var c in await _context.ClientesBanco.ToListAsync())
+                {
+                    clientes.Add(new ClienteDTO
                     {
                         Id = c.ID_Cliente,
                         TipoIdentificacion = c.Tipo_Identificacion,
                         Identificacion = c.Identificacion,
                         NombreCompleto = c.Nombre_Completo,
                         Telefono = c.Telefono,
-                        Fecha_Nacimiento = c.Fecha_Nacimiento,
+                        FechaNacimiento = c.Fecha_Nacimiento,
                         EstadoId = c.ID_Estado
-                    })
-                    .ToListAsync();
+                    });
+                }
 
-                
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
-                {
-                    Usuario = usuario,
-                    Accion = "CONSULTA",
-                    Descripcion = $"El usuario consulta todos los clientes del core. Total: {clientes.Count} registros",
-                    Servicio = "/core/client",
-                    Resultado = "OK"
-                });
+                _logger.LogInformation("Clientes procesados: {Count}", clientes.Count);
 
                 return Ok(new ClienteResponse
                 {
@@ -71,24 +91,20 @@ namespace Solucion_Pagos_Moviles.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al listar clientes");
+                _logger.LogError(ex, "❌ ERROR AL LISTAR CLIENTES");
+                _logger.LogError("Message: {Message}", ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
 
-                
-                var errorMessage = ex.Message.Length > 200 ? ex.Message.Substring(0, 200) + "..." : ex.Message;
-
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                if (ex.InnerException != null)
                 {
-                    Usuario = User.Identity?.Name ?? "Sistema",
-                    Accion = "ERROR",
-                    Descripcion = $"Error al listar clientes: {errorMessage}",
-                    Servicio = "/core/client",
-                    Resultado = "ERROR"
-                });
+                    _logger.LogError("InnerException: {InnerMessage}", ex.InnerException.Message);
+                }
 
+                // Devolver el error detallado temporalmente para debug
                 return StatusCode(500, new ClienteResponse
                 {
                     Codigo = -1,
-                    Descripcion = "Error interno del servidor"
+                    Descripcion = $"Error: {ex.Message}"
                 });
             }
         }
@@ -109,8 +125,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                         TipoIdentificacion = c.Tipo_Identificacion,
                         Identificacion = c.Identificacion,
                         NombreCompleto = c.Nombre_Completo,
-                        Telefono = c.Telefono,
-                        Fecha_Nacimiento = c.Fecha_Nacimiento,
+                        Telefono = c.Telefono,                    
+                        FechaNacimiento = c.Fecha_Nacimiento,     
                         EstadoId = c.ID_Estado
                     })
                     .FirstOrDefaultAsync();
@@ -124,7 +140,6 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // Registrar en bitácora
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
                     Usuario = usuario,
@@ -144,7 +159,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cliente {id}");
-
                 return StatusCode(500, new ClienteResponse
                 {
                     Codigo = -1,
@@ -456,7 +470,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     Identificacion = clienteExistente.Identificacion,
                     NombreCompleto = clienteExistente.Nombre_Completo,
                     Telefono = request.Telefono,
-                    Fecha_Nacimiento = request.Fecha_Nacimiento,
+                    FechaNacimiento = request.Fecha_Nacimiento,
                     EstadoId = clienteExistente.ID_Estado
                 };
 
