@@ -63,7 +63,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     }
                 }
 
-                // Intentar la consulta completa
+                
                 var clientes = new List<ClienteDTO>();
 
                 foreach (var c in await _context.ClientesBanco.ToListAsync())
