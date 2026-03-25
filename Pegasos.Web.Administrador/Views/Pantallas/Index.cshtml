@@ -214,6 +214,8 @@
             padding: 5px 10px;
             border-radius: 4px;
             border: 1px solid #28a745;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
         .badge-danger {
@@ -222,6 +224,8 @@
             padding: 5px 10px;
             border-radius: 4px;
             border: 1px solid #dc3545;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
         .btn-action {
@@ -410,29 +414,28 @@
                         <th>Ruta</th>
                         <th>Estado</th>
                         <th>Acciones</th>
-                    </tr>
-                </thead>
+                    </thead>
                 <tbody id="pantallasTableBody">
                     @if (Model != null && Model.Any())
                     {
                         @foreach (var pantalla in Model)
                         {
-                            <tr>
-                                <td>#@pantalla.Id</td>
-                                <td>@pantalla.Nombre</td>
-                                <td>@pantalla.Descripcion</td>
-                                <td>@pantalla.Ruta</td>
-                                <td>
+                             <tr>
+                                <td style="vertical-align: middle;">#@pantalla.Id</td>
+                                <td style="vertical-align: middle;"><strong>@pantalla.Nombre</strong></td>
+                                <td style="vertical-align: middle;">@pantalla.Descripcion</td>
+                                <td style="vertical-align: middle;"><code>@pantalla.Ruta</code></td>
+                                <td style="vertical-align: middle;">
                                     @if (pantalla.Estado == 1)
                                     {
-                                        <span class="badge-success">ACTIVO</span>
+                                        <span class="badge-success"><i class="fas fa-check-circle me-1"></i>ACTIVO</span>
                                     }
                                     else
                                     {
-                                        <span class="badge-danger">INACTIVO</span>
+                                        <span class="badge-danger"><i class="fas fa-times-circle me-1"></i>INACTIVO</span>
                                     }
                                 </td>
-                                <td>
+                                <td style="vertical-align: middle;">
                                     <a href="/Pantallas/Edit/@pantalla.Id"
                                        class="btn-action btn-action-warning"
                                        title="Editar pantalla">
@@ -530,6 +533,54 @@
         // Variable para almacenar el ID de la pantalla a eliminar
         let pantallaIdAEliminar = null;
 
+        // Función para obtener mensaje amigable según el código de estado HTTP
+        function obtenerMensajeError(statusCode, mensajeServidor) {
+            switch (statusCode) {
+                case 400:
+                    return {
+                        titulo: 'Datos Inválidos',
+                        mensaje: mensajeServidor || 'No se puede eliminar la pantalla. Verifique que los datos sean correctos.',
+                        icono: 'warning'
+                    };
+                case 401:
+                    return {
+                        titulo: 'Sesión Expirada',
+                        mensaje: 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.',
+                        icono: 'error'
+                    };
+                case 403:
+                    return {
+                        titulo: 'Acceso Denegado',
+                        mensaje: 'No tiene permisos para eliminar esta pantalla.',
+                        icono: 'error'
+                    };
+                case 404:
+                    return {
+                        titulo: 'No Encontrado',
+                        mensaje: 'La pantalla que intenta eliminar no existe o ya fue eliminada.',
+                        icono: 'warning'
+                    };
+                case 409:
+                    return {
+                        titulo: 'Conflicto',
+                        mensaje: mensajeServidor || 'No se puede eliminar la pantalla porque está asignada a uno o más roles.',
+                        icono: 'warning'
+                    };
+                case 500:
+                    return {
+                        titulo: 'Error del Servidor',
+                        mensaje: 'Ocurrió un error en el servidor. Por favor, intente más tarde.',
+                        icono: 'error'
+                    };
+                default:
+                    return {
+                        titulo: 'Error',
+                        mensaje: mensajeServidor || 'Ocurrió un error al intentar eliminar la pantalla.',
+                        icono: 'error'
+                    };
+            }
+        }
+
         // Función para abrir el modal de confirmación
         function abrirModalEliminar(id, nombre) {
             pantallaIdAEliminar = id;
@@ -560,13 +611,20 @@
                     body: JSON.stringify({ id: pantallaIdAEliminar })
                 });
 
-                const data = await response.json();
+                let mensajeServidor = '';
+                let data = null;
+                try {
+                    data = await response.json();
+                    mensajeServidor = data.message || data.descripcion || '';
+                } catch(e) {
+                    mensajeServidor = await response.text();
+                }
 
-                if (data.success) {
+                if (response.ok) {
                     // Cerrar modal
                     $('#modalEliminarPantalla').modal('hide');
 
-                    // Limpiar residuos de Bootstrap (overflow y backdrop) antes de SweetAlert2
+                    // Limpiar residuos de Bootstrap
                     $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
                     $('.modal-backdrop').remove();
 
@@ -574,48 +632,56 @@
                     Swal.fire({
                         icon: 'success',
                         title: '¡ELIMINADA!',
-                        text: data.message,
+                        text: data?.message || 'La pantalla ha sido eliminada exitosamente.',
                         background: '#1f060c',
                         color: '#fff',
                         confirmButtonColor: '#c5a367',
                         timer: 2000,
                         showConfirmButton: true
                     }).then(() => {
-                        // Recargar la página
                         location.reload();
                     });
                 } else {
-                    // Limpiar residuos de Bootstrap antes de SweetAlert2
+                    // Error: obtener mensaje según código HTTP
+                    const errorInfo = obtenerMensajeError(response.status, mensajeServidor);
+
+                    // Cerrar modal
+                    $('#modalEliminarPantalla').modal('hide');
+
+                    // Limpiar residuos de Bootstrap
                     $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
                     $('.modal-backdrop').remove();
 
-                    // Mostrar error
+                    // Mostrar mensaje de error con SweetAlert2
                     Swal.fire({
-                        icon: 'error',
-                        title: 'ERROR',
-                        text: data.message,
+                        icon: errorInfo.icono,
+                        title: errorInfo.titulo,
+                        text: errorInfo.mensaje,
                         background: '#1f060c',
                         color: '#fff',
-                        confirmButtonColor: '#c5a367'
+                        confirmButtonColor: '#c5a367',
+                        confirmButtonText: 'Entendido'
                     });
+
+                    console.error(`Error ${response.status}: ${mensajeServidor}`);
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error en la solicitud:', error);
 
-                // Limpiar residuos de Bootstrap antes de SweetAlert2
+                $('#modalEliminarPantalla').modal('hide');
                 $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
                 $('.modal-backdrop').remove();
 
                 Swal.fire({
                     icon: 'error',
-                    title: 'ERROR',
-                    text: 'Ocurrió un error al eliminar la pantalla',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo conectar con el servidor. Verifique su conexión a internet.',
                     background: '#1f060c',
                     color: '#fff',
-                    confirmButtonColor: '#c5a367'
+                    confirmButtonColor: '#c5a367',
+                    confirmButtonText: 'Entendido'
                 });
             } finally {
-                // Restaurar botón
                 btnConfirmar.disabled = false;
                 btnConfirmar.innerHTML = textoOriginal;
                 pantallaIdAEliminar = null;
@@ -625,7 +691,6 @@
         // Evento para el botón de confirmar eliminación
         document.getElementById('btnConfirmarEliminar').addEventListener('click', eliminarPantalla);
 
-        // Función para mostrar notificaciones (para la búsqueda)
         function showNotification(type, message) {
             let notification = $('#dynamicNotification');
             if (notification.length === 0) {
@@ -675,12 +740,12 @@
                             var nombreSeguro = (pantalla.nombre || '').replace(/'/g, "\\'");
 
                             var row = '<tr>' +
-                                '<td>#' + pantalla.id + '</td>' +
-                                '<td>' + (pantalla.nombre || '') + '</td>' +
-                                '<td>' + (pantalla.descripcion || '') + '</td>' +
-                                '<td>' + (pantalla.ruta || '') + '</td>' +
-                                '<td><span class="' + estadoBadge + '">' + estadoTexto + '</span></td>' +
-                                '<td>' +
+                                '<td style="vertical-align: middle;">#' + pantalla.id + '</td>' +
+                                '<td style="vertical-align: middle;"><strong>' + (pantalla.nombre || '') + '</strong></td>' +
+                                '<td style="vertical-align: middle;">' + (pantalla.descripcion || '') + '</td>' +
+                                '<td style="vertical-align: middle;"><code>' + (pantalla.ruta || '') + '</code></td>' +
+                                '<td style="vertical-align: middle;"><span class="' + estadoBadge + '"><i class="fas ' + (pantalla.estado == 1 ? 'fa-check-circle' : 'fa-times-circle') + ' me-1"></i>' + estadoTexto + '</span></td>' +
+                                '<td style="vertical-align: middle;">' +
                                 '<a href="/Pantallas/Edit/' + pantalla.id + '" class="btn-action btn-action-warning"><i class="fas fa-edit"></i></a> ' +
                                 '<button type="button" class="btn-action btn-action-danger delete-btn" onclick="abrirModalEliminar(' + pantalla.id + ', \'' + nombreSeguro + '\')"><i class="fas fa-trash-alt"></i></button>' +
                                 '</td>' +
