@@ -42,7 +42,7 @@ namespace Pegasos.Web.Administrador.Services
                     throw new UnauthorizedAccessException("No hay token de autenticación disponible en los claims");
                 }
 
-                _logger.LogInformation("Token obtenido exitosamente. Longitud: {Length}", token.Length);
+                _logger.LogDebug("Token obtenido exitosamente. Longitud: {Length}", token.Length);
                 return token;
             }
             catch (Exception ex)
@@ -86,6 +86,20 @@ namespace Pegasos.Web.Administrador.Services
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    // Mapear los datos de la respuesta al modelo EntidadViewModel
+                    if (result?.Entidades != null)
+                    {
+                        foreach (var entidad in result.Entidades)
+                        {
+                            // Asegurar que EstadoDescripcion esté correctamente asignado
+                            if (entidad.EstadoId == 1)
+                                entidad.EstadoDescripcion = "Activo";
+                            else if (entidad.EstadoId == 0)
+                                entidad.EstadoDescripcion = "Inactivo";
+                        }
+                    }
+
                     return result?.Entidades ?? new List<EntidadViewModel>();
                 }
 
@@ -123,13 +137,34 @@ namespace Pegasos.Web.Administrador.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
+                    _logger.LogDebug("Respuesta de Gateway para ID {Id}: {Json}", id, json);
+
                     var result = JsonSerializer.Deserialize<EntidadResponse>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    // Asegurar que EstadoDescripción esté correctamente asignado
+                    if (result?.Entidad != null)
+                    {
+                        if (result.Entidad.EstadoId == 1)
+                            result.Entidad.EstadoDescripcion = "Activo";
+                        else if (result.Entidad.EstadoId == 0)
+                            result.Entidad.EstadoDescripcion = "Inactivo";
+                    }
+
                     return result?.Entidad;
                 }
 
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("Entidad con ID {Id} no encontrada", id);
+                    return null;
+                }
+
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Error al obtener entidad {Id}: {StatusCode} - {Error}",
+                    id, response.StatusCode, errorContent);
                 return null;
             }
             catch (Exception ex)
@@ -146,11 +181,20 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
+                // Crear objeto con la estructura esperada por la API
+                var requestData = new
+                {
+                    identificador = model.Identificador,
+                    nombre = model.Nombre
+                };
+
+                var json = JsonSerializer.Serialize(requestData);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 _logger.LogInformation("=== INICIANDO CREACIÓN DE ENTIDAD ===");
                 _logger.LogInformation("JSON enviado: {Json}", json);
+                _logger.LogInformation("Identificador: {Identificador}, Nombre: {Nombre}",
+                    model.Identificador, model.Nombre);
 
                 var response = await _httpClient.PostAsync("gateway/api/entidad", content);
 
@@ -167,23 +211,31 @@ namespace Pegasos.Web.Administrador.Services
 
                     if (result?.Codigo == 0)
                     {
-                        _logger.LogInformation("Entidad creada exitosamente. ID: {EntidadId}", result.Entidad?.Id);
+                        _logger.LogInformation("Entidad creada exitosamente. ID: {EntidadId}, Identificador: {Identificador}",
+                            result.Entidad?.Id, model.Identificador);
                         return (true, "Entidad creada exitosamente", result.Entidad?.Id);
                     }
                     else
                     {
+                        _logger.LogWarning("Error en creación: {Descripcion}", result?.Descripcion);
                         return (false, result?.Descripcion ?? "Error al crear la entidad", null);
                     }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {
-                    return (false, "Ya existe una entidad con ese identificador", null);
+                    _logger.LogWarning("Conflicto: Ya existe una entidad con identificador {Identificador}", model.Identificador);
+                    return (false, $"Ya existe una entidad con identificador '{model.Identificador}'", null);
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    _logger.LogWarning("Error de validación: {Error}", responseContent);
+                    return (false, $"Error de validación: {responseContent}", null);
                 }
                 else
                 {
                     _logger.LogWarning("Error en creación. StatusCode: {StatusCode}", response.StatusCode);
                     _logger.LogWarning("Detalle: {Error}", responseContent);
-                    return (false, $"Error del servidor: {response.StatusCode}", null);
+                    return (false, $"Error del servidor: {response.StatusCode} - {responseContent}", null);
                 }
             }
             catch (Exception ex)
@@ -200,30 +252,67 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
+                // Crear objeto con la estructura esperada por la API
+                var requestData = new
+                {
+                    identificador = model.Identificador,
+                    nombre = model.Nombre,
+                    estadoId = model.EstadoId
+                };
+
+                var json = JsonSerializer.Serialize(requestData);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var url = $"gateway/api/entidad/{model.Id}";
                 _logger.LogInformation("Llamando a Gateway: {Url}", url);
+                _logger.LogInformation("JSON enviado: {Json}", json);
 
                 var response = await _httpClient.PutAsync(url, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("Código de respuesta: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Respuesta del servidor: {ResponseContent}", responseContent);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<EntidadResponse>(responseJson, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<EntidadResponse>(responseContent, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
-                    return result?.Codigo == 0;
-                }
 
-                return false;
+                    var exito = result?.Codigo == 0;
+                    if (exito)
+                    {
+                        _logger.LogInformation("Entidad {Id} actualizada exitosamente", model.Id);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Error al actualizar entidad {Id}: {Descripcion}", model.Id, result?.Descripcion);
+                    }
+
+                    return exito;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning("Conflicto al actualizar entidad {Id}: {Error}", model.Id, responseContent);
+                    return false;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("Entidad {Id} no encontrada para actualizar", model.Id);
+                    return false;
+                }
+                else
+                {
+                    _logger.LogError("Error al actualizar entidad {Id}: {StatusCode} - {Error}",
+                        model.Id, response.StatusCode, responseContent);
+                    return false;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al actualizar entidad {model.Id}");
-                throw;
+                return false;
             }
         }
 
@@ -252,13 +341,24 @@ namespace Pegasos.Web.Administrador.Services
                         PropertyNameCaseInsensitive = true
                     });
 
-                    _logger.LogInformation("Eliminación exitosa. Código: {Codigo}", result?.Codigo);
+                    _logger.LogInformation("Eliminación exitosa. Código: {Codigo}, Mensaje: {Descripcion}",
+                        result?.Codigo, result?.Descripcion);
                     return result?.Codigo == 0;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    _logger.LogWarning("No se puede eliminar la entidad {Id}: {Error}", id, responseContent);
+                    return false;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("Entidad {Id} no encontrada para eliminar", id);
+                    return false;
                 }
                 else
                 {
-                    _logger.LogWarning("Error en eliminación. StatusCode: {StatusCode}", response.StatusCode);
-                    _logger.LogWarning("Detalle: {Error}", responseContent);
+                    _logger.LogWarning("Error en eliminación. StatusCode: {StatusCode}, Detalle: {Error}",
+                        response.StatusCode, responseContent);
                     return false;
                 }
             }
@@ -269,7 +369,7 @@ namespace Pegasos.Web.Administrador.Services
             }
         }
 
-        // Buscar entidades por identificador
+        // Buscar entidades por identificador o nombre
         public async Task<List<EntidadViewModel>?> BuscarAsync(string termino)
         {
             try
@@ -278,19 +378,41 @@ namespace Pegasos.Web.Administrador.Services
 
                 if (!string.IsNullOrWhiteSpace(termino))
                 {
-                    termino = termino.ToLower();
+                    termino = termino.ToLower().Trim();
                     todos = todos.Where(e =>
                         (e.Identificador?.ToLower()?.Contains(termino) ?? false) ||
                         (e.Nombre?.ToLower()?.Contains(termino) ?? false)
                     ).ToList();
+
+                    _logger.LogInformation("Búsqueda de entidades: término '{Termino}', resultados: {Count}",
+                        termino, todos.Count);
                 }
 
                 return todos;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al buscar entidades");
+                _logger.LogError(ex, "Error al buscar entidades con término '{Termino}'", termino);
                 return new List<EntidadViewModel>();
+            }
+        }
+
+        // Método adicional para verificar disponibilidad de identificador
+        public async Task<bool> VerificarIdentificadorDisponibleAsync(string identificador, int? idExcluir = null)
+        {
+            try
+            {
+                var entidades = await ListarTodosAsync();
+                if (entidades == null) return true;
+
+                return !entidades.Any(e =>
+                    e.Identificador?.Equals(identificador, StringComparison.OrdinalIgnoreCase) == true &&
+                    (idExcluir == null || e.Id != idExcluir));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar disponibilidad de identificador {Identificador}", identificador);
+                return false;
             }
         }
     }
