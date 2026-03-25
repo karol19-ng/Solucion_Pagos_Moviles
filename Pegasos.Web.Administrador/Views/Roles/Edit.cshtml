@@ -312,14 +312,14 @@
     </style>
 }
 
-<!-- DEBUG: Mostrar valores del modelo -->
+@* <!-- DEBUG: Mostrar valores del modelo -->
 <div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0;">
-    <h5 style="color: #0f0; margin-top: 0;">DEBUG - Valores del Modelo:</h5>
+    <h5 style="color: #0f0; margin-top: 0;">📊 DEBUG - Valores del Modelo:</h5>
     <p><strong>ID:</strong> @Model.Id</p>
     <p><strong>Nombre:</strong> "@Model.Nombre"</p>
     <p><strong>Descripción:</strong> "@Model.Descripcion"</p>
-    <p><strong>PantallasSeleccionadas:</strong> @(Model.PantallasSeleccionadas != null ? string.Join(", ", Model.PantallasSeleccionadas) : "vacío")</p>
-</div>
+    <p><strong>PantallasSeleccionadas:</strong> @(Model.PantallasSeleccionadas != null && Model.PantallasSeleccionadas.Any() ? string.Join(", ", Model.PantallasSeleccionadas) : "vacío")</p>
+</div> *@
 
 <!-- Mensajes de notificación -->
 <div id="successNotification" class="notification notification-success" style="display: none;">
@@ -350,7 +350,6 @@
                     <strong>Modo Edición:</strong> Está modificando los datos del rol. Los cambios se guardarán permanentemente.
                 </div>
 
-                <!-- 🔴 AGREGAR EL FORM CON ID CORRECTO -->
                 <form asp-action="Edit" method="post" id="editForm">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
@@ -363,6 +362,7 @@
                         </label>
                         <input asp-for="Nombre" class="form-control form-control-custom"
                                id="Nombre" name="Nombre"
+                               value="@Model.Nombre"
                                placeholder="Ej: Administrador, Usuario, Supervisor" />
                         <span asp-validation-for="Nombre" class="text-danger" id="nombreError"></span>
                     </div>
@@ -373,6 +373,7 @@
                         </label>
                         <input asp-for="Descripcion" class="form-control form-control-custom"
                                id="Descripcion" name="Descripcion"
+                               value="@Model.Descripcion"
                                placeholder="Ej: Rol con permisos de administración" />
                         <span asp-validation-for="Descripcion" class="text-danger" id="descripcionError"></span>
                     </div>
@@ -427,11 +428,11 @@
                         <a href="/Roles/Index" class="btn-secondary-custom">
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
-                        <button type="submit" class="btn-warning-custom">
+                        <button type="submit" class="btn-warning-custom" id="btnGuardar">
                             <i class="fas fa-save"></i> Actualizar Rol
                         </button>
                     </div>
-                </form> <!-- 🔴 CERRAR EL FORM -->
+                </form>
             </div>
         </div>
     </div>
@@ -439,6 +440,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function showNotification(type, message) {
             if (type === 'success') {
@@ -461,15 +463,22 @@
         @if (TempData["Success"] != null)
         {
             <text>
-                    showNotification('success', '@TempData["Success"]');
+                        showNotification('success', '@TempData["Success"]');
             </text>
         }
         @if (TempData["Error"] != null)
         {
             <text>
-                    showNotification('error', '@TempData["Error"]');
+                        showNotification('error', '@TempData["Error"]');
             </text>
         }
+
+            // DEBUG: Mostrar valores en consola
+            console.log("=== VALORES DEL MODELO ===");
+            console.log("ID: @Model.Id");
+            console.log("Nombre: @Model.Nombre");
+            console.log("Descripcion: @Model.Descripcion");
+            console.log("PantallasSeleccionadas: @(Model.PantallasSeleccionadas != null ? string.Join(", ", Model.PantallasSeleccionadas) : "ninguna")");
 
             // Deshabilitar la validación automática de HTML5
             $('form').attr('novalidate', 'novalidate');
@@ -497,7 +506,7 @@
                 $('#selectAll').prop('checked', total === seleccionadas);
             });
 
-            // Validación en tiempo real
+            // Validación en tiempo real para Nombre
             $('#Nombre').on('input', function() {
                 var valor = $(this).val();
                 if (!valor || valor.trim() === '') {
@@ -518,7 +527,7 @@
                 formModified = true;
             });
 
-            $('a[asp-action="Index"]').click(function(e) {
+            $('a[href="/Roles/Index"]').click(function(e) {
                 if (formModified) {
                     if (!confirm('¿Tiene cambios sin guardar. ¿Está seguro que desea salir?')) {
                         e.preventDefault();

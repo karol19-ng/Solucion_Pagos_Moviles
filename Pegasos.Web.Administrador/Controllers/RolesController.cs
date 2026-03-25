@@ -187,11 +187,13 @@ namespace Pegasos.Web.Administrador.Controllers
             try
             {
                 _logger.LogInformation("=== ACTUALIZANDO ROL {Id} ===", id);
-                _logger.LogInformation("Nombre: {Nombre}, Descripción: {Descripcion}", model.Nombre, model.Descripcion);
+                _logger.LogInformation("Nombre: {Nombre}, Descripción del Rol: {Descripcion}",
+                    model.Nombre, model.Descripcion);
 
                 if (model.PantallasSeleccionadas != null)
                 {
-                    _logger.LogInformation("Pantallas seleccionadas: {Pantallas}", string.Join(",", model.PantallasSeleccionadas));
+                    _logger.LogInformation("Pantallas seleccionadas: {Pantallas}",
+                        string.Join(",", model.PantallasSeleccionadas));
                 }
 
                 if (string.IsNullOrWhiteSpace(model.Nombre))

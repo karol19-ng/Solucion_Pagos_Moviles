@@ -12,8 +12,19 @@ namespace AbstractDataAccess.Models
     {
         [Key]
         public int ID_Rol_Por_Pantalla { get; set; }
-        public int ID_Pantalla { get; set; }
+
+        [ForeignKey("Rol")]
+        [Column("ID_Rol")]
         public int ID_Rol { get; set; }
-        public string Descripcion { get; set; }
+
+        [ForeignKey("Pantalla")]
+        [Column("ID_Pantalla")]
+        public int ID_Pantalla { get; set; }
+
+        //public string? Descripcion { get; set; } 
+
+        // Propiedades de navegación
+        public virtual Rol? Rol { get; set; }
+        public virtual TablaPantalla? Pantalla { get; set; }
     }
 }

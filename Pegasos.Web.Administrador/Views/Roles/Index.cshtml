@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<Pegasos.Web.Administrador.Models.RolViewModel>
+
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Administración de Roles";
@@ -81,6 +82,12 @@
             border-left: 4px solid #fff;
         }
 
+        .notification-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: #1f060c;
+            border-left: 4px solid #fff;
+        }
+
         .close-btn {
             float: right;
             cursor: pointer;
@@ -120,6 +127,10 @@
 
         .alert-danger-custom {
             border-left: 4px solid #dc3545;
+        }
+
+        .alert-warning-custom {
+            border-left: 4px solid #ffc107;
         }
 
         .search-container {
@@ -206,6 +217,7 @@
             .table-custom tbody td {
                 padding: 12px 15px;
                 color: rgba(255, 255, 255, 0.9);
+                vertical-align: middle;
             }
 
         .badge-info {
@@ -217,6 +229,22 @@
             font-size: 0.75rem;
             display: inline-block;
             margin: 2px;
+        }
+
+        .descripcion-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .descripcion-cell:hover {
+            overflow: visible;
+            white-space: normal;
+            word-break: break-word;
+            background: rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 10;
         }
 
         .btn-action {
@@ -376,13 +404,21 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert-custom alert-warning-custom alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            @TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <div class="search-container">
         <div class="row">
             <div class="col-md-8">
                 <div class="input-group">
                     <input type="text" id="searchTerm" class="form-control search-box"
-                           placeholder="Buscar por nombre...">
+                           placeholder="Buscar por nombre o descripción...">
                     <button class="btn-search" type="button" id="searchButton">
                         <i class="fas fa-search me-2"></i>Buscar
                     </button>
@@ -401,18 +437,22 @@
                     <tr>
                         <th>ID</th>
                         <th>Nombre</th>
+                        <th>Descripción</th>
                         <th>Pantallas Asignadas</th>
                         <th>Acciones</th>
-                </thead>
+                    </thead>
                 <tbody id="rolesTableBody">
                     @if (Model != null && Model.Any())
                     {
                         @foreach (var rol in Model)
                         {
                             <tr>
-                                <td>#@rol.Id</td>
-                                <td><strong>@rol.Nombre</strong></td>
-                                <td>
+                                <td style="vertical-align: middle;">#@rol.Id</td>
+                                <td style="vertical-align: middle;"><strong>@rol.Nombre</strong></td>
+                                <td class="descripcion-cell" style="vertical-align: middle;" title="@rol.Descripcion">
+                                    @(string.IsNullOrEmpty(rol.Descripcion) ? "Sin descripción" : rol.Descripcion)
+                                </td>
+                                <td style="vertical-align: middle;">
                                     @if (rol.Pantallas != null && rol.Pantallas.Any())
                                     {
                                         @foreach (var pantalla in rol.Pantallas.Take(3))
@@ -429,7 +469,7 @@
                                         <span class="text-muted">Sin pantallas</span>
                                     }
                                 </td>
-                                <td>
+                                <td style="vertical-align: middle;">
                                     <a href="/Roles/Edit/@rol.Id"
                                        class="btn-action btn-action-warning"
                                        title="Editar rol">
@@ -448,7 +488,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="4" class="no-data">
+                            <td colspan="5" class="no-data">
                                 <i class="fas fa-user-tag"></i>
                                 No hay roles registrados en el sistema
                             </td>
@@ -530,6 +570,54 @@
         // Variable para almacenar el ID del rol a eliminar
         let rolIdAEliminar = null;
 
+        // Función para obtener mensaje amigable según el código de estado HTTP
+        function obtenerMensajeError(statusCode, mensajeServidor) {
+            switch (statusCode) {
+                case 400:
+                    return {
+                        titulo: 'Datos Inválidos',
+                        mensaje: mensajeServidor || 'No se puede eliminar el rol. Verifique que los datos sean correctos.',
+                        icono: 'warning'
+                    };
+                case 401:
+                    return {
+                        titulo: 'Sesión Expirada',
+                        mensaje: 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.',
+                        icono: 'error'
+                    };
+                case 403:
+                    return {
+                        titulo: 'Acceso Denegado',
+                        mensaje: 'No tiene permisos para eliminar este rol.',
+                        icono: 'error'
+                    };
+                case 404:
+                    return {
+                        titulo: 'No Encontrado',
+                        mensaje: 'El rol que intenta eliminar no existe o ya fue eliminado.',
+                        icono: 'warning'
+                    };
+                case 409:
+                    return {
+                        titulo: 'Conflicto',
+                        mensaje: mensajeServidor || 'No se puede eliminar el rol porque tiene usuarios asignados. Primero debe reasignar los usuarios a otro rol.',
+                        icono: 'warning'
+                    };
+                case 500:
+                    return {
+                        titulo: 'Error del Servidor',
+                        mensaje: 'Ocurrió un error en el servidor. Por favor, intente más tarde.',
+                        icono: 'error'
+                    };
+                default:
+                    return {
+                        titulo: 'Error',
+                        mensaje: mensajeServidor || 'Ocurrió un error al intentar eliminar el rol.',
+                        icono: 'error'
+                    };
+            }
+        }
+
         // Función para abrir el modal de confirmación
         function abrirModalEliminar(id, nombre) {
             rolIdAEliminar = id;
@@ -560,13 +648,21 @@
                     body: JSON.stringify({ id: rolIdAEliminar })
                 });
 
-                const data = await response.json();
+                // Intentar obtener el mensaje de error del servidor
+                let mensajeServidor = '';
+                let data = null;
+                try {
+                    data = await response.json();
+                    mensajeServidor = data.message || data.descripcion || '';
+                } catch(e) {
+                    mensajeServidor = await response.text();
+                }
 
-                if (data.success) {
+                if (response.ok) {
                     // Cerrar modal
                     $('#modalEliminarRol').modal('hide');
 
-                    // Limpiar residuos de Bootstrap (overflow y backdrop) antes de SweetAlert2
+                    // Limpiar residuos de Bootstrap
                     $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
                     $('.modal-backdrop').remove();
 
@@ -574,48 +670,56 @@
                     Swal.fire({
                         icon: 'success',
                         title: '¡ELIMINADO!',
-                        text: data.message,
+                        text: data?.message || 'El rol ha sido eliminado exitosamente.',
                         background: '#1f060c',
                         color: '#fff',
                         confirmButtonColor: '#c5a367',
                         timer: 2000,
                         showConfirmButton: true
                     }).then(() => {
-                        // Recargar la página
                         location.reload();
                     });
                 } else {
-                    // Limpiar residuos de Bootstrap antes de SweetAlert2
+                    // Error: obtener mensaje según código HTTP
+                    const errorInfo = obtenerMensajeError(response.status, mensajeServidor);
+                    
+                    // Cerrar modal
+                    $('#modalEliminarRol').modal('hide');
+
+                    // Limpiar residuos de Bootstrap
                     $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
                     $('.modal-backdrop').remove();
 
-                    // Mostrar error
+                    // Mostrar mensaje de error con SweetAlert2
                     Swal.fire({
-                        icon: 'error',
-                        title: 'ERROR',
-                        text: data.message,
+                        icon: errorInfo.icono,
+                        title: errorInfo.titulo,
+                        text: errorInfo.mensaje,
                         background: '#1f060c',
                         color: '#fff',
-                        confirmButtonColor: '#c5a367'
+                        confirmButtonColor: '#c5a367',
+                        confirmButtonText: 'Entendido'
                     });
+
+                    console.error(`Error ${response.status}: ${mensajeServidor}`);
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error en la solicitud:', error);
 
-                // Limpiar residuos de Bootstrap antes de SweetAlert2
+                $('#modalEliminarRol').modal('hide');
                 $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
                 $('.modal-backdrop').remove();
 
                 Swal.fire({
                     icon: 'error',
-                    title: 'ERROR',
-                    text: 'Ocurrió un error al eliminar el rol',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo conectar con el servidor. Verifique su conexión a internet.',
                     background: '#1f060c',
                     color: '#fff',
-                    confirmButtonColor: '#c5a367'
+                    confirmButtonColor: '#c5a367',
+                    confirmButtonText: 'Entendido'
                 });
             } finally {
-                // Restaurar botón
                 btnConfirmar.disabled = false;
                 btnConfirmar.innerHTML = textoOriginal;
                 rolIdAEliminar = null;
@@ -625,7 +729,6 @@
         // Evento para el botón de confirmar eliminación
         document.getElementById('btnConfirmarEliminar').addEventListener('click', eliminarRol);
 
-        // Función para mostrar notificaciones (para la búsqueda)
         function showNotification(type, message) {
             let notification = $('#dynamicNotification');
             if (notification.length === 0) {
@@ -633,14 +736,16 @@
                 notification = $('#dynamicNotification');
             }
 
-            notification.removeClass('notification-success notification-error');
+            notification.removeClass('notification-success notification-error notification-warning');
             if (type === 'success') {
                 notification.addClass('notification-success');
+            } else if (type === 'warning') {
+                notification.addClass('notification-warning');
             } else {
                 notification.addClass('notification-error');
             }
 
-            notification.html('<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle') + ' me-2"></i>' + message + '<span class="close-btn" onclick="$(this).parent().fadeOut()">&times;</span>');
+            notification.html('<i class="fas ' + (type === 'success' ? 'fa-check-circle' : (type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle')) + ' me-2"></i>' + message + '<span class="close-btn" onclick="$(this).parent().fadeOut()">&times;</span>');
             notification.fadeIn(300);
 
             setTimeout(function() {
@@ -683,12 +788,14 @@
                             }
 
                             var nombreSeguro = (rol.nombre || '').replace(/'/g, "\\'");
+                            var descripcionMostrar = rol.descripcion || '<span class="text-muted">Sin descripción</span>';
 
                             var row = '<tr>' +
-                                '<td>#' + rol.id + '</td>' +
-                                '<td><strong>' + (rol.nombre || '') + '</strong></td>' +
-                                '<td>' + pantallasHtml + '</td>' +
-                                '<td>' +
+                                '<td style="vertical-align: middle;">#' + rol.id + '</td>' +
+                                '<td style="vertical-align: middle;"><strong>' + (rol.nombre || '') + '</strong></td>' +
+                                '<td class="descripcion-cell" style="vertical-align: middle;" title="' + (rol.descripcion || '') + '">' + descripcionMostrar + '</td>' +
+                                '<td style="vertical-align: middle;">' + pantallasHtml + '</td>' +
+                                '<td style="vertical-align: middle;">' +
                                 '<a href="/Roles/Edit/' + rol.id + '" class="btn-action btn-action-warning"><i class="fas fa-edit"></i></a> ' +
                                 '<button type="button" class="btn-action btn-action-danger delete-btn" onclick="abrirModalEliminar(' + rol.id + ', \'' + nombreSeguro + '\')"><i class="fas fa-trash-alt"></i></button>' +
                                 '</td>' +
@@ -696,7 +803,7 @@
                             tbody.append(row);
                         });
                     } else {
-                        tbody.append('<tr><td colspan="4" class="no-data"><i class="fas fa-search"></i> No se encontraron roles con el término "' + termino + '"</td></tr>');
+                        tbody.append('<tr><td colspan="5" class="no-data"><i class="fas fa-search"></i> No se encontraron roles con el término "' + termino + '"</td></tr>');
                     }
                 }).always(function() {
                     $('#searchButton').html('<i class="fas fa-search me-2"></i>Buscar').prop('disabled', false);
