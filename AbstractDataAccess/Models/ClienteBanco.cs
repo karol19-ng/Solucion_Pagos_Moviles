@@ -11,9 +11,11 @@ namespace AbstractDataAccess.Models
     {
         [Key]
         public int ID_Cliente { get; set; }
-        public string Tipo_Identificacion { get; set; }
-        public string Identificacion { get; set; }
-        public string Nombre_Completo { get; set; }
+        public string Tipo_Identificacion { get; set; } = null!;
+        public string Identificacion { get; set; } = null!;
+        public string Nombre_Completo { get; set; } = null!;
+        public string Telefono { get; set; } = null!;
+        public DateTime Fecha_Nacimiento { get; set; }
         public int? ID_Estado { get; set; }
     }
 }

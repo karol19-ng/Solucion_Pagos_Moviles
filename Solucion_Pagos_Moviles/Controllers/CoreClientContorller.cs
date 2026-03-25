@@ -14,7 +14,7 @@ namespace Solucion_Pagos_Moviles.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Todas las operaciones requieren token
+    [Authorize] 
     public class CoreClientController : ControllerBase
     {
         private readonly CoreBancarioDbContext _context;
@@ -37,28 +37,50 @@ namespace Solucion_Pagos_Moviles.Controllers
         {
             try
             {
-                var usuario = User.Identity?.Name ?? "Sistema";
+                _logger.LogInformation("=== LISTANDO CLIENTES ===");
 
-                var clientes = await _context.ClientesBanco
-                    .Select(c => new ClienteDTO
+                // Probar una consulta simple primero
+                var count = await _context.ClientesBanco.CountAsync();
+                _logger.LogInformation("Total clientes en BD: {Count}", count);
+
+                // Obtener un cliente de prueba sin usar el DTO
+                var primerCliente = await _context.ClientesBanco.FirstOrDefaultAsync();
+                if (primerCliente != null)
+                {
+                    _logger.LogInformation("Primer cliente - ID: {Id}, Nombre: {Nombre}",
+                        primerCliente.ID_Cliente, primerCliente.Nombre_Completo);
+
+                    // Intentar acceder a Telefono y FechaNacimiento
+                    try
+                    {
+                        var telefono = primerCliente.Telefono;
+                        var fechaNac = primerCliente.Fecha_Nacimiento;
+                        _logger.LogInformation("Telefono: {Telefono}, FechaNac: {FechaNac}", telefono, fechaNac);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al acceder a Telefono/FechaNacimiento");
+                    }
+                }
+
+                
+                var clientes = new List<ClienteDTO>();
+
+                foreach (var c in await _context.ClientesBanco.ToListAsync())
+                {
+                    clientes.Add(new ClienteDTO
                     {
                         Id = c.ID_Cliente,
                         TipoIdentificacion = c.Tipo_Identificacion,
                         Identificacion = c.Identificacion,
                         NombreCompleto = c.Nombre_Completo,
+                        Telefono = c.Telefono,
+                        FechaNacimiento = c.Fecha_Nacimiento,
                         EstadoId = c.ID_Estado
-                    })
-                    .ToListAsync();
+                    });
+                }
 
-                // 🔴 MODIFICADO: No guardar la lista completa en bitácora
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
-                {
-                    Usuario = usuario,
-                    Accion = "CONSULTA",
-                    Descripcion = $"El usuario consulta todos los clientes del core. Total: {clientes.Count} registros",
-                    Servicio = "/core/client",
-                    Resultado = "OK"
-                });
+                _logger.LogInformation("Clientes procesados: {Count}", clientes.Count);
 
                 return Ok(new ClienteResponse
                 {
@@ -69,24 +91,20 @@ namespace Solucion_Pagos_Moviles.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al listar clientes");
+                _logger.LogError(ex, "❌ ERROR AL LISTAR CLIENTES");
+                _logger.LogError("Message: {Message}", ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
 
-                // Mensaje más corto para evitar truncamiento
-                var errorMessage = ex.Message.Length > 200 ? ex.Message.Substring(0, 200) + "..." : ex.Message;
-
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                if (ex.InnerException != null)
                 {
-                    Usuario = User.Identity?.Name ?? "Sistema",
-                    Accion = "ERROR",
-                    Descripcion = $"Error al listar clientes: {errorMessage}",
-                    Servicio = "/core/client",
-                    Resultado = "ERROR"
-                });
+                    _logger.LogError("InnerException: {InnerMessage}", ex.InnerException.Message);
+                }
 
+                // Devolver el error detallado temporalmente para debug
                 return StatusCode(500, new ClienteResponse
                 {
                     Codigo = -1,
-                    Descripcion = "Error interno del servidor"
+                    Descripcion = $"Error: {ex.Message}"
                 });
             }
         }
@@ -107,6 +125,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                         TipoIdentificacion = c.Tipo_Identificacion,
                         Identificacion = c.Identificacion,
                         NombreCompleto = c.Nombre_Completo,
+                        Telefono = c.Telefono,                    
+                        FechaNacimiento = c.Fecha_Nacimiento,     
                         EstadoId = c.ID_Estado
                     })
                     .FirstOrDefaultAsync();
@@ -120,7 +140,6 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // Registrar en bitácora
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
                     Usuario = usuario,
@@ -140,7 +159,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cliente {id}");
-
                 return StatusCode(500, new ClienteResponse
                 {
                     Codigo = -1,
@@ -178,7 +196,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // Registrar en bitácora
+                
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
                     Usuario = usuario,
@@ -271,14 +289,13 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // 🔴 SOLUCIÓN 2: Generar ID manualmente
-                // Obtener el máximo ID actual
+               
                 var maxId = await _context.ClientesBanco
                     .OrderByDescending(c => c.ID_Cliente)
                     .Select(c => (int?)c.ID_Cliente)
                     .FirstOrDefaultAsync();
 
-                // Si no hay registros, empezar desde 1
+               
                 int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
 
                 _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
@@ -286,11 +303,13 @@ namespace Solucion_Pagos_Moviles.Controllers
                 // Crear nuevo cliente con ID manual
                 var nuevoCliente = new ClienteBanco
                 {
-                    ID_Cliente = nuevoId,  // Asignar ID manualmente
+                    ID_Cliente = nuevoId,  
                     Tipo_Identificacion = request.TipoIdentificacion,
                     Identificacion = request.Identificacion,
                     Nombre_Completo = request.NombreCompleto,
-                    ID_Estado = 1 // Asumiendo que 1 = Activo
+                    Telefono = request.Telefono,
+                    Fecha_Nacimiento = request.Fecha_Nacimiento,
+                    ID_Estado = 1 
                 };
 
                 _logger.LogInformation("Cliente a insertar: {@Cliente}", nuevoCliente);
@@ -450,6 +469,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                     TipoIdentificacion = clienteExistente.Tipo_Identificacion,
                     Identificacion = clienteExistente.Identificacion,
                     NombreCompleto = clienteExistente.Nombre_Completo,
+                    Telefono = request.Telefono,
+                    FechaNacimiento = request.Fecha_Nacimiento,
                     EstadoId = clienteExistente.ID_Estado
                 };
 
@@ -484,7 +505,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 _logger.LogInformation("ID a eliminar: {Id}", id);
                 _logger.LogInformation("Usuario: {Usuario}", usuario);
 
-                // Buscar cliente existente
+               
                 var clienteExistente = await _context.ClientesBanco
                     .FirstOrDefaultAsync(c => c.ID_Cliente == id);
 
@@ -500,7 +521,7 @@ namespace Solucion_Pagos_Moviles.Controllers
 
                 _logger.LogInformation("Cliente encontrado: {@Cliente}", clienteExistente);
 
-                // Verificar si tiene cuentas asociadas
+                
                 var tieneCuentas = await _context.Cuentas
                     .AnyAsync(c => c.Identificacion_Cliente == id);
 
