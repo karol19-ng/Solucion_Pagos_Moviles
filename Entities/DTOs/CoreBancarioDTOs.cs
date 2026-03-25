@@ -9,7 +9,7 @@ namespace Entities.DTOs
     // SRV19 - Verificar cliente
     public class ClienteExisteRequest
     {
-        public string Identificacion { get; set; }
+        public string Identificacion { get; set; } = null!;
     }
 
     public class ClienteExisteResponse
@@ -21,7 +21,7 @@ namespace Entities.DTOs
     public class CoreOperacionResponse
     {
         public int codigo { get; set; }
-        public string descripcion { get; set; }
+        public string descripcion { get; set; } = null!;
         public decimal? saldo { get; set; }
     }
 
@@ -29,28 +29,34 @@ namespace Entities.DTOs
     public class ClienteDTO
     {
         public int Id { get; set; }
-        public string TipoIdentificacion { get; set; }
-        public string Identificacion { get; set; }
-        public string NombreCompleto { get; set; }
+        public string TipoIdentificacion { get; set; } = null!;
+        public string Identificacion { get; set; } = null!;
+        public string NombreCompleto { get; set; } = null!;
+        public string Telefono { get; set; } = null!;
+        public DateTime FechaNacimiento { get; set; }
         public int? EstadoId { get; set; }
-        public string EstadoDescripcion { get; set; }
+        public string EstadoDescripcion { get; set; } = null!;
     }
 
     // DTO para crear un cliente
     public class CrearClienteRequest
     {
-        public string TipoIdentificacion { get; set; }
-        public string Identificacion { get; set; }
-        public string NombreCompleto { get; set; }
+        public string TipoIdentificacion { get; set; } = null!;
+        public string Identificacion { get; set; } = null!;
+        public string NombreCompleto { get; set; } = null!;
+        public string Telefono { get; set; } = null!;
+        public DateTime Fecha_Nacimiento { get; set; }
     }
 
     // DTO para actualizar un cliente
     public class ActualizarClienteRequest
     {
         public int Id { get; set; }
-        public string TipoIdentificacion { get; set; }
-        public string Identificacion { get; set; }
-        public string NombreCompleto { get; set; }
+        public string TipoIdentificacion { get; set; } = null!;
+        public string Identificacion { get; set; } = null!;
+        public string NombreCompleto { get; set; } = null!;
+        public string Telefono { get; set; } = null!;
+        public DateTime Fecha_Nacimiento { get; set; }
         public int? EstadoId { get; set; }
     }
 
@@ -58,9 +64,9 @@ namespace Entities.DTOs
     public class ClienteResponse
     {
         public int Codigo { get; set; }
-        public string Descripcion { get; set; }
-        public ClienteDTO Cliente { get; set; }
-        public List<ClienteDTO> Clientes { get; set; }
+        public string Descripcion { get; set; } = null!;
+        public ClienteDTO Cliente { get; set; } = null!;
+        public List<ClienteDTO> Clientes { get; set; } = null!;
     }
 
 }

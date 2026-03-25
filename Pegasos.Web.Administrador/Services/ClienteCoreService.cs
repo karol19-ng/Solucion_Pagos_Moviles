@@ -92,8 +92,8 @@ namespace Pegasos.Web.Administrador.Services
                         _logger.LogInformation("=== CLIENTES RECIBIDOS ===");
                         foreach (var c in result.Clientes)
                         {
-                            _logger.LogInformation("Cliente - ID: {Id}, Nombre: {Nombre}, Identificacion: {Identificacion}",
-                                c.Id, c.NombreCompleto, c.Identificacion);
+                            _logger.LogInformation("Cliente - ID: {Id}, Nombre: {Nombre}, Identificacion: {Identificacion}, Telefono: {Telefono}, FechaNac: {FechaNac}",
+                                c.Id, c.NombreCompleto, c.Identificacion, c.Telefono, c.FechaNacimiento);
                         }
                     }
 
@@ -119,46 +119,42 @@ namespace Pegasos.Web.Administrador.Services
                 _logger.LogInformation("ID solicitado: {Id}", id);
                 _logger.LogInformation("BaseAddress del HttpClient: {BaseAddress}", _httpClient.BaseAddress);
 
-                // Probar diferentes formatos de URL
-                var urlsToTest = new[]
+                var url = $"gateway/api/CoreClient/{id}";
+                _logger.LogInformation("URL completa: {Url}", url);
+
+                var response = await _httpClient.GetAsync(url);
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Respuesta RAW del servidor: {Response}", responseContent);
+                _logger.LogInformation("StatusCode: {StatusCode}", response.StatusCode);
+
+                if (response.IsSuccessStatusCode)
                 {
-            $"gateway/api/CoreClient/{id}",
-            $"api/CoreClient/{id}",
-            $"CoreClient/{id}",
-            $"https://localhost:7258/api/CoreClient/{id}",
-            $"https://localhost:7258/CoreClient/{id}"
-        };
+                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(responseContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
 
-                foreach (var testUrl in urlsToTest)
+                    if (result?.Cliente != null)
+                    {
+                        _logger.LogInformation("✅ Cliente deserializado exitosamente:");
+                        _logger.LogInformation("   - Id: {Id}", result.Cliente.Id);
+                        _logger.LogInformation("   - Nombre: {Nombre}", result.Cliente.NombreCompleto);
+                        _logger.LogInformation("   - Telefono: {Telefono}", result.Cliente.Telefono);
+                        _logger.LogInformation("   - FechaNacimiento: {Fecha}", result.Cliente.FechaNacimiento);
+
+                        return result.Cliente;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("⚠️ Resultado deserializado es null o no tiene cliente");
+                        _logger.LogWarning("result: {Result}", System.Text.Json.JsonSerializer.Serialize(result));
+                    }
+                }
+                else
                 {
-                    _logger.LogInformation("Probando URL: {Url}", testUrl);
-                    try
-                    {
-                        var response = await _httpClient.GetAsync(testUrl);
-                        _logger.LogInformation("URL {Url} - StatusCode: {StatusCode}", testUrl, response.StatusCode);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            var json = await response.Content.ReadAsStringAsync();
-                            _logger.LogInformation("✅ ÉXITO con URL {Url}: {Json}", testUrl, json);
-
-                            var result = JsonSerializer.Deserialize<ClienteCoreResponse>(json, new JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            });
-
-                            return result?.Cliente;
-                        }
-                        else
-                        {
-                            var error = await response.Content.ReadAsStringAsync();
-                            _logger.LogWarning("❌ Falló URL {Url}: {StatusCode} - {Error}", testUrl, response.StatusCode, error);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "❌ Excepción con URL {Url}", testUrl);
-                    }
+                    _logger.LogWarning("❌ Falló obtener cliente {Id}. StatusCode: {StatusCode}", id, response.StatusCode);
+                    _logger.LogWarning("Respuesta error: {Response}", responseContent);
                 }
 
                 return null;
@@ -177,7 +173,7 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = $"gateway/api/CoreClient/identificacion/{identificacion}";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
@@ -206,19 +202,27 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                var json = JsonSerializer.Serialize(model);
+                // Crea objeto con todos los campos  
+                var request = new
+                {
+                    tipoIdentificacion = model.TipoIdentificacion,
+                    identificacion = model.Identificacion,
+                    nombreCompleto = model.NombreCompleto,
+                    telefono = model.Telefono,                    
+                    fechaNacimiento = model.FechaNacimiento.ToString("yyyy-MM-dd")  
+                };
+
+                var json = JsonSerializer.Serialize(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 _logger.LogInformation("=== INICIANDO CREACIÓN DE CLIENTE ===");
                 _logger.LogInformation("JSON enviado: {Json}", json);
                 _logger.LogInformation("BaseAddress del HttpClient: {BaseAddress}", _httpClient.BaseAddress);
 
-                // Usar la ruta relativa - confiando en que BaseAddress ya apunta al gateway
                 var response = await _httpClient.PostAsync("gateway/api/CoreClient", content);
 
-                _logger.LogInformation("Código de respuesta HTTP: {StatusCode}", response.StatusCode);
-
                 var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Código de respuesta HTTP: {StatusCode}", response.StatusCode);
                 _logger.LogInformation("Respuesta del servidor: {ResponseContent}", responseContent);
 
                 if (response.IsSuccessStatusCode)
@@ -252,16 +256,18 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 _logger.LogInformation("=== ACTUALIZANDO CLIENTE ===");
-                _logger.LogInformation("Modelo recibido - Id: {Id}, Nombre: {Nombre}, Identificacion: {Identificacion}, TipoId: {TipoId}, EstadoId: {EstadoId}",
-                    model.Id, model.NombreCompleto, model.Identificacion, model.TipoIdentificacion, model.EstadoId);
+                _logger.LogInformation("Modelo recibido - Id: {Id}, Nombre: {Nombre}, Identificacion: {Identificacion}, TipoId: {TipoId}, Telefono: {Telefono}, FechaNac: {FechaNac}, EstadoId: {EstadoId}",
+                    model.Id, model.NombreCompleto, model.Identificacion, model.TipoIdentificacion, model.Telefono, model.FechaNacimiento, model.EstadoId);
 
-                // Crear el objeto que espera la API
+                // Crea un objeto con todos los campos 
                 var request = new
                 {
                     id = model.Id,
                     tipoIdentificacion = model.TipoIdentificacion,
                     identificacion = model.Identificacion,
                     nombreCompleto = model.NombreCompleto,
+                    telefono = model.Telefono,                    
+                    fechaNacimiento = model.FechaNacimiento.ToString("yyyy-MM-dd"),  
                     estadoId = model.EstadoId
                 };
 
@@ -285,9 +291,11 @@ namespace Pegasos.Web.Administrador.Services
                     {
                         PropertyNameCaseInsensitive = true
                     });
+                    _logger.LogInformation("Actualización exitosa. Código: {Codigo}", result?.Codigo);
                     return result?.Codigo == 0;
                 }
 
+                _logger.LogWarning("Error en actualización. StatusCode: {StatusCode}", response.StatusCode);
                 return false;
             }
             catch (Exception ex)
@@ -355,7 +363,7 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 var url = "gateway/api/CoreClient/tipos-identificacion";
-                _logger.LogInformation("Llamando a Gateway 1: {Url}", url);
+                _logger.LogInformation("Llamando a Gateway: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 

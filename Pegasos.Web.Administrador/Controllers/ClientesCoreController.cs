@@ -82,8 +82,8 @@ namespace Pegasos.Web.Administrador.Controllers
             try
             {
                 // Log para ver qué datos llegan
-                _logger.LogInformation("Intentando crear cliente - Identificacion: {Identificacion}, Nombre: {Nombre}",
-                    model?.Identificacion, model?.NombreCompleto);
+                _logger.LogInformation("Intentando crear cliente - Identificacion: {Identificacion}, Nombre: {Nombre}, Telefono: {Telefono}, Fecha: {Fecha}",
+                    model?.Identificacion, model?.NombreCompleto, model?.Telefono, model?.FechaNacimiento);
 
                 // Validaciones manuales
                 if (model == null)
@@ -104,6 +104,18 @@ namespace Pegasos.Web.Administrador.Controllers
                     ModelState.AddModelError("NombreCompleto", "El nombre completo es requerido");
                 }
 
+                // 🆕 Validar teléfono
+                if (string.IsNullOrWhiteSpace(model.Telefono))
+                {
+                    ModelState.AddModelError("Telefono", "El teléfono es requerido");
+                }
+
+                // 🆕 Validar fecha de nacimiento
+                if (model.FechaNacimiento == default || model.FechaNacimiento == DateTime.MinValue)
+                {
+                    ModelState.AddModelError("FechaNacimiento", "La fecha de nacimiento es requerida");
+                }
+
                 if (!ModelState.IsValid)
                 {
                     _logger.LogWarning("ModelState inválido");
@@ -115,17 +127,17 @@ namespace Pegasos.Web.Administrador.Controllers
                 if (resultado)
                 {
                     _logger.LogInformation("Cliente creado exitosamente");
-                    TempData["Success"] = "Cliente creado exitosamente"; // ✅ Mensaje de éxito
+                    TempData["Success"] = "Cliente creado exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
 
                 _logger.LogWarning("No se pudo crear el cliente");
-                TempData["Error"] = "No se pudo crear el cliente. Verifique que la identificación no esté duplicada."; // ❌ Mensaje de error
+                TempData["Error"] = "No se pudo crear el cliente. Verifique que la identificación no esté duplicada.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear cliente");
-                TempData["Error"] = "Error al crear el cliente: " + ex.Message; // ❌ Mensaje de error
+                TempData["Error"] = "Error al crear el cliente: " + ex.Message;
             }
 
             ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync();
@@ -142,6 +154,23 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 var cliente = await _clienteService.ObtenerPorIdAsync(id);
 
+                // Log del cliente recibido
+                if (cliente != null)
+                {
+                    _logger.LogInformation("Cliente recibido del servicio:");
+                    _logger.LogInformation("  - Id: {Id}", cliente.Id);
+                    _logger.LogInformation("  - TipoIdentificacion: {Tipo}", cliente.TipoIdentificacion);
+                    _logger.LogInformation("  - Identificacion: {Ident}", cliente.Identificacion);
+                    _logger.LogInformation("  - NombreCompleto: {Nombre}", cliente.NombreCompleto);
+                    _logger.LogInformation("  - Telefono: {Telefono}", cliente.Telefono);
+                    _logger.LogInformation("  - FechaNacimiento: {Fecha}", cliente.FechaNacimiento);
+                    _logger.LogInformation("  - EstadoId: {Estado}", cliente.EstadoId);
+                }
+                else
+                {
+                    _logger.LogWarning("Cliente es NULL para ID: {Id}", id);
+                }
+
                 if (cliente == null)
                 {
                     _logger.LogWarning("Cliente con ID {Id} no encontrado en el servicio", id);
@@ -149,7 +178,13 @@ namespace Pegasos.Web.Administrador.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                _logger.LogInformation("Cliente encontrado: {Nombre}", cliente.NombreCompleto);
+                //var cliente = await _clienteService.ObtenerPorIdAsync(id);
+
+                if (cliente == null)
+                {
+                    TempData["Error"] = "Cliente no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var model = new EditarClienteCoreViewModel
                 {
@@ -157,6 +192,8 @@ namespace Pegasos.Web.Administrador.Controllers
                     TipoIdentificacion = cliente.TipoIdentificacion,
                     Identificacion = cliente.Identificacion,
                     NombreCompleto = cliente.NombreCompleto,
+                    Telefono = cliente.Telefono ?? string.Empty,
+                    FechaNacimiento = cliente.FechaNacimiento != DateTime.MinValue ? cliente.FechaNacimiento : new DateTime(2000, 1, 1),           
                     EstadoId = cliente.EstadoId ?? 1
                 };
 
@@ -180,8 +217,8 @@ namespace Pegasos.Web.Administrador.Controllers
         {
             _logger.LogInformation("=== PROCESANDO EDICIÓN DE CLIENTE ===");
             _logger.LogInformation("ID recibido: {Id}", id);
-            _logger.LogInformation("Model - Id: {ModelId}, Nombre: {Nombre}, Identificacion: {Identificacion}, TipoId: {TipoId}, EstadoId: {EstadoId}",
-                model?.Id, model?.NombreCompleto, model?.Identificacion, model?.TipoIdentificacion, model?.EstadoId);
+            _logger.LogInformation("Model - Id: {ModelId}, Nombre: {Nombre}, Identificacion: {Identificacion}, TipoId: {TipoId}, Telefono: {Telefono}, FechaNac: {FechaNac}, EstadoId: {EstadoId}",
+                model?.Id, model?.NombreCompleto, model?.Identificacion, model?.TipoIdentificacion, model?.Telefono, model?.FechaNacimiento, model?.EstadoId);
 
             if (model == null)
             {
@@ -208,6 +245,20 @@ namespace Pegasos.Web.Administrador.Controllers
                 ModelState.AddModelError("NombreCompleto", "El nombre completo es requerido");
             }
 
+            // 🆕 Validar teléfono
+            if (string.IsNullOrWhiteSpace(model.Telefono))
+            {
+                _logger.LogWarning("Teléfono vacío");
+                ModelState.AddModelError("Telefono", "El teléfono es requerido");
+            }
+
+            // 🆕 Validar fecha de nacimiento
+            if (model.FechaNacimiento == default || model.FechaNacimiento == DateTime.MinValue)
+            {
+                _logger.LogWarning("Fecha de nacimiento vacía");
+                ModelState.AddModelError("FechaNacimiento", "La fecha de nacimiento es requerida");
+            }
+
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("ModelState inválido. Errores: {ErrorCount}", ModelState.ErrorCount);
@@ -229,17 +280,17 @@ namespace Pegasos.Web.Administrador.Controllers
                 var resultado = await _clienteService.ActualizarAsync(model);
                 if (resultado)
                 {
-                    _logger.LogInformation("✅ Cliente {Id} actualizado exitosamente", id);
+                    _logger.LogInformation("Cliente {Id} actualizado exitosamente", id);
                     TempData["Success"] = "Cliente actualizado exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
 
-                _logger.LogWarning("❌ No se pudo actualizar el cliente {Id}", id);
+                _logger.LogWarning("No se pudo actualizar el cliente {Id}", id);
                 ModelState.AddModelError(string.Empty, "No se pudo actualizar el cliente");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error al actualizar cliente {Id}", id);
+                _logger.LogError(ex, "Error al actualizar cliente {Id}", id);
                 ModelState.AddModelError(string.Empty, "Error al actualizar el cliente");
             }
 
@@ -291,7 +342,8 @@ namespace Pegasos.Web.Administrador.Controllers
                     termino = termino.ToLower();
                     todos = todos.Where(c =>
                         (c.NombreCompleto?.ToLower()?.Contains(termino) ?? false) ||
-                        (c.Identificacion?.Contains(termino) ?? false)
+                        (c.Identificacion?.Contains(termino) ?? false) ||
+                        (c.Telefono?.Contains(termino) ?? false)  
                     ).ToList();
                 }
 
@@ -304,7 +356,7 @@ namespace Pegasos.Web.Administrador.Controllers
             }
         }
 
-        // GET: ClientesCore/Detalles/5 - Ver detalles de un cliente (opcional, si quieres añadir)
+        // GET: ClientesCore/Detalles/5 - Ver detalles de un cliente
         public async Task<IActionResult> Detalles(int id)
         {
             try
@@ -335,7 +387,9 @@ namespace Pegasos.Web.Administrador.Controllers
                 {
                     TipoIdentificacion = "FISICA",
                     Identificacion = "TEST" + DateTime.Now.Ticks,
-                    NombreCompleto = "Cliente de Prueba"
+                    NombreCompleto = "Cliente de Prueba",
+                    Telefono = "8888-8888",                                    
+                    FechaNacimiento = new DateTime(1990, 1, 1)                 
                 };
 
                 _logger.LogInformation("Probando creación directa");
@@ -355,6 +409,5 @@ namespace Pegasos.Web.Administrador.Controllers
                 return Content($"❌ Error: {ex.Message}");
             }
         }
-
     }
 }

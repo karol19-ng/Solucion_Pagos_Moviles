@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authentication;
 var builder = WebApplication.CreateBuilder(args);
 
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-// Configurar autenticaci�n con cookies (5 minutos = SA4)
+
 // Configurar autenticación con cookies (5 minutos = SA4)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -62,13 +62,13 @@ builder.Services.AddHttpClient<IPantallaService, PantallaService>(client =>
 // Registrar ClienteCoreService
 builder.Services.AddHttpClient<IClienteCoreService, ClienteCoreService>(client =>
 {
-    // Esta URL debe ser la del GATEWAY 1 (puerto 7096)
+    
     client.BaseAddress = new Uri("https://localhost:7096/");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// REGISTRAR CuentaCoreService - NUEVO
+// REGISTRAR CuentaCoreService
 builder.Services.AddHttpClient<ICuentaCoreService, CuentaCoreService>(client =>
 {
     // La misma URL del GATEWAY 1 (puerto 7096)

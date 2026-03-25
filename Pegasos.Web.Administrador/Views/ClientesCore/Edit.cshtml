@@ -1,6 +1,6 @@
 ﻿@model Pegasos.Web.Administrador.Models.EditarClienteCoreViewModel
 @{
-    Layout = "_Layout";  // 👈 Esto es lo más importante
+    Layout = "_Layout";  
     ViewData["Title"] = "Editar Cliente";
 }
 
@@ -168,7 +168,6 @@
                 margin-right: 8px;
             }
 
-        /* Info box */
         .info-box {
             background: rgba(197, 163, 103, 0.1);
             border-left: 4px solid var(--dorado-primario);
@@ -183,7 +182,6 @@
                 font-size: 1.2rem;
             }
 
-        /* Validation summary */
         .validation-summary-errors {
             background: rgba(220, 53, 69, 0.1);
             border: 1px solid #dc3545;
@@ -198,25 +196,44 @@
                 padding-left: 20px;
             }
 
-        /* Required field indicator */
         .required-field::after {
             content: "*";
             color: #dc3545;
             margin-left: 4px;
             font-weight: bold;
         }
+
+        .row-custom {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .col-half {
+            flex: 1;
+        }
+
+        @@media (max-width: 768px) {
+            .row-custom {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
     </style>
 }
 
-<!-- DEBUG: Mostrar valores del modelo -->
-<div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0;">
-    <h5 style="color: #0f0; margin-top: 0;">Valores</h5>
+
+@* <!-- DEBUG: Mostrar valores del modelo -->
+<div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0; font-family: monospace;">
+    <h5 style="color: #0f0; margin-top: 0;">📊 VALORES RECIBIDOS POR LA VISTA</h5>
     <p><strong>ID:</strong> @Model.Id</p>
     <p><strong>TipoIdentificacion:</strong> "@Model.TipoIdentificacion"</p>
     <p><strong>Identificacion:</strong> "@Model.Identificacion"</p>
     <p><strong>NombreCompleto:</strong> "@Model.NombreCompleto"</p>
+    <p><strong>Teléfono:</strong> "@Model.Telefono"</p>
+    <p><strong>FechaNacimiento:</strong> @Model.FechaNacimiento.ToString("yyyy-MM-dd")</p>
     <p><strong>EstadoId:</strong> @Model.EstadoId</p>
-</div>
+</div> *@
 
 <div class="container mt-4">
     <div class="row justify-content-center">
@@ -255,7 +272,7 @@
                         <select asp-for="TipoIdentificacion" class="form-select form-select-custom" id="TipoIdentificacion" name="TipoIdentificacion">
                             @foreach (var tipo in ViewBag.TiposIdentificacion)
                             {
-                                <option value="@tipo">@tipo</option>
+                                <option value="@tipo" @(Model.TipoIdentificacion == tipo ? "selected" : "")>@tipo</option>
                             }
                         </select>
                         <span asp-validation-for="TipoIdentificacion" class="text-danger"></span>
@@ -267,6 +284,7 @@
                         </label>
                         <input asp-for="Identificacion" class="form-control form-control-custom"
                                id="Identificacion" name="Identificacion"
+                               value="@Model.Identificacion"
                                placeholder="Ej: 123456789" />
                         <span asp-validation-for="Identificacion" class="text-danger" id="identificacionError"></span>
                     </div>
@@ -277,8 +295,37 @@
                         </label>
                         <input asp-for="NombreCompleto" class="form-control form-control-custom"
                                id="NombreCompleto" name="NombreCompleto"
+                               value="@Model.NombreCompleto"
                                placeholder="Ej: Juan Pérez González" />
                         <span asp-validation-for="NombreCompleto" class="text-danger" id="nombreError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Telefono" class="form-label">
+                            <i class="fas fa-phone"></i> Teléfono <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Telefono" class="form-control form-control-custom"
+                               id="Telefono" name="Telefono"
+                               value="@Model.Telefono"
+                               placeholder="Ej: 8888-8888" />
+                        <span asp-validation-for="Telefono" class="text-danger" id="telefonoError"></span>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Formato: 8888-8888 o 12345678
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="FechaNacimiento" class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Fecha de Nacimiento <span class="required-field"></span>
+                        </label>
+                        <input asp-for="FechaNacimiento" class="form-control form-control-custom"
+                               id="FechaNacimiento" name="FechaNacimiento"
+                               type="date"
+                               value="@(Model.FechaNacimiento != DateTime.MinValue ? Model.FechaNacimiento.ToString("yyyy-MM-dd") : "")" />
+                        <span asp-validation-for="FechaNacimiento" class="text-danger" id="fechaError"></span>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Formato: DD/MM/AAAA
+                        </small>
                     </div>
 
                     <div class="form-group">
@@ -295,10 +342,10 @@
                     </div>
 
                     <div class="btn-container">
-                        <a asp-action="Index" class="btn-secondary-custom">
+                        <a href="/ClientesCore/Index" class="btn-secondary-custom">
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
-                        <button type="submit" class="btn-warning-custom">
+                        <button type="submit" class="btn-warning-custom" id="btnGuardar">
                             <i class="fas fa-save"></i> Actualizar Cliente
                         </button>
                     </div>
@@ -310,6 +357,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
             // Validación en tiempo real
@@ -331,10 +379,51 @@
                 }
             });
 
+            // Validación de teléfono en tiempo real
+            $('#Telefono').on('input', function() {
+                var valor = $(this).val();
+                var regexTelefono = /^[0-9\-\(\)\s]+$/;
+
+                if (!valor || valor.trim() === '') {
+                    $('#telefonoError').text('El teléfono es requerido');
+                } else if (!regexTelefono.test(valor)) {
+                    $('#telefonoError').text('El teléfono solo puede contener números, guiones y paréntesis');
+                } else {
+                    $('#telefonoError').text('');
+                }
+            });
+
+            // 🆕 Validación de fecha en tiempo real
+            $('#FechaNacimiento').on('change', function() {
+                var valor = $(this).val();
+                if (!valor) {
+                    $('#fechaError').text('La fecha de nacimiento es requerida');
+                } else {
+                    var fecha = new Date(valor);
+                    var hoy = new Date();
+                    var edad = hoy.getFullYear() - fecha.getFullYear();
+                    var mesDiff = hoy.getMonth() - fecha.getMonth();
+
+                    if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fecha.getDate())) {
+                        edad--;
+                    }
+
+                    if (edad < 18) {
+                        $('#fechaError').text('El cliente debe ser mayor de 18 años');
+                    } else if (edad > 100) {
+                        $('#fechaError').text('Verifique la fecha de nacimiento');
+                    } else {
+                        $('#fechaError').text('');
+                    }
+                }
+            });
+
             // Validación antes de enviar
             $('#editForm').submit(function(e) {
                 var identificacion = $('#Identificacion').val();
                 var nombre = $('#NombreCompleto').val();
+                var telefono = $('#Telefono').val();
+                var fecha = $('#FechaNacimiento').val();
                 var errores = [];
 
                 if (!identificacion || identificacion.trim() === '') {
@@ -345,6 +434,16 @@
                 if (!nombre || nombre.trim() === '') {
                     errores.push('El nombre completo es requerido');
                     $('#nombreError').text('El nombre completo es requerido');
+                }
+
+                if (!telefono || telefono.trim() === '') {
+                    errores.push('El teléfono es requerido');
+                    $('#telefonoError').text('El teléfono es requerido');
+                }
+
+                if (!fecha) {
+                    errores.push('La fecha de nacimiento es requerida');
+                    $('#fechaError').text('La fecha de nacimiento es requerida');
                 }
 
                 if (errores.length > 0) {
@@ -358,12 +457,7 @@
 
             // Confirmar cambios antes de salir
             var formModified = false;
-
-            $('input, select').on('change', function() {
-                formModified = true;
-            });
-
-            $('input').on('keyup', function() {
+            $('input, select').on('change keyup', function() {
                 formModified = true;
             });
 
@@ -376,33 +470,48 @@
                 }
             });
 
-                    // Antes de enviar el formulario
-        $('#editForm').submit(function(e) {
-            console.log('=== DATOS DEL FORMULARIO ===');
-            console.log('ID:', $('#Id').val());
-            console.log('TipoIdentificacion:', $('#TipoIdentificacion').val());
-            console.log('Identificacion:', $('#Identificacion').val());
-            console.log('NombreCompleto:', $('#NombreCompleto').val());
-            console.log('EstadoId:', $('#EstadoId').val());
+            // Antes de enviar el formulario
+            $('#editForm').submit(function(e) {
+                console.log('=== DATOS DEL FORMULARIO ===');
+                console.log('ID:', $('#Id').val());
+                console.log('TipoIdentificacion:', $('#TipoIdentificacion').val());
+                console.log('Identificacion:', $('#Identificacion').val());
+                console.log('NombreCompleto:', $('#NombreCompleto').val());
+                console.log('Teléfono:', $('#Telefono').val());
+                console.log('FechaNacimiento:', $('#FechaNacimiento').val());
+                console.log('EstadoId:', $('#EstadoId').val());
 
-            var token = $('input[name="__RequestVerificationToken"]').val();
-            console.log('Token:', token ? 'Presente' : 'No encontrado');
-
-            // Mostrar indicador de carga
-            $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...');
-        });
+                // Mostrar indicador de carga
+                $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...');
+            });
 
             // Mostrar mensajes de TempData
         @if (TempData["Success"] != null)
         {
             <text>
-                        alert('@TempData["Success"]');
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: '@TempData["Success"]',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367',
+                        timer: 2500,
+                        showConfirmButton: true
+                    });
             </text>
         }
         @if (TempData["Error"] != null)
         {
             <text>
-                        alert('Error: @TempData["Error"]');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: '@TempData["Error"]',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367'
+                    });
             </text>
         }
         });

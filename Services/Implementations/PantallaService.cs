@@ -16,7 +16,7 @@ namespace Services.Implementations
     {
         private readonly PagosMovilesDbContext _context;
         private readonly IBitacoraService _bitacoraService;
-        private readonly ILogger<PantallaService> _logger;  // Agregar logger
+        private readonly ILogger<PantallaService> _logger;  
 
         public PantallaService(
         PagosMovilesDbContext context,
@@ -25,7 +25,7 @@ namespace Services.Implementations
         {
             _context = context;
             _bitacoraService = bitacoraService;
-            _logger = logger;  // ✅ Agregar esta línea
+            _logger = logger;  
         }
 
         public async Task<List<PantallaResponse>> GetAllAsync()
@@ -48,20 +48,20 @@ namespace Services.Implementations
 
             ValidarPantalla(request);
 
-            // Obtener el máximo ID actual
+            
             var maxId = await _context.TablaPantallas
                 .OrderByDescending(p => p.ID_Pantalla)
                 .Select(p => (int?)p.ID_Pantalla)
                 .FirstOrDefaultAsync();
 
-            // Si no hay registros, empezar desde 1
+            
             int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
 
             _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
 
             var pantalla = new TablaPantalla
             {
-                ID_Pantalla = nuevoId,  // Asignar ID manualmente
+                ID_Pantalla = nuevoId,  
                 Nombre = request.Nombre,
                 Descripcion = request.Descripcion,
                 Ruta = request.Ruta,
@@ -118,7 +118,7 @@ namespace Services.Implementations
             _logger.LogInformation("=== ELIMINANDO PANTALLA EN BD ===");
             _logger.LogInformation("ID recibido: {Id}", id);
 
-            // Buscar por ID exacto
+            
             var pantalla = await _context.TablaPantallas.FindAsync(id);
 
             if (pantalla == null)
