@@ -125,8 +125,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                         TipoIdentificacion = c.Tipo_Identificacion,
                         Identificacion = c.Identificacion,
                         NombreCompleto = c.Nombre_Completo,
-                        Telefono = c.Telefono,                    
-                        FechaNacimiento = c.Fecha_Nacimiento,     
+                        Telefono = c.Telefono ?? string.Empty,              
+                        FechaNacimiento = c.Fecha_Nacimiento,               
                         EstadoId = c.ID_Estado
                     })
                     .FirstOrDefaultAsync();
@@ -140,6 +140,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
+                // Registrar en bitácora
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
                     Usuario = usuario,

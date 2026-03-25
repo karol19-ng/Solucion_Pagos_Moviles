@@ -222,9 +222,10 @@
     </style>
 }
 
-<!-- DEBUG: Mostrar valores del modelo -->
-<div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0;">
-    <h5 style="color: #0f0; margin-top: 0;">Valores recibidos</h5>
+
+@* <!-- DEBUG: Mostrar valores del modelo -->
+<div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0; font-family: monospace;">
+    <h5 style="color: #0f0; margin-top: 0;">📊 VALORES RECIBIDOS POR LA VISTA</h5>
     <p><strong>ID:</strong> @Model.Id</p>
     <p><strong>TipoIdentificacion:</strong> "@Model.TipoIdentificacion"</p>
     <p><strong>Identificacion:</strong> "@Model.Identificacion"</p>
@@ -232,7 +233,7 @@
     <p><strong>Teléfono:</strong> "@Model.Telefono"</p>
     <p><strong>FechaNacimiento:</strong> @Model.FechaNacimiento.ToString("yyyy-MM-dd")</p>
     <p><strong>EstadoId:</strong> @Model.EstadoId</p>
-</div>
+</div> *@
 
 <div class="container mt-4">
     <div class="row justify-content-center">
@@ -271,7 +272,7 @@
                         <select asp-for="TipoIdentificacion" class="form-select form-select-custom" id="TipoIdentificacion" name="TipoIdentificacion">
                             @foreach (var tipo in ViewBag.TiposIdentificacion)
                             {
-                                <option value="@tipo">@tipo</option>
+                                <option value="@tipo" @(Model.TipoIdentificacion == tipo ? "selected" : "")>@tipo</option>
                             }
                         </select>
                         <span asp-validation-for="TipoIdentificacion" class="text-danger"></span>
@@ -283,6 +284,7 @@
                         </label>
                         <input asp-for="Identificacion" class="form-control form-control-custom"
                                id="Identificacion" name="Identificacion"
+                               value="@Model.Identificacion"
                                placeholder="Ej: 123456789" />
                         <span asp-validation-for="Identificacion" class="text-danger" id="identificacionError"></span>
                     </div>
@@ -293,17 +295,18 @@
                         </label>
                         <input asp-for="NombreCompleto" class="form-control form-control-custom"
                                id="NombreCompleto" name="NombreCompleto"
+                               value="@Model.NombreCompleto"
                                placeholder="Ej: Juan Pérez González" />
                         <span asp-validation-for="NombreCompleto" class="text-danger" id="nombreError"></span>
                     </div>
 
-                    <!-- 🆕 NUEVO: Teléfono -->
                     <div class="form-group">
                         <label asp-for="Telefono" class="form-label">
                             <i class="fas fa-phone"></i> Teléfono <span class="required-field"></span>
                         </label>
                         <input asp-for="Telefono" class="form-control form-control-custom"
                                id="Telefono" name="Telefono"
+                               value="@Model.Telefono"
                                placeholder="Ej: 8888-8888" />
                         <span asp-validation-for="Telefono" class="text-danger" id="telefonoError"></span>
                         <small class="text-muted">
@@ -311,7 +314,6 @@
                         </small>
                     </div>
 
-                    <!-- 🆕 NUEVO: Fecha de Nacimiento -->
                     <div class="form-group">
                         <label asp-for="FechaNacimiento" class="form-label">
                             <i class="fas fa-calendar-alt"></i> Fecha de Nacimiento <span class="required-field"></span>
@@ -319,7 +321,7 @@
                         <input asp-for="FechaNacimiento" class="form-control form-control-custom"
                                id="FechaNacimiento" name="FechaNacimiento"
                                type="date"
-                               value="@Model.FechaNacimiento.ToString("yyyy-MM-dd")" />
+                               value="@(Model.FechaNacimiento != DateTime.MinValue ? Model.FechaNacimiento.ToString("yyyy-MM-dd") : "")" />
                         <span asp-validation-for="FechaNacimiento" class="text-danger" id="fechaError"></span>
                         <small class="text-muted">
                             <i class="fas fa-info-circle"></i> Formato: DD/MM/AAAA
@@ -340,7 +342,7 @@
                     </div>
 
                     <div class="btn-container">
-                        <a asp-action="Index" class="btn-secondary-custom">
+                        <a href="/ClientesCore/Index" class="btn-secondary-custom">
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
                         <button type="submit" class="btn-warning-custom" id="btnGuardar">
@@ -355,6 +357,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
             // Validación en tiempo real
@@ -376,7 +379,7 @@
                 }
             });
 
-            // 🆕 Validación de teléfono en tiempo real
+            // Validación de teléfono en tiempo real
             $('#Telefono').on('input', function() {
                 var valor = $(this).val();
                 var regexTelefono = /^[0-9\-\(\)\s]+$/;
@@ -486,13 +489,29 @@
         @if (TempData["Success"] != null)
         {
             <text>
-                        alert('@TempData["Success"]');
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: '@TempData["Success"]',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367',
+                        timer: 2500,
+                        showConfirmButton: true
+                    });
             </text>
         }
         @if (TempData["Error"] != null)
         {
             <text>
-                        alert('Error: @TempData["Error"]');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: '@TempData["Error"]',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367'
+                    });
             </text>
         }
         });

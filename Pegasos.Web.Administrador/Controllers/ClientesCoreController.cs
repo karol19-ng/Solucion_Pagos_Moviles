@@ -154,6 +154,23 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 var cliente = await _clienteService.ObtenerPorIdAsync(id);
 
+                // Log del cliente recibido
+                if (cliente != null)
+                {
+                    _logger.LogInformation("Cliente recibido del servicio:");
+                    _logger.LogInformation("  - Id: {Id}", cliente.Id);
+                    _logger.LogInformation("  - TipoIdentificacion: {Tipo}", cliente.TipoIdentificacion);
+                    _logger.LogInformation("  - Identificacion: {Ident}", cliente.Identificacion);
+                    _logger.LogInformation("  - NombreCompleto: {Nombre}", cliente.NombreCompleto);
+                    _logger.LogInformation("  - Telefono: {Telefono}", cliente.Telefono);
+                    _logger.LogInformation("  - FechaNacimiento: {Fecha}", cliente.FechaNacimiento);
+                    _logger.LogInformation("  - EstadoId: {Estado}", cliente.EstadoId);
+                }
+                else
+                {
+                    _logger.LogWarning("Cliente es NULL para ID: {Id}", id);
+                }
+
                 if (cliente == null)
                 {
                     _logger.LogWarning("Cliente con ID {Id} no encontrado en el servicio", id);
@@ -161,7 +178,13 @@ namespace Pegasos.Web.Administrador.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                _logger.LogInformation("Cliente encontrado: {Nombre}", cliente.NombreCompleto);
+                //var cliente = await _clienteService.ObtenerPorIdAsync(id);
+
+                if (cliente == null)
+                {
+                    TempData["Error"] = "Cliente no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var model = new EditarClienteCoreViewModel
                 {
@@ -169,8 +192,8 @@ namespace Pegasos.Web.Administrador.Controllers
                     TipoIdentificacion = cliente.TipoIdentificacion,
                     Identificacion = cliente.Identificacion,
                     NombreCompleto = cliente.NombreCompleto,
-                    Telefono = cliente.Telefono,                              
-                    FechaNacimiento = cliente.FechaNacimiento,                
+                    Telefono = cliente.Telefono ?? string.Empty,
+                    FechaNacimiento = cliente.FechaNacimiento != DateTime.MinValue ? cliente.FechaNacimiento : new DateTime(2000, 1, 1),           
                     EstadoId = cliente.EstadoId ?? 1
                 };
 

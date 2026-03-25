@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Pegasos.Web.Administrador.Models
 {
@@ -13,6 +14,7 @@ namespace Pegasos.Web.Administrador.Models
         public string Telefono { get; set; } = string.Empty;
 
         [Display(Name = "Fecha de nacimiento")]
+        [JsonPropertyName("Fecha_Nacimiento")]
         public DateTime FechaNacimiento { get; set; }
 
         public int? EstadoId { get; set; }
@@ -48,8 +50,14 @@ namespace Pegasos.Web.Administrador.Models
     public class EditarClienteCoreViewModel
     {
         public int Id { get; set; }
+
+        [Display(Name = "Tipo de Identificación")]
         public string TipoIdentificacion { get; set; } = string.Empty;
+
+        [Display(Name = "Número de Identificación")]
         public string Identificacion { get; set; } = string.Empty;
+
+        [Display(Name = "Nombre Completo")]
         public string NombreCompleto { get; set; } = string.Empty;
 
         [Display(Name = "Teléfono")]
@@ -61,6 +69,7 @@ namespace Pegasos.Web.Administrador.Models
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime FechaNacimiento { get; set; }
 
+        [Display(Name = "Estado")]
         public int EstadoId { get; set; } = 1;
     }
 

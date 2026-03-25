@@ -120,30 +120,43 @@ namespace Pegasos.Web.Administrador.Services
                 _logger.LogInformation("BaseAddress del HttpClient: {BaseAddress}", _httpClient.BaseAddress);
 
                 var url = $"gateway/api/CoreClient/{id}";
-                _logger.LogInformation("URL: {Url}", url);
+                _logger.LogInformation("URL completa: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
 
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Respuesta RAW del servidor: {Response}", responseContent);
+                _logger.LogInformation("StatusCode: {StatusCode}", response.StatusCode);
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    _logger.LogInformation("Exito: {Json}", json);
-
-                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(json, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<ClienteCoreResponse>(responseContent, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
 
                     if (result?.Cliente != null)
                     {
-                        _logger.LogInformation("Cliente encontrado - ID: {Id}, Nombre: {Nombre}, Telefono: {Telefono}, FechaNac: {FechaNac}",
-                            result.Cliente.Id, result.Cliente.NombreCompleto, result.Cliente.Telefono, result.Cliente.FechaNacimiento);
-                    }
+                        _logger.LogInformation("✅ Cliente deserializado exitosamente:");
+                        _logger.LogInformation("   - Id: {Id}", result.Cliente.Id);
+                        _logger.LogInformation("   - Nombre: {Nombre}", result.Cliente.NombreCompleto);
+                        _logger.LogInformation("   - Telefono: {Telefono}", result.Cliente.Telefono);
+                        _logger.LogInformation("   - FechaNacimiento: {Fecha}", result.Cliente.FechaNacimiento);
 
-                    return result?.Cliente;
+                        return result.Cliente;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("⚠️ Resultado deserializado es null o no tiene cliente");
+                        _logger.LogWarning("result: {Result}", System.Text.Json.JsonSerializer.Serialize(result));
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("❌ Falló obtener cliente {Id}. StatusCode: {StatusCode}", id, response.StatusCode);
+                    _logger.LogWarning("Respuesta error: {Response}", responseContent);
                 }
 
-                _logger.LogWarning("❌ Falló obtener cliente {Id}. StatusCode: {StatusCode}", id, response.StatusCode);
                 return null;
             }
             catch (Exception ex)
