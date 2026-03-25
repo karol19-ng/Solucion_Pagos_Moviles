@@ -37,6 +37,33 @@ namespace AbstractDataAccess.Models
             modelBuilder.Entity<Afiliacion>().ToTable("Afiliacion");
             modelBuilder.Entity<Estado>().ToTable("Estados");
             modelBuilder.Entity<TipoIdentificacion>().ToTable("Tipos_Identificacion");
+
+            // Configuracion relacion ROL - ROL_POR_PANTALLA
+            modelBuilder.Entity<RolPorPantalla>()
+                .HasOne(rp => rp.Rol)
+                .WithMany(r => r.RolPorPantallas)
+                .HasForeignKey(rp => rp.ID_Rol)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configuracion relacion PANTALLA - ROL_POR_PANTALLA
+            modelBuilder.Entity<RolPorPantalla>()
+                .HasOne(rp => rp.Pantalla)
+                .WithMany(p => p.RolPorPantallas)
+                .HasForeignKey(rp => rp.ID_Pantalla)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configurar nombres de columnas explícitamente
+            modelBuilder.Entity<RolPorPantalla>()
+                .Property(rp => rp.ID_Rol)
+                .HasColumnName("ID_Rol");
+
+            modelBuilder.Entity<RolPorPantalla>()
+                .Property(rp => rp.ID_Pantalla)
+                .HasColumnName("ID_Pantalla");
+
+            modelBuilder.Entity<RolPorPantalla>()
+                .Property(rp => rp.ID_Rol_Por_Pantalla)
+                .HasColumnName("ID_Rol_Por_Pantalla");
         }
     }
 }
