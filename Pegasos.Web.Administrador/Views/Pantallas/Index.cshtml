@@ -289,6 +289,67 @@
                 margin-bottom: 15px;
                 color: rgba(197, 163, 103, 0.3);
             }
+
+        /* Modal personalizado */
+        .modal-content-custom {
+            background: #1f060c;
+            border: 2px solid var(--dorado-primario);
+            color: white;
+        }
+
+        .modal-header-custom {
+            border-bottom: 1px solid rgba(197, 163, 103, 0.3);
+        }
+
+        .modal-footer-custom {
+            border-top: 1px solid rgba(197, 163, 103, 0.3);
+        }
+
+        .modal-title-custom {
+            font-family: 'Cinzel', serif;
+            color: var(--dorado-primario);
+        }
+
+        .btn-cancel-custom {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+            .btn-cancel-custom:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+            }
+
+        .btn-delete-custom {
+            background: #dc3545;
+            border: none;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+            .btn-delete-custom:hover {
+                background: #c82333;
+                transform: translateY(-2px);
+            }
+
+        /* Fix z-index para modal de eliminar */
+        #modalEliminarPantalla {
+            z-index: 99999 !important;
+        }
+
+            #modalEliminarPantalla .modal-content {
+                z-index: 100000 !important;
+                position: relative;
+            }
+
+        /* SweetAlert2 siempre encima de todo */
+        .swal2-container {
+            z-index: 999999 !important;
+        }
     </style>
 }
 
@@ -379,7 +440,7 @@
                                     </a>
                                     <button type="button"
                                             class="btn-action btn-action-danger delete-btn"
-                                            onclick="confirmarEliminacion(@pantalla.Id, '@Html.Raw(pantalla.Nombre?.Replace("'", "\\'"))')"
+                                            onclick="abrirModalEliminar(@pantalla.Id, '@Html.Raw(pantalla.Nombre?.Replace("'", "\\'"))')"
                                             title="Eliminar pantalla">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
@@ -426,8 +487,145 @@
     </div>
 </div>
 
+<!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR -->
+<div class="modal fade" id="modalEliminarPantalla" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true" data-bs-backdrop="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-custom">
+                <h5 class="modal-title modal-title-custom" id="modalEliminarLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>CONFIRMAR ELIMINACIÓN
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-desktop fa-4x mb-3" style="color: #dc3545;"></i>
+                <p style="color: white; font-size: 1.1rem;" id="modalMensajeEliminar">
+                    ¿Realmente desea eliminar la pantalla?
+                </p>
+                <p class="small text-danger" id="modalAdvertencia">
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer modal-footer-custom">
+                <button type="button" class="btn btn-cancel-custom" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>CANCELAR
+                </button>
+                <button type="button" class="btn btn-delete-custom" id="btnConfirmarEliminar">
+                    <i class="fas fa-trash-alt me-2"></i>SÍ, ELIMINAR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario oculto para el borrado -->
+<form id="deleteForm" method="post" asp-action="Delete">
+    <input type="hidden" id="deleteId" name="id" />
+    @Html.AntiForgeryToken()
+</form>
+
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // Variable para almacenar el ID de la pantalla a eliminar
+        let pantallaIdAEliminar = null;
+
+        // Función para abrir el modal de confirmación
+        function abrirModalEliminar(id, nombre) {
+            pantallaIdAEliminar = id;
+            document.getElementById('modalMensajeEliminar').innerHTML =
+                `¿Realmente desea eliminar la pantalla <b style="color: var(--dorado-primario);">${nombre}</b>?`;
+            $('#modalEliminarPantalla').modal('show');
+        }
+
+        // Función para eliminar la pantalla
+        async function eliminarPantalla() {
+            if (!pantallaIdAEliminar) return;
+
+            // Mostrar loading en el botón
+            const btnConfirmar = document.getElementById('btnConfirmarEliminar');
+            const textoOriginal = btnConfirmar.innerHTML;
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ELIMINANDO...';
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                const response = await fetch(`/Pantallas/Delete/${pantallaIdAEliminar}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ id: pantallaIdAEliminar })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Cerrar modal
+                    $('#modalEliminarPantalla').modal('hide');
+
+                    // Limpiar residuos de Bootstrap (overflow y backdrop) antes de SweetAlert2
+                    $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                    $('.modal-backdrop').remove();
+
+                    // Mostrar notificación de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡ELIMINADA!',
+                        text: data.message,
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367',
+                        timer: 2000,
+                        showConfirmButton: true
+                    }).then(() => {
+                        // Recargar la página
+                        location.reload();
+                    });
+                } else {
+                    // Limpiar residuos de Bootstrap antes de SweetAlert2
+                    $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                    $('.modal-backdrop').remove();
+
+                    // Mostrar error
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ERROR',
+                        text: data.message,
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367'
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+
+                // Limpiar residuos de Bootstrap antes de SweetAlert2
+                $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                $('.modal-backdrop').remove();
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ERROR',
+                    text: 'Ocurrió un error al eliminar la pantalla',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonColor: '#c5a367'
+                });
+            } finally {
+                // Restaurar botón
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = textoOriginal;
+                pantallaIdAEliminar = null;
+            }
+        }
+
+        // Evento para el botón de confirmar eliminación
+        document.getElementById('btnConfirmarEliminar').addEventListener('click', eliminarPantalla);
+
+        // Función para mostrar notificaciones (para la búsqueda)
         function showNotification(type, message) {
             let notification = $('#dynamicNotification');
             if (notification.length === 0) {
@@ -448,42 +646,6 @@
             setTimeout(function() {
                 notification.fadeOut(300);
             }, 5000);
-        }
-
-        function confirmarEliminacion(id, nombre) {
-            if (confirm('¿Está seguro que desea eliminar la pantalla ' + nombre + '? Esta acción no se puede deshacer.')) {
-
-                var btn = $(`button[onclick*="confirmarEliminacion(${id}"]`);
-                var originalHtml = btn.html();
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-
-                var token = $('input[name="__RequestVerificationToken"]').first().val();
-
-                $.ajax({
-                    url: '/Pantallas/Delete/' + id,
-                    type: 'POST',
-                    data: {
-                        __RequestVerificationToken: token,
-                        id: id
-                    },
-                    success: function(response) {
-                        btn.prop('disabled', false).html(originalHtml);
-
-                        if (response.success) {
-                            showNotification('success', response.message);
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1000);
-                        } else {
-                            showNotification('error', response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        btn.prop('disabled', false).html(originalHtml);
-                        showNotification('error', 'Error al eliminar: ' + error);
-                    }
-                });
-            }
         }
 
         $(document).ready(function() {
@@ -520,7 +682,7 @@
                                 '<td><span class="' + estadoBadge + '">' + estadoTexto + '</span></td>' +
                                 '<td>' +
                                 '<a href="/Pantallas/Edit/' + pantalla.id + '" class="btn-action btn-action-warning"><i class="fas fa-edit"></i></a> ' +
-                                '<button type="button" class="btn-action btn-action-danger delete-btn" onclick="confirmarEliminacion(' + pantalla.id + ', \'' + nombreSeguro + '\')"><i class="fas fa-trash-alt"></i></button>' +
+                                '<button type="button" class="btn-action btn-action-danger delete-btn" onclick="abrirModalEliminar(' + pantalla.id + ', \'' + nombreSeguro + '\')"><i class="fas fa-trash-alt"></i></button>' +
                                 '</td>' +
                                 '</tr>';
                             tbody.append(row);
