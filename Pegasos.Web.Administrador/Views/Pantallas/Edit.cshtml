@@ -257,15 +257,7 @@
     </style>
 }
 
-<!-- DEBUG: Mostrar valores del modelo -->
-<div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0;">
-    <h5 style="color: #0f0; margin-top: 0;">DEBUG - Valores del Modelo:</h5>
-    <p><strong>ID:</strong> @Model.Id</p>
-    <p><strong>Nombre:</strong> "@Model.Nombre"</p>
-    <p><strong>Descripción:</strong> "@Model.Descripcion"</p>
-    <p><strong>Ruta:</strong> "@Model.Ruta"</p>
-    <p><strong>Estado:</strong> @Model.Estado</p>
-</div>
+
 
 <!-- Mensajes de notificación -->
 <div id="successNotification" class="notification notification-success" style="display: none;">
@@ -316,6 +308,7 @@
                         </label>
                         <input asp-for="Nombre" class="form-control form-control-custom"
                                id="Nombre" name="Nombre"
+                               value="@Model.Nombre"
                                placeholder="Ej: Usuarios, Roles, etc." />
                         <span asp-validation-for="Nombre" class="text-danger" id="nombreError"></span>
                     </div>
@@ -326,6 +319,7 @@
                         </label>
                         <input asp-for="Descripcion" class="form-control form-control-custom"
                                id="Descripcion" name="Descripcion"
+                               value="@Model.Descripcion"
                                placeholder="Ej: Administración de usuarios del sistema" />
                         <span asp-validation-for="Descripcion" class="text-danger" id="descripcionError"></span>
                     </div>
@@ -336,6 +330,7 @@
                         </label>
                         <input asp-for="Ruta" class="form-control form-control-custom"
                                id="Ruta" name="Ruta"
+                               value="@Model.Ruta"
                                placeholder="Ej: /Usuarios/Index" />
                         <span asp-validation-for="Ruta" class="text-danger" id="rutaError"></span>
                     </div>
@@ -345,9 +340,12 @@
                             <i class="fas fa-toggle-on"></i> Estado
                         </label>
                         <select asp-for="Estado" class="form-select form-select-custom" id="Estado" name="Estado">
-                            <option value="1">Activo</option>
-                            <option value="0">Inactivo</option>
+                            <option value="1" @(Model.Estado == 1 ? "selected" : "")>Activo</option>
+                            <option value="0" @(Model.Estado == 0 ? "selected" : "")>Inactivo</option>
                         </select>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Activo = 1, Inactivo = 2 en la base de datos
+                        </small>
                     </div>
 
                     <div class="btn-container">
@@ -366,6 +364,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function showNotification(type, message) {
             if (type === 'success') {
@@ -388,15 +387,23 @@
         @if (TempData["Success"] != null)
         {
             <text>
-                        showNotification('success', '@TempData["Success"]');
+                            showNotification('success', '@TempData["Success"]');
             </text>
         }
         @if (TempData["Error"] != null)
         {
             <text>
-                        showNotification('error', '@TempData["Error"]');
+                            showNotification('error', '@TempData["Error"]');
             </text>
         }
+
+            // DEBUG: Mostrar valores en consola
+            console.log("=== VALORES DEL MODELO ===");
+            console.log("ID: @Model.Id");
+            console.log("Nombre: @Model.Nombre");
+            console.log("Descripcion: @Model.Descripcion");
+            console.log("Ruta: @Model.Ruta");
+            console.log("Estado: @Model.Estado");
 
             // Deshabilitar la validación automática de HTML5
             $('form').attr('novalidate', 'novalidate');

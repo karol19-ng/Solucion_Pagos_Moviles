@@ -126,7 +126,8 @@ namespace Pegasos.Web.Administrador.Services
                             else if (item.TryGetProperty("Estado", out estadoProp))
                                 pantalla.Estado = estadoProp.GetInt32();
 
-                            _logger.LogInformation("Pantalla mapeada - ID: {Id}, Nombre: {Nombre}", pantalla.Id, pantalla.Nombre);
+                            _logger.LogInformation("Pantalla - ID: {Id}, Nombre: {Nombre}, Estado: {Estado}",
+    pantalla.Id, pantalla.Nombre, pantalla.Estado);
                             pantallas.Add(pantalla);
                         }
                     }
@@ -246,7 +247,7 @@ namespace Pegasos.Web.Administrador.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("✅ ÉXITO - Pantalla creada");
+                    _logger.LogInformation("Pantalla creada");
 
                     // Intentar deserializar la respuesta para ver si obtenemos el ID
                     try
@@ -291,14 +292,14 @@ namespace Pegasos.Web.Administrador.Services
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "❌ HttpRequestException al crear pantalla");
+                _logger.LogError(ex, "HttpRequestException al crear pantalla");
                 _logger.LogError("Mensaje: {Message}", ex.Message);
                 _logger.LogError("Status Code: {StatusCode}", ex.StatusCode);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error general al crear pantalla");
+                _logger.LogError(ex, "Error general al crear pantalla");
                 _logger.LogError("Mensaje: {Message}", ex.Message);
                 _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
                 return false;
@@ -312,27 +313,28 @@ namespace Pegasos.Web.Administrador.Services
                 AgregarTokenAlHeader();
 
                 _logger.LogInformation("=== ACTUALIZANDO PANTALLA ===");
-                _logger.LogInformation("Modelo - Id: {Id}, Nombre: {Nombre}, Descripción: {Descripcion}, Ruta: {Ruta}, Estado: {Estado}",
-                    model.Id, model.Nombre, model.Descripcion, model.Ruta, model.Estado);
+                _logger.LogInformation("Modelo - Id: {Id}, Nombre: {Nombre}, Estado recibido: {Estado}",
+                    model.Id, model.Nombre, model.Estado);
 
-                // Crear el objeto con TODOS los campos
+                
+                var estadoEnvio = model.Estado == 1 ? 1 : 2;
+
+                _logger.LogInformation("Estado convertido: {EstadoOriginal} -> {EstadoEnvio}", model.Estado, estadoEnvio);
+
                 var request = new
                 {
-                    id_Pantalla = model.Id,
+                    iD_Pantalla = model.Id,
                     nombre = model.Nombre,
                     descripcion = model.Descripcion,
                     ruta = model.Ruta,
-                    estado = model.Estado  // ← ESTO ES LO QUE FALTA
+                    estado = estadoEnvio  
                 };
 
                 var json = JsonSerializer.Serialize(request);
                 _logger.LogInformation("JSON enviado: {Json}", json);
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-
                 var apiUrl = $"https://localhost:7258/api/screen/{model.Id}";
-                _logger.LogInformation("URL: {Url}", apiUrl);
-
                 var response = await _httpClient.PutAsync(apiUrl, content);
 
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -344,11 +346,8 @@ namespace Pegasos.Web.Administrador.Services
                     _logger.LogInformation("✅ Pantalla actualizada exitosamente");
                     return true;
                 }
-                else
-                {
-                    _logger.LogWarning("❌ Error al actualizar: {StatusCode}", response.StatusCode);
-                    return false;
-                }
+
+                return false;
             }
             catch (Exception ex)
             {
