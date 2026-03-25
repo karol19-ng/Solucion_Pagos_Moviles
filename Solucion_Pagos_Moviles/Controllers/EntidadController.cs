@@ -42,6 +42,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     .Select(e => new
                     {
                         Id = e.ID_Entidad,
+                        Identificador = e.Identificador, // Nuevo campo
                         Nombre = e.Nombre_Institucion,
                         EstadoId = e.ID_Estado,
                         FechaCreacion = e.Fecha_Creacion
@@ -84,6 +85,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     .Select(e => new
                     {
                         Id = e.ID_Entidad,
+                        Identificador = e.Identificador, // Nuevo campo
                         Nombre = e.Nombre_Institucion,
                         EstadoId = e.ID_Estado,
                         FechaCreacion = e.Fecha_Creacion
@@ -127,11 +129,16 @@ namespace Solucion_Pagos_Moviles.Controllers
                 var usuario = User.Identity?.Name ?? "Sistema";
 
                 _logger.LogInformation("=== INTENTANDO CREAR ENTIDAD ===");
-                _logger.LogInformation("Nombre: {Nombre}", request?.Nombre);
+                _logger.LogInformation("Identificador: {Identificador}, Nombre: {Nombre}", request?.Identificador, request?.Nombre);
 
                 if (request == null)
                 {
                     return BadRequest(new { Codigo = -1, Descripcion = "Debe enviar los datos de la entidad" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Identificador))
+                {
+                    return BadRequest(new { Codigo = -1, Descripcion = "El identificador es requerido" });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.Nombre))
@@ -139,11 +146,20 @@ namespace Solucion_Pagos_Moviles.Controllers
                     return BadRequest(new { Codigo = -1, Descripcion = "El nombre de la institución es requerido" });
                 }
 
+                // Validar que no exista una entidad con el mismo identificador
+                var existeIdentificador = await _context.Entidades
+                    .AnyAsync(e => e.Identificador == request.Identificador);
+
+                if (existeIdentificador)
+                {
+                    return Conflict(new { Codigo = -1, Descripcion = $"Ya existe una entidad con identificador '{request.Identificador}'" });
+                }
+
                 // Validar que no exista una entidad con el mismo nombre
-                var existe = await _context.Entidades
+                var existeNombre = await _context.Entidades
                     .AnyAsync(e => e.Nombre_Institucion == request.Nombre);
 
-                if (existe)
+                if (existeNombre)
                 {
                     return Conflict(new { Codigo = -1, Descripcion = $"Ya existe una entidad con nombre '{request.Nombre}'" });
                 }
@@ -159,6 +175,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 var nuevaEntidad = new Entidad
                 {
                     ID_Entidad = nuevoId,
+                    Identificador = request.Identificador,
                     Nombre_Institucion = request.Nombre,
                     ID_Estado = 1, // Activo por defecto
                     Fecha_Creacion = DateTime.Now
@@ -173,7 +190,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 {
                     Usuario = usuario,
                     Accion = "CREACION",
-                    Descripcion = $"Nueva entidad creada: {nuevaEntidad.Nombre_Institucion}",
+                    Descripcion = $"Nueva entidad creada: {nuevaEntidad.Identificador} - {nuevaEntidad.Nombre_Institucion}",
                     Servicio = "/api/entidad",
                     Resultado = "OK"
                 });
@@ -185,6 +202,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     Entidad = new
                     {
                         Id = nuevaEntidad.ID_Entidad,
+                        Identificador = nuevaEntidad.Identificador,
                         Nombre = nuevaEntidad.Nombre_Institucion,
                         EstadoId = nuevaEntidad.ID_Estado,
                         FechaCreacion = nuevaEntidad.Fecha_Creacion
@@ -218,8 +236,22 @@ namespace Solucion_Pagos_Moviles.Controllers
                 }
 
                 // Guardar copia para bitácora
+                var identificadorAnterior = entidad.Identificador;
                 var nombreAnterior = entidad.Nombre_Institucion;
                 var estadoAnterior = entidad.ID_Estado;
+
+                // Si cambia el identificador, validar que no exista otro con el mismo
+                if (!string.IsNullOrWhiteSpace(request.Identificador) && request.Identificador != entidad.Identificador)
+                {
+                    var existe = await _context.Entidades
+                        .AnyAsync(e => e.Identificador == request.Identificador && e.ID_Entidad != id);
+
+                    if (existe)
+                    {
+                        return Conflict(new { Codigo = -1, Descripcion = $"Ya existe otra entidad con identificador '{request.Identificador}'" });
+                    }
+                    entidad.Identificador = request.Identificador;
+                }
 
                 // Si cambia el nombre, validar que no exista otro con el mismo
                 if (!string.IsNullOrWhiteSpace(request.Nombre) && request.Nombre != entidad.Nombre_Institucion)
@@ -247,7 +279,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 {
                     Usuario = usuario,
                     Accion = "ACTUALIZACION",
-                    Descripcion = $"Entidad actualizada - Anterior: {nombreAnterior}, Nueva: {entidad.Nombre_Institucion}",
+                    Descripcion = $"Entidad actualizada - ID: {id}, Identificador: {identificadorAnterior} -> {entidad.Identificador}, Nombre: {nombreAnterior} -> {entidad.Nombre_Institucion}",
                     Servicio = "/api/entidad",
                     Resultado = "OK"
                 });
@@ -312,7 +344,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 }
 
                 // Guardar copia para bitácora
-                var entidadEliminada = entidad.Nombre_Institucion;
+                var entidadEliminada = $"{entidad.Identificador} - {entidad.Nombre_Institucion}";
 
                 _context.Entidades.Remove(entidad);
                 await _context.SaveChangesAsync();
@@ -344,11 +376,13 @@ namespace Solucion_Pagos_Moviles.Controllers
 
     public class CrearEntidadRequest
     {
+        public string Identificador { get; set; } = string.Empty; // Nuevo campo
         public string Nombre { get; set; } = string.Empty;
     }
 
     public class ActualizarEntidadRequest
     {
+        public string? Identificador { get; set; } // Nuevo campo
         public string? Nombre { get; set; }
         public int? EstadoId { get; set; }
     }

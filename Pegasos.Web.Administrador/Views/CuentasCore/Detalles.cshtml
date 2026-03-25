@@ -202,7 +202,10 @@
                         <div class="info-value"><strong>@Model.NumeroCuenta</strong></div>
                     </div>
 
-                  
+                    <div class="info-row">
+                        <div class="info-label">Tipo de Cuenta:</div>
+                        <div class="info-value">@Model.TipoCuenta</div>
+                    </div>
 
                     <div class="info-row">
                         <div class="info-label">Saldo Actual:</div>
@@ -243,10 +246,6 @@
                 <div class="action-buttons">
                     <a asp-action="Index" class="btn-secondary-custom">
                         <i class="fas fa-arrow-left"></i> Regresar
-                    </a>
-                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-warning-custom">
-                        <i class="fas fa-edit"></i> Editar Cuenta
-                    </a>
                 </div>
             </div>
         </div>

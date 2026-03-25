@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-
 namespace Pegasos.Web.Administrador.Models
 {
     public class CuentaCoreViewModel
@@ -10,8 +9,7 @@ namespace Pegasos.Web.Administrador.Models
         public string ClienteIdentificacion { get; set; } = string.Empty;
         public string ClienteNombre { get; set; } = string.Empty;
         public string NumeroCuenta { get; set; } = string.Empty;
-        //public string TipoCuenta { get; set; } = string.Empty;
-        //public string TipoCuentaDescripcion { get; set; } = string.Empty;
+        public string TipoCuenta { get; set; } = string.Empty;
         public decimal Saldo { get; set; }
         public int? EstadoId { get; set; }
         public string EstadoDescripcion { get; set; } = "Activo";
@@ -24,20 +22,18 @@ namespace Pegasos.Web.Administrador.Models
         [Display(Name = "Identificación del Cliente")]
         public string ClienteIdentificacion { get; set; } = string.Empty;
 
-        //[Required(ErrorMessage = "El tipo de cuenta es requerido")]
-        //[Display(Name = "Tipo de Cuenta")]
-       // public string TipoCuenta { get; set; } = string.Empty;
-
-        // El número de cuenta es autogenerado por el backend
+        [Required(ErrorMessage = "El tipo de cuenta es requerido")]
+        [Display(Name = "Tipo de Cuenta")]
+        public string TipoCuenta { get; set; } = string.Empty;
     }
 
     public class EditarCuentaCoreViewModel
     {
         public int Id { get; set; }
 
-        //[Required(ErrorMessage = "El tipo de cuenta es requerido")]
-       // [Display(Name = "Tipo de Cuenta")]
-        //public string TipoCuenta { get; set; } = string.Empty;
+        [Required(ErrorMessage = "El tipo de cuenta es requerido")]
+        [Display(Name = "Tipo de Cuenta")]
+        public string TipoCuenta { get; set; } = string.Empty;
 
         public int EstadoId { get; set; } = 1;
     }

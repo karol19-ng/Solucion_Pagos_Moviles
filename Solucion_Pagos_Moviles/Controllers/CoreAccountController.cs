@@ -14,7 +14,7 @@ namespace Solucion_Pagos_Moviles.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Todas las operaciones requieren token
+    [Authorize]
     public class CoreAccountController : ControllerBase
     {
         private readonly CoreBancarioDbContext _context;
@@ -29,6 +29,33 @@ namespace Solucion_Pagos_Moviles.Controllers
             _context = context;
             _bitacoraService = bitacoraService;
             _logger = logger;
+        }
+
+        // GET: api/coreaccount/tipos-cuenta
+        [HttpGet("tipos-cuenta")]
+        public async Task<ActionResult<List<string>>> GetTiposCuenta()
+        {
+            try
+            {
+                _logger.LogInformation("Endpoint tipos-cuenta llamado");
+                var tipos = new List<string> { "CORRIENTE", "AHORROS" };
+
+                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                {
+                    Usuario = User.Identity?.Name ?? "Sistema",
+                    Accion = "CONSULTA",
+                    Descripcion = "Consulta de tipos de cuenta",
+                    Servicio = "/core/account/tipos-cuenta",
+                    Resultado = "OK"
+                });
+
+                return Ok(tipos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener tipos de cuenta");
+                return StatusCode(500, new { error = "Error interno del servidor" });
+            }
         }
 
         // GET: api/coreaccount
@@ -48,6 +75,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                                      {
                                          Id = c.ID_Cuenta,
                                          NumeroCuenta = c.Numero_Cuenta,
+                                         TipoCuenta = c.Tipo_Cuenta ?? "AHORROS",
                                          ClienteId = c.Identificacion_Cliente,
                                          ClienteIdentificacion = cliente != null ? cliente.Identificacion : "",
                                          ClienteNombre = cliente != null ? cliente.Nombre_Completo : "",
@@ -76,18 +104,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar cuentas");
-
-                var errorMessage = ex.Message.Length > 200 ? ex.Message.Substring(0, 200) + "..." : ex.Message;
-
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
-                {
-                    Usuario = User.Identity?.Name ?? "Sistema",
-                    Accion = "ERROR",
-                    Descripcion = $"Error al listar cuentas: {errorMessage}",
-                    Servicio = "/core/account",
-                    Resultado = "ERROR"
-                });
-
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
@@ -114,6 +130,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                                     {
                                         Id = c.ID_Cuenta,
                                         NumeroCuenta = c.Numero_Cuenta,
+                                        TipoCuenta = c.Tipo_Cuenta ?? "AHORROS",
                                         ClienteId = c.Identificacion_Cliente,
                                         ClienteIdentificacion = cliente != null ? cliente.Identificacion : "",
                                         ClienteNombre = cliente != null ? cliente.Nombre_Completo : "",
@@ -151,7 +168,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cuenta {id}");
-
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
@@ -178,6 +194,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                                     {
                                         Id = c.ID_Cuenta,
                                         NumeroCuenta = c.Numero_Cuenta,
+                                        TipoCuenta = c.Tipo_Cuenta ?? "AHORROS",
                                         ClienteId = c.Identificacion_Cliente,
                                         ClienteIdentificacion = cliente != null ? cliente.Identificacion : "",
                                         ClienteNombre = cliente != null ? cliente.Nombre_Completo : "",
@@ -196,15 +213,6 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
-                {
-                    Usuario = usuario,
-                    Accion = "CONSULTA",
-                    Descripcion = $"El usuario consulta cuenta por número: {numeroCuenta}",
-                    Servicio = "/core/account",
-                    Resultado = "OK"
-                });
-
                 return Ok(new CuentaResponse
                 {
                     Codigo = 0,
@@ -215,7 +223,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cuenta por número {numeroCuenta}");
-
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
@@ -226,39 +233,44 @@ namespace Solucion_Pagos_Moviles.Controllers
 
         // GET: api/coreaccount/cliente/{identificacionCliente}
         [HttpGet("cliente/{identificacionCliente}")]
-        public async Task<ActionResult<CuentaResponse>> ObtenerPorClienteIdentificacion(int identificacionCliente)
+        public async Task<ActionResult<CuentaResponse>> ObtenerPorClienteIdentificacion(string identificacionCliente)
         {
             try
             {
                 var usuario = User.Identity?.Name ?? "Sistema";
 
+                var cliente = await _context.ClientesBanco
+                    .FirstOrDefaultAsync(c => c.Identificacion == identificacionCliente);
+
+                if (cliente == null)
+                {
+                    return Ok(new CuentaResponse
+                    {
+                        Codigo = 0,
+                        Descripcion = $"No se encontró cliente con identificación {identificacionCliente}",
+                        Cuentas = new List<CuentaDTO>()
+                    });
+                }
+
                 var cuentas = await (from c in _context.Cuentas
                                      join cli in _context.ClientesBanco on c.Identificacion_Cliente equals cli.ID_Cliente into clienteJoin
-                                     from cliente in clienteJoin.DefaultIfEmpty()
+                                     from cliData in clienteJoin.DefaultIfEmpty()
                                      join est in _context.EstadosCore on c.ID_Estado equals est.ID_Estado into estadoJoin
                                      from estado in estadoJoin.DefaultIfEmpty()
-                                     where c.Identificacion_Cliente == identificacionCliente
+                                     where c.Identificacion_Cliente == cliente.ID_Cliente
                                      select new CuentaDTO
                                      {
                                          Id = c.ID_Cuenta,
                                          NumeroCuenta = c.Numero_Cuenta,
+                                         TipoCuenta = c.Tipo_Cuenta ?? "AHORROS",
                                          ClienteId = c.Identificacion_Cliente,
-                                         ClienteIdentificacion = cliente != null ? cliente.Identificacion : "",
-                                         ClienteNombre = cliente != null ? cliente.Nombre_Completo : "",
+                                         ClienteIdentificacion = cliData != null ? cliData.Identificacion : "",
+                                         ClienteNombre = cliData != null ? cliData.Nombre_Completo : "",
                                          Saldo = c.Saldo,
                                          EstadoId = c.ID_Estado,
                                          EstadoDescripcion = estado != null ? estado.Descripcion : ""
                                      })
                                       .ToListAsync();
-
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
-                {
-                    Usuario = usuario,
-                    Accion = "CONSULTA",
-                    Descripcion = $"El usuario consulta cuentas del cliente ID: {identificacionCliente}. Total: {cuentas.Count}",
-                    Servicio = "/core/account",
-                    Resultado = "OK"
-                });
 
                 return Ok(new CuentaResponse
                 {
@@ -270,7 +282,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener cuentas del cliente {identificacionCliente}");
-
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
@@ -279,7 +290,54 @@ namespace Solucion_Pagos_Moviles.Controllers
             }
         }
 
-        // POST: api/coreaccount
+        // GET: api/coreaccount/cliente-id/{clienteId}
+        [HttpGet("cliente-id/{clienteId}")]
+        public async Task<ActionResult<CuentaResponse>> ObtenerPorClienteId(int clienteId)
+        {
+            try
+            {
+                var usuario = User.Identity?.Name ?? "Sistema";
+
+                var cuentas = await (from c in _context.Cuentas
+                                     join cli in _context.ClientesBanco on c.Identificacion_Cliente equals cli.ID_Cliente into clienteJoin
+                                     from cliente in clienteJoin.DefaultIfEmpty()
+                                     join est in _context.EstadosCore on c.ID_Estado equals est.ID_Estado into estadoJoin
+                                     from estado in estadoJoin.DefaultIfEmpty()
+                                     where c.Identificacion_Cliente == clienteId
+                                     select new CuentaDTO
+                                     {
+                                         Id = c.ID_Cuenta,
+                                         NumeroCuenta = c.Numero_Cuenta,
+                                         TipoCuenta = c.Tipo_Cuenta ?? "AHORROS",
+                                         ClienteId = c.Identificacion_Cliente,
+                                         ClienteIdentificacion = cliente != null ? cliente.Identificacion : "",
+                                         ClienteNombre = cliente != null ? cliente.Nombre_Completo : "",
+                                         Saldo = c.Saldo,
+                                         EstadoId = c.ID_Estado,
+                                         EstadoDescripcion = estado != null ? estado.Descripcion : ""
+                                     })
+                                      .ToListAsync();
+
+                return Ok(new CuentaResponse
+                {
+                    Codigo = 0,
+                    Descripcion = "Cuentas obtenidas exitosamente",
+                    Cuentas = cuentas
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al obtener cuentas del cliente ID {clienteId}");
+                return StatusCode(500, new CuentaResponse
+                {
+                    Codigo = -1,
+                    Descripcion = "Error interno del servidor"
+                });
+            }
+        }
+
+
+        // POST: api/coreaccount - CREAR CUENTA
         [HttpPost]
         public async Task<ActionResult<CuentaResponse>> Crear([FromBody] CrearCuentaRequest request)
         {
@@ -289,7 +347,8 @@ namespace Solucion_Pagos_Moviles.Controllers
 
                 _logger.LogInformation("=== INTENTANDO CREAR CUENTA ===");
                 _logger.LogInformation("Usuario: {Usuario}", usuario);
-                _logger.LogInformation("Request: {@Request}", request);
+                _logger.LogInformation("Request: ClienteId={ClienteId}, TipoCuenta={TipoCuenta}",
+                    request?.ClienteId, request?.TipoCuenta);
 
                 // Validaciones
                 if (request == null)
@@ -301,89 +360,117 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                if (request.IdentificacionCliente <= 0)
+                if (request.ClienteId <= 0)
                 {
                     return BadRequest(new CuentaResponse
                     {
                         Codigo = -1,
-                        Descripcion = "La identificación del cliente es requerida"
+                        Descripcion = "El ID del cliente es requerido"
                     });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.NumeroCuenta))
+                if (string.IsNullOrWhiteSpace(request.TipoCuenta))
                 {
                     return BadRequest(new CuentaResponse
                     {
                         Codigo = -1,
-                        Descripcion = "El número de cuenta es requerido"
+                        Descripcion = "El tipo de cuenta es requerido"
                     });
                 }
 
-                // Validar que el número de cuenta no exista
-                var existeNumero = await _context.Cuentas
-                    .AnyAsync(c => c.Numero_Cuenta == request.NumeroCuenta);
-
-                if (existeNumero)
+                // Validar que el tipo de cuenta sea válido
+                var tiposValidos = new List<string> { "CORRIENTE", "AHORROS" };
+                if (!tiposValidos.Contains(request.TipoCuenta.ToUpper()))
                 {
-                    return Conflict(new CuentaResponse
+                    return BadRequest(new CuentaResponse
                     {
                         Codigo = -1,
-                        Descripcion = $"Ya existe una cuenta con el número {request.NumeroCuenta}"
+                        Descripcion = $"Tipo de cuenta inválido. Los tipos válidos son: {string.Join(", ", tiposValidos)}"
                     });
                 }
 
                 // Validar que el cliente existe
                 var cliente = await _context.ClientesBanco
-                    .FirstOrDefaultAsync(c => c.ID_Cliente == request.IdentificacionCliente);
+                    .FirstOrDefaultAsync(c => c.ID_Cliente == request.ClienteId);
 
                 if (cliente == null)
                 {
-                    _logger.LogWarning("Cliente no encontrado: {IdentificacionCliente}", request.IdentificacionCliente);
+                    _logger.LogWarning("Cliente no encontrado: {ClienteId}", request.ClienteId);
                     return BadRequest(new CuentaResponse
                     {
                         Codigo = -1,
-                        Descripcion = $"El cliente con ID {request.IdentificacionCliente} no existe"
+                        Descripcion = $"El cliente con ID {request.ClienteId} no existe"
                     });
                 }
 
-                // Obtener el máximo ID actual
-                var maxId = await _context.Cuentas
-                    .OrderByDescending(c => c.ID_Cuenta)
-                    .Select(c => (int?)c.ID_Cuenta)
-                    .FirstOrDefaultAsync();
+                _logger.LogInformation("Cliente encontrado: ID={Id}, Nombre={Nombre}, Identificacion={Identificacion}",
+                    cliente.ID_Cliente, cliente.Nombre_Completo, cliente.Identificacion);
 
-                int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
+                // Generar número de cuenta (sin usar ID, porque la BD lo genera automáticamente)
+                string numeroCuenta = GenerarNumeroCuenta(cliente.ID_Cliente, request.TipoCuenta);
+                _logger.LogInformation("Número de cuenta generado: {NumeroCuenta}", numeroCuenta);
 
-                _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
+                // Verificar que el número de cuenta no exista
+                var existeNumero = await _context.Cuentas
+                    .AnyAsync(c => c.Numero_Cuenta == numeroCuenta);
 
-                // Crear nueva cuenta
+                if (existeNumero)
+                {
+                    _logger.LogWarning("Número de cuenta {NumeroCuenta} ya existe, generando alternativo", numeroCuenta);
+                    numeroCuenta = GenerarNumeroCuentaAlternativo(cliente.ID_Cliente, request.TipoCuenta);
+                    _logger.LogInformation("Número alternativo generado: {NumeroCuenta}", numeroCuenta);
+                }
+
+                // Crear nueva cuenta (SIN ESPECIFICAR ID_Cuenta - la BD lo genera automáticamente)
                 var nuevaCuenta = new Cuenta
                 {
-                    ID_Cuenta = nuevoId,
-                    Numero_Cuenta = request.NumeroCuenta,
-                    Identificacion_Cliente = request.IdentificacionCliente,
+                    Numero_Cuenta = numeroCuenta,
+                    Tipo_Cuenta = request.TipoCuenta.ToUpper(),
+                    Identificacion_Cliente = request.ClienteId,
                     Saldo = 0,
-                    ID_Estado = 1 // Activo
+                    ID_Estado = 1,
                 };
 
-                _logger.LogInformation("Cuenta a insertar: {@Cuenta}", new
-                {
-                    nuevaCuenta.ID_Cuenta,
-                    nuevaCuenta.Numero_Cuenta,
-                    nuevaCuenta.Identificacion_Cliente,
-                    nuevaCuenta.Saldo,
-                    nuevaCuenta.ID_Estado
-                });
+                _logger.LogInformation("Cuenta a insertar: Numero={Numero}, Tipo={Tipo}, ClienteId={ClienteId}, Saldo={Saldo}, Estado={Estado}",
+                    nuevaCuenta.Numero_Cuenta, nuevaCuenta.Tipo_Cuenta,
+                    nuevaCuenta.Identificacion_Cliente, nuevaCuenta.Saldo, nuevaCuenta.ID_Estado);
 
                 _context.Cuentas.Add(nuevaCuenta);
-                var saveResult = await _context.SaveChangesAsync();
-                _logger.LogInformation("SaveChangesAsync result: {SaveResult}", saveResult);
+
+                try
+                {
+                    var saveResult = await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ SaveChangesAsync exitoso: {SaveResult} registros afectados", saveResult);
+                    _logger.LogInformation("Nuevo ID generado automáticamente: {NuevoId}", nuevaCuenta.ID_Cuenta);
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    _logger.LogError(dbEx, "❌ DbUpdateException al guardar la cuenta");
+                    _logger.LogError("Mensaje: {Message}", dbEx.Message);
+
+                    if (dbEx.InnerException != null)
+                    {
+                        _logger.LogError("InnerException: {InnerMessage}", dbEx.InnerException.Message);
+                        return StatusCode(500, new CuentaResponse
+                        {
+                            Codigo = -1,
+                            Descripcion = $"Error de base de datos: {dbEx.InnerException.Message}"
+                        });
+                    }
+
+                    return StatusCode(500, new CuentaResponse
+                    {
+                        Codigo = -1,
+                        Descripcion = $"Error al guardar: {dbEx.Message}"
+                    });
+                }
 
                 // Registrar en bitácora
                 var jsonRegistro = System.Text.Json.JsonSerializer.Serialize(new
                 {
                     nuevaCuenta.ID_Cuenta,
                     nuevaCuenta.Numero_Cuenta,
+                    nuevaCuenta.Tipo_Cuenta,
                     nuevaCuenta.Identificacion_Cliente,
                     nuevaCuenta.Saldo,
                     nuevaCuenta.ID_Estado
@@ -402,6 +489,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 {
                     Id = nuevaCuenta.ID_Cuenta,
                     NumeroCuenta = nuevaCuenta.Numero_Cuenta,
+                    TipoCuenta = nuevaCuenta.Tipo_Cuenta ?? "AHORROS",
                     ClienteId = nuevaCuenta.Identificacion_Cliente,
                     ClienteIdentificacion = cliente.Identificacion,
                     ClienteNombre = cliente.Nombre_Completo,
@@ -409,7 +497,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                     EstadoId = nuevaCuenta.ID_Estado
                 };
 
-                _logger.LogInformation("Cuenta creada exitosamente con ID: {Id}", nuevaCuenta.ID_Cuenta);
+                _logger.LogInformation("✅ Cuenta creada exitosamente con ID: {Id}, Número: {Numero}, Tipo: {Tipo}",
+                    nuevaCuenta.ID_Cuenta, nuevaCuenta.Numero_Cuenta, nuevaCuenta.Tipo_Cuenta);
 
                 return CreatedAtAction(nameof(ObtenerPorId), new { id = nuevaCuenta.ID_Cuenta }, new CuentaResponse
                 {
@@ -420,9 +509,8 @@ namespace Solucion_Pagos_Moviles.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear cuenta");
+                _logger.LogError(ex, "❌ Error general al crear cuenta");
                 _logger.LogError("Mensaje: {Message}", ex.Message);
-                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
 
                 if (ex.InnerException != null)
                 {
@@ -432,9 +520,37 @@ namespace Solucion_Pagos_Moviles.Controllers
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
-                    Descripcion = "Error interno del servidor: " + ex.Message
+                    Descripcion = $"Error interno del servidor: {ex.Message}"
                 });
             }
+        }
+
+        // Método para generar número de cuenta
+        private string GenerarNumeroCuenta(int clienteId, string tipoCuenta)
+        {
+            string codigoCliente = clienteId.ToString().PadLeft(4, '0');
+            string timestamp = DateTime.Now.ToString("yyMMddHHmmss");
+            string codigoTipo = tipoCuenta.ToUpper() == "CORRIENTE" ? "C" : "A";
+
+            string numero = $"CR{codigoCliente}{timestamp}{codigoTipo}";
+
+            // Limitar a 22 caracteres (máximo de la columna)
+            if (numero.Length > 22) numero = numero.Substring(0, 22);
+
+            return numero;
+        }
+
+        private string GenerarNumeroCuentaAlternativo(int clienteId, string tipoCuenta)
+        {
+            string codigoCliente = clienteId.ToString().PadLeft(4, '0');
+            string guid = Guid.NewGuid().ToString("N").Substring(0, 8);
+            string codigoTipo = tipoCuenta.ToUpper() == "CORRIENTE" ? "C" : "A";
+
+            string numero = $"CR{codigoCliente}{guid}{codigoTipo}";
+
+            if (numero.Length > 22) numero = numero.Substring(0, 22);
+
+            return numero;
         }
 
         // PUT: api/coreaccount/{id}
@@ -445,7 +561,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             {
                 var usuario = User.Identity?.Name ?? "Sistema";
 
-                // Validaciones
                 if (request == null)
                 {
                     return BadRequest(new CuentaResponse
@@ -464,7 +579,6 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // Buscar cuenta existente
                 var cuentaExistente = await _context.Cuentas
                     .FirstOrDefaultAsync(c => c.ID_Cuenta == id);
 
@@ -477,19 +591,17 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // Guardar copia para bitácora
                 var cuentaAnterior = new
                 {
                     cuentaExistente.Numero_Cuenta,
+                    cuentaExistente.Tipo_Cuenta,
                     cuentaExistente.Identificacion_Cliente,
                     cuentaExistente.Saldo,
                     cuentaExistente.ID_Estado
                 };
 
-                // Actualizar estado si se envía
                 if (request.EstadoId.HasValue)
                 {
-                    // Validar que el estado existe
                     var estadoValido = await _context.EstadosCore.AnyAsync(e => e.ID_Estado == request.EstadoId.Value);
                     if (!estadoValido)
                     {
@@ -502,23 +614,35 @@ namespace Solucion_Pagos_Moviles.Controllers
                     cuentaExistente.ID_Estado = request.EstadoId.Value;
                 }
 
-                // Actualizar saldo si se envía
                 if (request.Saldo.HasValue)
                 {
                     cuentaExistente.Saldo = request.Saldo.Value;
                 }
 
+                if (!string.IsNullOrWhiteSpace(request.TipoCuenta))
+                {
+                    var tiposValidos = new List<string> { "CORRIENTE", "AHORROS" };
+                    if (!tiposValidos.Contains(request.TipoCuenta.ToUpper()))
+                    {
+                        return BadRequest(new CuentaResponse
+                        {
+                            Codigo = -1,
+                            Descripcion = $"Tipo de cuenta inválido. Los tipos válidos son: {string.Join(", ", tiposValidos)}"
+                        });
+                    }
+                    cuentaExistente.Tipo_Cuenta = request.TipoCuenta.ToUpper();
+                }
+
                 await _context.SaveChangesAsync();
 
-                // Obtener datos del cliente para el DTO
                 var cliente = await _context.ClientesBanco
                     .FirstOrDefaultAsync(c => c.ID_Cliente == cuentaExistente.Identificacion_Cliente);
 
-                // Registrar en bitácora
                 var jsonAnterior = System.Text.Json.JsonSerializer.Serialize(cuentaAnterior);
                 var jsonActual = System.Text.Json.JsonSerializer.Serialize(new
                 {
                     cuentaExistente.Numero_Cuenta,
+                    cuentaExistente.Tipo_Cuenta,
                     cuentaExistente.Identificacion_Cliente,
                     cuentaExistente.Saldo,
                     cuentaExistente.ID_Estado
@@ -537,6 +661,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 {
                     Id = cuentaExistente.ID_Cuenta,
                     NumeroCuenta = cuentaExistente.Numero_Cuenta,
+                    TipoCuenta = cuentaExistente.Tipo_Cuenta ?? "AHORROS",
                     ClienteId = cuentaExistente.Identificacion_Cliente,
                     ClienteIdentificacion = cliente?.Identificacion ?? "",
                     ClienteNombre = cliente?.Nombre_Completo ?? "",
@@ -554,7 +679,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al actualizar cuenta {id}");
-
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
@@ -573,15 +697,12 @@ namespace Solucion_Pagos_Moviles.Controllers
 
                 _logger.LogInformation("=== INTENTANDO ELIMINAR CUENTA ===");
                 _logger.LogInformation("ID a eliminar: {Id}", id);
-                _logger.LogInformation("Usuario: {Usuario}", usuario);
 
-                // Buscar cuenta existente
                 var cuentaExistente = await _context.Cuentas
                     .FirstOrDefaultAsync(c => c.ID_Cuenta == id);
 
                 if (cuentaExistente == null)
                 {
-                    _logger.LogWarning("Cuenta con ID {Id} no encontrada", id);
                     return NotFound(new CuentaResponse
                     {
                         Codigo = -1,
@@ -589,23 +710,11 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                _logger.LogInformation("Cuenta encontrada: {@Cuenta}", new
-                {
-                    cuentaExistente.ID_Cuenta,
-                    cuentaExistente.Numero_Cuenta,
-                    cuentaExistente.Identificacion_Cliente,
-                    cuentaExistente.Saldo,
-                    cuentaExistente.ID_Estado
-                });
-
-                // Verificar si tiene movimientos asociados usando MovimientoId
                 var tieneMovimientos = await _context.MovimientosCuenta
                     .AnyAsync(m => m.Numero_Cuenta == cuentaExistente.Numero_Cuenta);
 
                 if (tieneMovimientos)
                 {
-                    _logger.LogWarning("Cuenta {NumeroCuenta} tiene movimientos asociados. No se puede eliminar.", cuentaExistente.Numero_Cuenta);
-
                     var cantidadMovimientos = await _context.MovimientosCuenta
                         .CountAsync(m => m.Numero_Cuenta == cuentaExistente.Numero_Cuenta);
 
@@ -616,23 +725,19 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
-                // Guardar copia para bitácora
                 var cuentaEliminada = new
                 {
                     cuentaExistente.ID_Cuenta,
                     cuentaExistente.Numero_Cuenta,
                     cuentaExistente.Identificacion_Cliente,
                     cuentaExistente.Saldo,
-                    cuentaExistente.ID_Estado
+                    cuentaExistente.ID_Estado,
+                    cuentaExistente.Tipo_Cuenta
                 };
 
-                // Eliminar cuenta
                 _context.Cuentas.Remove(cuentaExistente);
-                var saveResult = await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-                _logger.LogInformation("SaveChangesAsync result: {SaveResult}", saveResult);
-
-                // Registrar en bitácora
                 var jsonEliminado = System.Text.Json.JsonSerializer.Serialize(cuentaEliminada);
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
@@ -654,28 +759,21 @@ namespace Solucion_Pagos_Moviles.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al eliminar cuenta {id}");
-                _logger.LogError("Mensaje: {Message}", ex.Message);
-                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    _logger.LogError("InnerException: {InnerMessage}", ex.InnerException.Message);
-                }
-
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
-                    Descripcion = "Error interno del servidor: " + ex.Message
+                    Descripcion = "Error interno del servidor"
                 });
             }
         }
     }
 
-    // DTOs para las respuestas
+    // DTOs actualizados con TipoCuenta
     public class CuentaDTO
     {
         public int Id { get; set; }
         public string NumeroCuenta { get; set; } = "";
+        public string TipoCuenta { get; set; } = "AHORROS";
         public int ClienteId { get; set; }
         public string ClienteIdentificacion { get; set; } = "";
         public string ClienteNombre { get; set; } = "";
@@ -694,8 +792,8 @@ namespace Solucion_Pagos_Moviles.Controllers
 
     public class CrearCuentaRequest
     {
-        public int IdentificacionCliente { get; set; }
-        public string NumeroCuenta { get; set; } = "";
+        public int ClienteId { get; set; }
+        public string TipoCuenta { get; set; } = "";
     }
 
     public class ActualizarCuentaRequest
@@ -703,5 +801,6 @@ namespace Solucion_Pagos_Moviles.Controllers
         public int Id { get; set; }
         public decimal? Saldo { get; set; }
         public int? EstadoId { get; set; }
+        public string? TipoCuenta { get; set; }
     }
 }

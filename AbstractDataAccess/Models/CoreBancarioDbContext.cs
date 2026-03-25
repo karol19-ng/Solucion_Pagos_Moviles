@@ -19,7 +19,7 @@ namespace AbstractDataAccess.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ClienteBanco>().ToTable("Cliente_Banco");
-            modelBuilder.Entity<Cuenta>().ToTable("Cuenta");
+            modelBuilder.Entity<Cuenta>().ToTable("Cuentas");
             modelBuilder.Entity<MovimientoCuenta>().ToTable("Movimiento_Cuenta");
             modelBuilder.Entity<EstadoCore>().ToTable("Estados");
         }

@@ -11,7 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Ocelot.json" />
     <None Include="Pegasos.Gateway.csproj" />
   </ItemGroup>
 
@@ -25,10 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gateway_2\Gateway_2.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Configuration\" />
   </ItemGroup>
 
 </Project>

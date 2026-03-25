@@ -209,18 +209,18 @@ namespace Pegasos.Web.Administrador.Controllers
                 if (resultado)
                 {
                     _logger.LogInformation("Entidad {Id} eliminada exitosamente", id);
-                    return Json(new { success = true, message = "✅ Entidad eliminada exitosamente" });
+                    return Json(new { success = true, message = "Entidad eliminada exitosamente" });
                 }
                 else
                 {
                     _logger.LogWarning("No se pudo eliminar la entidad {Id}", id);
-                    return Json(new { success = false, message = "❌ No se pudo eliminar la entidad" });
+                    return Json(new { success = false, message = "No se pudo eliminar la entidad" });
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar entidad {Id}", id);
-                return Json(new { success = false, message = "❌ Error al eliminar la entidad: " + ex.Message });
+                return Json(new { success = false, message = "Error al eliminar la entidad: " + ex.Message });
             }
         }
 
