@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Pegasos.Web.Administrador.Services;
 
 namespace Pegasos.Web.Administrador.Controllers
 {
