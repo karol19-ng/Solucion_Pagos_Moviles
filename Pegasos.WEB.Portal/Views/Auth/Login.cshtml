@@ -1,7 +1,7 @@
 ﻿@model LoginPortalViewModel
 @{
     ViewData["Title"] = "Inicio de Sesión - Clientes";
-    Layout = null; // No usa layout para evitar sidebar
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -180,24 +180,24 @@
             }
 
             .alert-error {
-                background: rgba(255,0,0,0.2);
+                background: rgba(239, 68, 68, 0.2);
                 color: #ff6b6b;
-                padding: 10px;
+                padding: 12px;
                 border-radius: 5px;
-                margin-bottom: 15px;
-                border: 1px solid #ff0000;
-                font-size: 0.8rem;
+                margin-bottom: 20px;
+                border: 1px solid #ef4444;
+                font-size: 0.85rem;
                 text-align: center;
             }
 
             .alert-warning {
-                background: rgba(255, 165, 0, 0.2);
+                background: rgba(245, 158, 11, 0.2);
                 color: #ffb347;
-                padding: 10px;
+                padding: 12px;
                 border-radius: 5px;
-                margin-bottom: 15px;
-                border: 1px solid orange;
-                font-size: 0.8rem;
+                margin-bottom: 20px;
+                border: 1px solid #f59e0b;
+                font-size: 0.85rem;
                 text-align: center;
             }
     </style>
@@ -205,21 +205,6 @@
 <body>
     <div class="login-card">
         <img src="/images/logo_pegasos.png" alt="Logo Banco Pegasos" class="brand-logo">
-        @if (TempData["SessionExpired"] != null && (bool)TempData["SessionExpired"])
-        {
-            <div style="
-                background: rgba(255, 165, 0, 0.2);
-                color: #ffb347;
-                padding: 15px;
-                border-radius: 5px;
-                margin-bottom: 20px;
-                border: 1px solid orange;
-                text-align: center;
-                ">
-                <i class="fas fa-clock me-2"></i>
-                Su sesión ha expirado por inactividad. Por favor, inicie sesión nuevamente.
-            </div>
-        }
         <h1 class="bank-title">BANCO PEGASOS</h1>
         <p class="bank-slogan">Su socio financiero</p>
         <div class="badge-cliente">PORTAL CLIENTES</div>
@@ -227,14 +212,14 @@
         @if (ViewBag.SessionExpired != null && (bool)ViewBag.SessionExpired)
         {
             <div class="alert-warning">
-                <i class="fas fa-clock"></i> Su sesión ha expirado por inactividad. Por favor, inicie sesión nuevamente.
+                <i class="fas fa-clock me-2"></i> Su sesión ha expirado por inactividad. Por favor, inicie sesión nuevamente.
             </div>
         }
 
         @if (!string.IsNullOrEmpty(Model?.ErrorMessage))
         {
             <div class="alert-error">
-                <i class="fas fa-exclamation-triangle"></i> @Model.ErrorMessage
+                <i class="fas fa-exclamation-triangle me-2"></i> @Model.ErrorMessage
             </div>
         }
 

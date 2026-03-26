@@ -1,81 +1,60 @@
 ﻿let sessionTimer;
-let timeLeft = 300;
-let timerDisplay = document.getElementById('timerDisplay');
 
 function iniciarContadorSesion(minutos, logoutUrl) {
-    timeLeft = minutos * 60;
-    actualizarDisplay();
-
     if (sessionTimer) {
         clearInterval(sessionTimer);
     }
 
     sessionTimer = setInterval(function () {
-        timeLeft--;
-        actualizarDisplay();
+        // Mostrar mensaje de sesión expirada después de 5 minutos
+        const mensaje = document.createElement('div');
+        mensaje.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
 
-        if (timeLeft <= 0) {
-            clearInterval(sessionTimer);
+        mensaje.innerHTML = `
+            <div style="
+                background: #2b0811;
+                border: 2px solid #c5a367;
+                border-radius: 12px;
+                padding: 35px;
+                text-align: center;
+                max-width: 380px;
+                box-shadow: 0 0 25px rgba(197,163,103,0.3);
+            ">
+                <i class="fas fa-clock" style="font-size: 55px; color: #c5a367; margin-bottom: 20px;"></i>
+                <h3 style="color: white; margin-bottom: 15px; font-family: 'Cinzel', serif;">Sesión Expirada</h3>
+                <p style="color: rgba(255,255,255,0.8); margin-bottom: 25px; font-size: 15px;">
+                    Su sesión ha expirado por inactividad.
+                </p>
+                <button onclick="window.location.href='${logoutUrl}?expired=true'" 
+                        style="
+                            background: linear-gradient(135deg, #c5a367 0%, #8e6d31 100%);
+                            border: none;
+                            padding: 12px 30px;
+                            border-radius: 6px;
+                            color: #1a050a;
+                            font-weight: bold;
+                            cursor: pointer;
+                            font-size: 16px;
+                            width: 100%;
+                        ">
+                    Volver a iniciar sesión
+                </button>
+            </div>
+        `;
 
-            // Mostrar mensaje simple
-            const mensaje = document.createElement('div');
-            mensaje.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-            `;
+        document.body.appendChild(mensaje);
 
-            mensaje.innerHTML = `
-                <div style="
-                    background: #2b0811;
-                    border: 2px solid #c5a367;
-                    border-radius: 10px;
-                    padding: 30px;
-                    text-align: center;
-                    max-width: 350px;
-                ">
-                    <i class="fas fa-clock" style="font-size: 40px; color: #c5a367; margin-bottom: 15px;"></i>
-                    <p style="color: white; font-size: 16px; margin-bottom: 20px;">
-                        Su sesión ha expirado por inactividad.
-                    </p>
-                    <button onclick="window.location.href='${logoutUrl}?expired=true'" 
-                            style="
-                                background: linear-gradient(135deg, #c5a367 0%, #8e6d31 100%);
-                                border: none;
-                                padding: 10px 25px;
-                                border-radius: 5px;
-                                color: #1a050a;
-                                font-weight: bold;
-                                cursor: pointer;
-                                width: 100%;
-                            ">
-                        Aceptar
-                    </button>
-                </div>
-            `;
-
-            document.body.appendChild(mensaje);
-        }
-    }, 1000);
-
-    $(document).on('mousemove keydown click scroll', function () {
-        timeLeft = 300;
-        actualizarDisplay();
-    });
-}
-
-function actualizarDisplay() {
-    if (timerDisplay) {
-        let minutes = Math.floor(timeLeft / 60);
-        let seconds = timeLeft % 60;
-        timerDisplay.textContent = minutes.toString().padStart(2, '0') + ':' +
-            seconds.toString().padStart(2, '0');
-    }
+        clearInterval(sessionTimer);
+    }, minutos * 60 * 1000);
 }

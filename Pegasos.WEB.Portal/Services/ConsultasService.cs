@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Net.Http.Headers;
 using Pegasos.WEB.Portal.Models.ViewModels;
 
@@ -24,13 +23,9 @@ namespace Pegasos.WEB.Portal.Services
                 _httpClient.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
 
-                _logger.LogInformation("=== CONSULTA SALDO ===");
-                _logger.LogInformation("Teléfono: {Telefono}", telefono);
-                _logger.LogInformation("Identificación: {Identificacion}", identificacion);
-
-                // Construir URL con los parámetros requeridos
                 var url = $"gateway/accounts/balance?telefono={telefono}&identificacion={identificacion}";
-                _logger.LogInformation("URL: {Url}", url);
+
+                _logger.LogInformation("Consultando saldo: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
                 var responseJson = await response.Content.ReadAsStringAsync();
@@ -40,8 +35,9 @@ namespace Pegasos.WEB.Portal.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = JsonSerializer.Deserialize<SaldoResponse>(responseJson,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    // Deserializar correctamente a un objeto específico
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var result = JsonSerializer.Deserialize<SaldoResponseDto>(responseJson, options);
 
                     if (result != null)
                     {
@@ -49,17 +45,26 @@ namespace Pegasos.WEB.Portal.Services
                         {
                             Telefono = telefono,
                             Identificacion = identificacion,
-                            Saldo = result.Saldo,
-                            NumeroCuenta = result.NumeroCuenta,
-                            NombreCompleto = result.NombreCompleto,
+                            Saldo = result.saldo ?? 0,
+                            NumeroCuenta = result.numeroCuenta ?? result.Numero_Cuenta ?? "",
+                            NombreCompleto = result.nombreCompleto ?? result.Nombre_Completo ?? "",
                             FechaConsulta = DateTime.Now
                         };
                     }
                 }
-                else
+
+                // Manejo de errores según código HTTP
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning("Error en consulta de saldo: {StatusCode} - {Response}",
-                        response.StatusCode, responseJson);
+                    _logger.LogWarning("Cliente no encontrado: {Identificacion}", identificacion);
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    _logger.LogWarning("Datos inválidos: {Response}", responseJson);
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                {
+                    _logger.LogError("Error interno del servidor: {Response}", responseJson);
                 }
 
                 return null;
@@ -79,18 +84,10 @@ namespace Pegasos.WEB.Portal.Services
                 _httpClient.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
 
-                _logger.LogInformation("=== CONSULTA MOVIMIENTOS ===");
-                _logger.LogInformation("Teléfono: {Telefono}", telefono);
-                _logger.LogInformation("Identificación: {Identificacion}", identificacion);
-
                 var url = $"gateway/accounts/transactions?telefono={telefono}&identificacion={identificacion}";
-                _logger.LogInformation("URL: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
                 var responseJson = await response.Content.ReadAsStringAsync();
-
-                _logger.LogInformation("Status Code: {StatusCode}", response.StatusCode);
-                _logger.LogInformation("Respuesta: {Response}", responseJson);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -106,5 +103,17 @@ namespace Pegasos.WEB.Portal.Services
                 return null;
             }
         }
+    }
+
+    // DTO para la respuesta del saldo
+    public class SaldoResponseDto
+    {
+        public decimal? saldo { get; set; }
+        public string? numeroCuenta { get; set; }
+        public string? Numero_Cuenta { get; set; }
+        public string? nombreCompleto { get; set; }
+        public string? Nombre_Completo { get; set; }
+        public int? codigo { get; set; }
+        public string? descripcion { get; set; }
     }
 }

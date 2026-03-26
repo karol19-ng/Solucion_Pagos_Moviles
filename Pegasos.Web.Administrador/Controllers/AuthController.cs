@@ -16,33 +16,33 @@ using System.Net.Http.Headers;
 namespace Pegasos.Web.Administrador.Controllers
 {
 
-        public class AuthController : Controller
+    public class AuthController : Controller
+    {
+        private readonly IAuthService _authService;
+        private readonly ILogger<AuthController> _logger;
+
+        private static readonly Dictionary<string, (int Attempts, DateTime? LockoutEnd)> LoginAttempts = new();
+
+        public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
-            private readonly IAuthService _authService;
-            private readonly ILogger<AuthController> _logger;
+            _authService = authService;
+            _logger = logger;
+        }
 
-            private static readonly Dictionary<string, (int Attempts, DateTime? LockoutEnd)> LoginAttempts = new();
-
-            public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Login(string? returnUrl = null)
+        {
+            if (User.Identity?.IsAuthenticated == true)
             {
-                _authService = authService;
-                _logger = logger;
+                return RedirectToAction("Index", "Home");
             }
 
-            [HttpGet]
-            [AllowAnonymous]
-            public IActionResult Login(string? returnUrl = null)
-            {
-                if (User.Identity?.IsAuthenticated == true)
-                {
-                    return RedirectToAction("Index", "Home");
-                }
+            if (TempData["SessionExpired"] != null) ViewBag.SessionExpired = true;
 
-                if (TempData["SessionExpired"] != null) ViewBag.SessionExpired = true;
-
-                ViewData["ReturnUrl"] = returnUrl;
-                return View(new LoginViewModel());
-            }
+            ViewData["ReturnUrl"] = returnUrl;
+            return View(new LoginViewModel());
+        }
 
         [HttpPost]
         [AllowAnonymous]
@@ -135,6 +135,14 @@ namespace Pegasos.Web.Administrador.Controllers
                 AllowRefresh = false
             };
 
+            // CRÍTICO: guardar el token en AuthenticationProperties para que
+            // GetAccessTokenAsync() lo encuentre con GetTokenValue("access_token")
+            authProperties.StoreTokens(new[]
+            {
+                new AuthenticationToken { Name = "access_token", Value = token },
+                new AuthenticationToken { Name = "refresh_token", Value = refresh ?? string.Empty }
+            });
+
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal,
@@ -146,18 +154,18 @@ namespace Pegasos.Web.Administrador.Controllers
         }
 
         [HttpPost]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult> Logout(bool expired = false)
-            {
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                if (expired) TempData["SessionExpired"] = true;
-                return RedirectToAction("Login");
-            }
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout(bool expired = false)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (expired) TempData["SessionExpired"] = true;
+            return RedirectToAction("Login");
+        }
 
-            [HttpPost]
-            [Authorize]
-            public async Task<IActionResult> ExtendSession()
-            {
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ExtendSession()
+        {
             // SA4: Extender la cookie local de acceso
             var identity = User.Identity as ClaimsIdentity;
             if (identity == null) return Unauthorized();
@@ -177,40 +185,29 @@ namespace Pegasos.Web.Administrador.Controllers
         }
 
         [HttpGet]
-            public async Task<IActionResult> Logout()
-            {
+        public async Task<IActionResult> Logout()
+        {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Auth");
         }
 
-            #region Helpers de Seguridad (SA1)
-            private bool IsUserLockedOut(string username)
-            {
-                if (LoginAttempts.TryGetValue(username, out var data))
-                {
-                    if (data.LockoutEnd.HasValue && data.LockoutEnd > DateTime.Now) return true;
-                    if (data.LockoutEnd.HasValue && data.LockoutEnd <= DateTime.Now)
-                    {
-                        ClearAttempts(username);
-                        return false;
-                    }
-                }
-                return false;
-            }
+        #region Helpers de Seguridad (SA1)
 
-            private void RegisterFailedAttempt(string username)
-            {
-                if (!LoginAttempts.ContainsKey(username)) LoginAttempts[username] = (0, null);
-                var current = LoginAttempts[username];
-                LoginAttempts[username] = (current.Attempts + 1, current.LockoutEnd);
-            }
-
-            private int GetFailedAttempts(string username) => LoginAttempts.TryGetValue(username, out var data) ? data.Attempts : 0;
-
-            private void LockUser(string username) => LoginAttempts[username] = (3, DateTime.Now.AddMinutes(15));
-
-            private void ClearAttempts(string username) => LoginAttempts.Remove(username);
-            #endregion
+        private void RegisterFailedAttempt(string username)
+        {
+            if (!LoginAttempts.ContainsKey(username)) LoginAttempts[username] = (0, null);
+            var current = LoginAttempts[username];
+            LoginAttempts[username] = (current.Attempts + 1, current.LockoutEnd);
         }
-    
+
+        private int GetFailedAttempts(string username) => LoginAttempts.TryGetValue(username, out var data) ? data.Attempts : 0;
+
+        private void LockUser(string username) => LoginAttempts[username] = (3, null);
+        private bool IsUserLockedOut(string username) =>
+            LoginAttempts.TryGetValue(username, out var data) && data.Attempts >= 3;
+
+        private void ClearAttempts(string username) => LoginAttempts.Remove(username);
+        #endregion
+    }
+
 }

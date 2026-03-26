@@ -52,7 +52,7 @@ namespace Pegasos.WEB.Portal.Controllers
             // PTL1: Verificar bloqueo por 3 intentos fallidos
             if (IsUserLockedOut(username))
             {
-                model.ErrorMessage = "Cuenta bloqueada temporalmente por seguridad (3 intentos fallidos). Intente en 15 minutos.";
+                model.ErrorMessage = "Usuario bloqueado.";
                 return View(model);
             }
 
@@ -69,7 +69,7 @@ namespace Pegasos.WEB.Portal.Controllers
                 if (remaining <= 0)
                 {
                     LockUser(username);
-                    model.ErrorMessage = "Usuario bloqueado. Intente en 15 minutos.";
+                    model.ErrorMessage = "Usuario bloqueado.";
                 }
                 else
                 {
