@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace Pegasos.WEB.Portal.Controllers
 {
-    [Authorize(Roles = "Cliente")]
+    [Authorize(Roles = "Cliente,Administrador")]
     public class ConsultasController : Controller
     {
         private readonly IConsultasService _consultasService;
@@ -30,39 +30,21 @@ namespace Pegasos.WEB.Portal.Controllers
         {
             if (!ModelState.IsValid)
             {
+                TempData["ErrorStatusCode"] = "400";
+                TempData["ErrorMessage"] = "Datos incompletos. Por favor, complete todos los campos requeridos.";
                 return View("Saldo", model);
             }
 
-            // Obtener token e identificación del usuario autenticado
             var token = User.FindFirst("access_token")?.Value ?? "";
-            var identificacion = User.FindFirst("identificacion")?.Value ?? "";
-
-            _logger.LogInformation("=== INICIANDO CONSULTA DE SALDO ===");
-            _logger.LogInformation("Usuario: {User}", User.Identity?.Name);
-            _logger.LogInformation("Claims disponibles:");
-
-            foreach (var claim in User.Claims)
-            {
-                _logger.LogInformation("Claim: {Type} = {Value}", claim.Type, claim.Value);
-            }
-
-            _logger.LogInformation("Identificación encontrada: '{Identificacion}'", identificacion);
-            _logger.LogInformation("Token presente: {TokenPresent}", !string.IsNullOrEmpty(token));
 
             if (string.IsNullOrEmpty(token))
             {
-                _logger.LogWarning("Token no encontrado, redirigiendo a login");
+                TempData["ErrorStatusCode"] = "401";
+                TempData["ErrorMessage"] = "Sesión no válida. Por favor, inicie sesión nuevamente.";
                 return RedirectToAction("Login", "Auth");
             }
 
-            if (string.IsNullOrEmpty(identificacion))
-            {
-                _logger.LogError("IDENTIFICACIÓN NO ENCONTRADA EN CLAIMS");
-                ModelState.AddModelError("", "Error de autenticación: No se pudo obtener la identificación del usuario");
-                return View("Saldo", model);
-            }
-
-            var result = await _consultasService.ConsultarSaldoAsync(model.Telefono, identificacion, token);
+            var result = await _consultasService.ConsultarSaldoAsync(model.Telefono, model.Identificacion, token);
 
             if (result != null)
             {
@@ -72,8 +54,8 @@ namespace Pegasos.WEB.Portal.Controllers
             }
             else
             {
-                _logger.LogWarning("Consulta fallida para teléfono: {Telefono}", model.Telefono);
-                ModelState.AddModelError("", "No se pudo consultar el saldo. Verifique que el teléfono esté inscrito en pagos móviles.");
+                TempData["ErrorStatusCode"] = "404";
+                TempData["ErrorMessage"] = "No se encontró información. Verifique que la identificación y el teléfono sean correctos y que estén inscritos en pagos móviles.";
                 return View("Saldo", model);
             }
         }
