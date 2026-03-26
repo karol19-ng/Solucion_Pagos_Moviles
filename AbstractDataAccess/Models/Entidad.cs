@@ -16,5 +16,7 @@ namespace AbstractDataAccess.Models
 
         public int? ID_Estado { get; set; }
         public DateTime? Fecha_Creacion { get; set; }
+
+        public string Identificador { get; set; } = string.Empty;
     }
 }

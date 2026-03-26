@@ -22,5 +22,7 @@ namespace AbstractDataAccess.Models
         public string Ruta { get; set; }
 
         public int Estado { get; set; }
+
+        public virtual ICollection<RolPorPantalla> RolPorPantallas { get; set; } = new List<RolPorPantalla>();
     }
 }

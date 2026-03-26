@@ -7,16 +7,19 @@ using System.Security.Claims;
 namespace API_Proyecto1.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     [Authorize]
     public class screen : ControllerBase
     {
         private readonly IPantallaService _service;
+        private readonly ILogger<screen> _logger;  // Agregar logger
 
-        public screen(IPantallaService service)
+        public screen(IPantallaService service, ILogger<screen> logger)  // Inyectar logger
         {
             _service = service;
+            _logger = logger;
         }
+
 
         [HttpGet]
         public async Task<ActionResult<List<PantallaResponse>>> GetAll()
@@ -91,13 +94,25 @@ namespace API_Proyecto1.Controllers
         {
             try
             {
+                _logger.LogInformation("=== RECIBIDA PETICIÓN DELETE EN API ===");
+                _logger.LogInformation("ID a eliminar: {Id}", id);
+
                 var usuario = User.FindFirst(ClaimTypes.Name)?.Value ?? "Sistema";
+                _logger.LogInformation("Usuario: {Usuario}", usuario);
+
                 var result = await _service.DeleteAsync(id, usuario);
-                if (!result) return NotFound(new { codigo = -1, descripcion = "Pantalla no encontrada" });
-                return NoContent();
+
+                if (!result)
+                {
+                    return NotFound(new { codigo = -1, descripcion = "Pantalla no encontrada" });
+                }
+
+                _logger.LogInformation("✅ Pantalla {Id} eliminada exitosamente", id);
+                return Ok(new { codigo = 0, descripcion = "Pantalla eliminada exitosamente" });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "❌ Error al eliminar pantalla {Id}", id);
                 return StatusCode(500, new { codigo = -1, descripcion = ex.Message });
             }
         }

@@ -13,8 +13,10 @@ namespace AbstractDataAccess.Models
         public int ID_Rol { get; set; }
 
         [Required]
-        public string Nombre { get; set; }
+        public string Nombre { get; set; } = null!;
 
-        public string Descripcion { get; set; }
+        public string Descripcion { get; set; } = null!;
+
+        public virtual ICollection<RolPorPantalla> RolPorPantallas { get; set; } = new List<RolPorPantalla>();
     }
 }

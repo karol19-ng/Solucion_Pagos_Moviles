@@ -8,6 +8,7 @@ using Entities.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace Services.Implementations
 {
@@ -15,11 +16,16 @@ namespace Services.Implementations
     {
         private readonly PagosMovilesDbContext _context;
         private readonly IBitacoraService _bitacoraService;
+        private readonly ILogger<PantallaService> _logger;  
 
-        public PantallaService(PagosMovilesDbContext context, IBitacoraService bitacoraService)
+        public PantallaService(
+        PagosMovilesDbContext context,
+        IBitacoraService bitacoraService,
+        ILogger<PantallaService> logger)
         {
             _context = context;
             _bitacoraService = bitacoraService;
+            _logger = logger;  
         }
 
         public async Task<List<PantallaResponse>> GetAllAsync()
@@ -36,11 +42,26 @@ namespace Services.Implementations
 
         public async Task<PantallaResponse> CreateAsync(PantallaRequest request, string usuarioEjecutor)
         {
+            _logger.LogInformation("=== CREANDO PANTALLA EN BD (ID Manual) ===");
+            _logger.LogInformation("Request: {@Request}", request);
+            _logger.LogInformation("Usuario: {Usuario}", usuarioEjecutor);
+
             ValidarPantalla(request);
+
+            
+            var maxId = await _context.TablaPantallas
+                .OrderByDescending(p => p.ID_Pantalla)
+                .Select(p => (int?)p.ID_Pantalla)
+                .FirstOrDefaultAsync();
+
+            
+            int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
+
+            _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
 
             var pantalla = new TablaPantalla
             {
-                ID_Pantalla = request.ID_Pantalla,
+                ID_Pantalla = nuevoId,  
                 Nombre = request.Nombre,
                 Descripcion = request.Descripcion,
                 Ruta = request.Ruta,
@@ -49,6 +70,8 @@ namespace Services.Implementations
 
             _context.TablaPantallas.Add(pantalla);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Pantalla creada con ID: {Id}", pantalla.ID_Pantalla);
 
             await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
             {
@@ -64,51 +87,89 @@ namespace Services.Implementations
 
         public async Task<PantallaResponse> UpdateAsync(int id, PantallaRequest request, string usuarioEjecutor)
         {
-            ValidarPantalla(request);
+            _logger.LogInformation("=== ACTUALIZANDO PANTALLA EN BD ===");
+            _logger.LogInformation("ID: {Id}, Nombre: {Nombre}, Estado: {Estado}",
+                id, request.Nombre, request.Estado);
 
             var pantalla = await _context.TablaPantallas.FindAsync(id);
             if (pantalla == null) return null;
 
-            var anterior = System.Text.Json.JsonSerializer.Serialize(MapToResponse(pantalla));
+            var pantallaAnterior = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                pantalla.ID_Pantalla,
+                pantalla.Nombre,
+                pantalla.Descripcion,
+                pantalla.Ruta,
+                pantalla.Estado
+            });
 
+            // Actualizar propiedades
             pantalla.Nombre = request.Nombre;
             pantalla.Descripcion = request.Descripcion;
             pantalla.Ruta = request.Ruta;
+            pantalla.Estado = request.Estado;
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Pantalla actualizada - Nuevo Estado: {Estado}", pantalla.Estado);
+
+            // Registrar bitácora
             await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
             {
                 Usuario = usuarioEjecutor,
-                Accion = "MODIFICAR_PANTALLA",
-                Descripcion = $"Anterior: {anterior} | Actual: {System.Text.Json.JsonSerializer.Serialize(request)}",
-                Servicio = "/screen",
+                Accion = "ACTUALIZAR_PANTALLA",
+                Descripcion = $"Anterior: {pantallaAnterior} | Actual: {System.Text.Json.JsonSerializer.Serialize(request)}",
+                Servicio = "/api/screen",
                 Resultado = "OK"
             });
 
-            return MapToResponse(pantalla);
+            return await GetByIdAsync(id);
         }
 
         public async Task<bool> DeleteAsync(int id, string usuarioEjecutor)
         {
+            _logger.LogInformation("=== ELIMINANDO PANTALLA EN BD ===");
+            _logger.LogInformation("ID recibido: {Id}", id);
+
+            
             var pantalla = await _context.TablaPantallas.FindAsync(id);
-            if (pantalla == null) return false;
 
-            var eliminado = System.Text.Json.JsonSerializer.Serialize(MapToResponse(pantalla));
-
-            _context.TablaPantallas.Remove(pantalla);
-            await _context.SaveChangesAsync();
-
-            await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+            if (pantalla == null)
             {
-                Usuario = usuarioEjecutor,
-                Accion = "ELIMINAR_PANTALLA",
-                Descripcion = $"Eliminado: {eliminado}",
-                Servicio = "/screen",
-                Resultado = "OK"
-            });
+                _logger.LogWarning("No se encontró pantalla con ID {Id}", id);
+                return false;
+            }
 
-            return true;
+            _logger.LogInformation("Eliminando pantalla: {Nombre} (ID: {Id})", pantalla.Nombre, pantalla.ID_Pantalla);
+
+            try
+            {
+                _context.TablaPantallas.Remove(pantalla);
+                var result = await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Resultado de eliminación: {Result}", result > 0 ? "Éxito" : "Falló");
+
+                if (result > 0)
+                {
+                    await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+                    {
+                        Usuario = usuarioEjecutor,
+                        Accion = "ELIMINAR_PANTALLA",
+                        Descripcion = $"Pantalla eliminada: {pantalla.Nombre} (ID:{id})",
+                        Servicio = "/screen",
+                        Resultado = "OK"
+                    });
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar pantalla {Id}", id);
+                return false;
+            }
         }
 
         private void ValidarPantalla(PantallaRequest request)
@@ -130,7 +191,8 @@ namespace Services.Implementations
                 ID_Pantalla = p.ID_Pantalla,
                 Nombre = p.Nombre,
                 Descripcion = p.Descripcion,
-                Ruta = p.Ruta
+                Ruta = p.Ruta,
+                Estado = p.Estado
             };
         }
     }

@@ -1,0 +1,776 @@
+﻿@model Pegasos.Web.Administrador.Models.CrearCuentaCoreViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Crear Nueva Cuenta";
+}
+@section Styles {
+    <style>
+        :root {
+            --primary-gold: #c5a367;
+            --primary-gold-light: rgba(197, 163, 103, 0.15);
+            --primary-gold-dark: #a8894f;
+            --secondary-burgundy: #1f060c;
+            --secondary-burgundy-light: rgba(31, 6, 12, 0.8);
+            --success-green: #28a745;
+            --success-green-light: rgba(40, 167, 69, 0.1);
+            --error-red: #dc3545;
+            --error-red-light: rgba(220, 53, 69, 0.1);
+            --text-light: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --border-color: rgba(197, 163, 103, 0.3);
+            --border-focus: rgba(197, 163, 103, 0.8);
+            --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 8px 15px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 15px 30px rgba(0, 0, 0, 0.3);
+            --transition-fast: all 0.2s ease;
+            --transition-normal: all 0.3s ease;
+            --border-radius-sm: 6px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 12px;
+        }
+
+        .page-wrapper {
+            animation: fadeInUp 0.5s ease-out;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .breadcrumb-modern {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            padding: 12px 20px;
+            background: rgba(31, 6, 12, 0.4);
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(5px);
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition-fast);
+        }
+
+        .breadcrumb-item:hover {
+            color: var(--primary-gold);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--primary-gold);
+            font-weight: 600;
+        }
+
+        .breadcrumb-separator {
+            color: var(--primary-gold);
+            opacity: 0.5;
+            font-size: 0.8rem;
+            margin: 0 8px;
+        }
+
+        .form-header-modern {
+            background: linear-gradient(135deg, var(--secondary-burgundy) 0%, #4a0d1f 100%);
+            border: 1px solid var(--primary-gold);
+            border-radius: var(--border-radius-lg);
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .form-header-modern::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(197, 163, 103, 0.1) 0%, transparent 70%);
+            animation: spin 20s linear infinite;
+        }
+
+        .form-header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-gold-light);
+            border: 2px solid var(--primary-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: var(--primary-gold);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-title {
+            flex: 1;
+        }
+
+        .header-title h4 {
+            color: var(--primary-gold);
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0 0 5px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-title p i {
+            color: var(--primary-gold);
+        }
+
+        .info-box-modern {
+            background: linear-gradient(135deg, var(--primary-gold-light), transparent);
+            border-left: 5px solid var(--primary-gold);
+            border-radius: var(--border-radius-md);
+            padding: 18px 22px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(5px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .info-box-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary-burgundy);
+            font-size: 18px;
+        }
+
+        .info-box-content {
+            flex: 1;
+        }
+
+        .info-box-content strong {
+            color: var(--primary-gold);
+            font-size: 1rem;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .info-box-content p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .form-container-modern {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 35px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .form-group-modern {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .form-label-modern {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-gold);
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-label-modern i {
+            font-size: 1rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-control-modern, .form-select-modern {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            color: var(--text-light);
+            padding: 14px 16px;
+            font-size: 1rem;
+            transition: var(--transition-normal);
+            backdrop-filter: blur(5px);
+        }
+
+        .form-control-modern:focus, .form-select-modern:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--border-focus);
+            color: var(--text-light);
+            box-shadow: 0 0 0 3px var(--primary-gold-light);
+            outline: none;
+        }
+
+        .form-control-modern::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+            font-style: italic;
+        }
+
+        .form-select-modern option {
+            background: var(--secondary-burgundy);
+            color: var(--text-light);
+        }
+
+        .validation-spinner {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-gold-light);
+            border-radius: 50%;
+            border-top-color: var(--primary-gold);
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .validation-message {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            padding-left: 16px;
+        }
+
+        .validation-success {
+            color: var(--success-green) !important;
+        }
+
+        .validation-success i {
+            color: var(--success-green);
+            margin-right: 5px;
+        }
+
+        .validation-error {
+            color: var(--error-red) !important;
+        }
+
+        .validation-error i {
+            color: var(--error-red);
+            margin-right: 5px;
+        }
+
+        .help-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .help-text i {
+            color: var(--primary-gold);
+            font-size: 0.9rem;
+        }
+
+        .id-examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .id-example-tag {
+            background: var(--primary-gold-light);
+            border: 1px solid var(--primary-gold);
+            color: var(--primary-gold);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .id-example-tag:hover {
+            background: var(--primary-gold);
+            color: var(--secondary-burgundy);
+            transform: translateY(-2px);
+        }
+
+        .cliente-info-card {
+            background: var(--success-green-light);
+            border: 1px solid var(--success-green);
+            border-radius: var(--border-radius-md);
+            padding: 15px 20px;
+            margin-top: 15px;
+            display: none;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .cliente-info-card i {
+            color: var(--success-green);
+            margin-right: 10px;
+        }
+
+        .cliente-info-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .cliente-badge {
+            background: var(--success-green);
+            color: var(--text-light);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .btn-container-modern {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .btn-back-modern {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 25px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            color: var(--text-light);
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-normal);
+        }
+
+        .btn-back-modern:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary-gold);
+            color: var(--primary-gold);
+            transform: translateX(-5px);
+        }
+
+        .btn-save-modern {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 35px;
+            background: transparent;
+            border: 2px solid var(--primary-gold);
+            border-radius: var(--border-radius-md);
+            color: var(--primary-gold);
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition-normal);
+            cursor: pointer;
+        }
+
+        .btn-save-modern:hover:not(:disabled) {
+            background: var(--primary-gold);
+            color: var(--secondary-burgundy);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(197, 163, 103, 0.3);
+        }
+
+        .btn-save-modern:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: var(--text-muted);
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: var(--primary-gold-light);
+            color: var(--primary-gold);
+            border: 1px solid var(--primary-gold);
+        }
+
+        .text-danger {
+            color: var(--error-red) !important;
+        }
+        
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        @@keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .form-header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .btn-container-modern {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn-back-modern, .btn-save-modern {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+}
+
+<div class="page-wrapper">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-modern">
+        <a href="@Url.Action("Index", "Home")" class="breadcrumb-item">
+            <i class="fas fa-home me-2"></i>Inicio
+        </a>
+        <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+        <a href="@Url.Action("Index", "CuentasCore")" class="breadcrumb-item">
+            <i class="fas fa-credit-card me-2"></i>Cuentas Core
+        </a>
+        <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-item active">
+            <i class="fas fa-plus-circle me-2"></i>Nueva Cuenta
+        </span>
+    </div>
+
+    <!-- Header mejorado -->
+    <div class="form-header-modern">
+        <div class="form-header-content">
+            <div class="header-icon">
+                <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="header-title">
+                <h4>Crear Nueva Cuenta</h4>
+                <p>
+                    <i class="fas fa-info-circle"></i>
+                    Complete los datos para crear una nueva cuenta en el core bancario
+                </p>
+            </div>
+            <div class="status-badge">
+                <i class="fas fa-clock me-1"></i>Nuevo registro
+            </div>
+        </div>
+    </div>
+
+    <!-- Info box mejorado -->
+    <div class="info-box-modern">
+        <div class="info-box-icon">
+            <i class="fas fa-lightbulb"></i>
+        </div>
+        <div class="info-box-content">
+            <strong>Información:</strong>
+            <p>Complete los datos para crear una nueva cuenta. El número de cuenta se generará automáticamente.</p>
+        </div>
+    </div>
+
+    <!-- Formulario principal -->
+    <div class="form-container-modern">
+        <form asp-action="Create" method="post" id="createForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+            <!-- Campo Identificación del Cliente -->
+            <div class="form-group-modern">
+                <label asp-for="ClienteIdentificacion" class="form-label-modern">
+                    <i class="fas fa-id-card"></i> Identificación del Cliente <span class="required-field"></span>
+                </label>
+                <div class="input-wrapper">
+                    <input asp-for="ClienteIdentificacion" class="form-control-modern"
+                           id="ClienteIdentificacion" name="ClienteIdentificacion"
+                           placeholder="Ej: 100, 109990888, 305550444, B777666"
+                           value="@Model?.ClienteIdentificacion" 
+                           autocomplete="off" />
+                    <div class="validation-spinner" id="validacionSpinner"></div>
+                </div>
+                
+                <!-- Ejemplos rápidos -->
+                <div class="id-examples">
+                    <span class="id-example-tag" onclick="setClienteValue('100')">ID: 100</span>
+                    <span class="id-example-tag" onclick="setClienteValue('109990888')">ID: 109990888</span>
+                    <span class="id-example-tag" onclick="setClienteValue('101')">ID: 101</span>
+                    <span class="id-example-tag" onclick="setClienteValue('305550444')">ID: 305550444</span>
+                    <span class="id-example-tag" onclick="setClienteValue('102')">ID: 102</span>
+                    <span class="id-example-tag" onclick="setClienteValue('B777666')">ID: B777666</span>
+                </div>
+
+                <!-- Mensajes de validación -->
+                <span class="validation-message" id="clienteIdentificacionError"></span>
+
+                <!-- Tarjeta de información del cliente -->
+                <div id="clienteInfo" class="cliente-info-card">
+                    <div class="cliente-info-content">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                        <div style="flex: 1;">
+                            <strong style="color: var(--success-green);">Cliente validado</strong>
+                            <div id="clienteInfoText" style="color: var(--text-light); margin-top: 5px;"></div>
+                        </div>
+                        <span class="cliente-badge">✓ Verificado</span>
+                    </div>
+                </div>
+
+                <div class="help-text">
+                    <i class="fas fa-lightbulb"></i>
+                    Puede usar ID numérico (100, 101, 102, 103) o la identificación real del cliente
+                </div>
+            </div>
+
+            <!-- Campo Tipo de Cuenta - CORREGIDO -->
+            <div class="form-group-modern">
+                <label asp-for="TipoCuenta" class="form-label-modern">
+                    <i class="fas fa-tag"></i> Tipo de Cuenta <span class="required-field"></span>
+                </label>
+                <select asp-for="TipoCuenta" class="form-select-modern" id="TipoCuenta">
+                    <option value="">-- Seleccione un tipo --</option>
+                    <option value="CORRIENTE">CORRIENTE</option>
+                    <option value="AHORROS">AHORROS</option>
+                </select>
+                <span asp-validation-for="TipoCuenta" class="text-danger"></span>
+                <div class="help-text">
+                    <i class="fas fa-info-circle"></i>
+                    Seleccione el tipo de cuenta que desea crear.
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="btn-container-modern">
+                <a asp-action="Index" class="btn-back-modern">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Regresar al Listado</span>
+                </a>
+                <button type="submit" class="btn-save-modern" id="btnGuardar" disabled>
+                    <i class="fas fa-save"></i>
+                    <span>Guardar Cuenta</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Mantén todo el HTML igual, solo modifica el script -->
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let clienteValidado = false;
+        let timeoutId;
+
+        // Función para autocompletar con ejemplos
+        window.setClienteValue = function(valor) {
+            $('#ClienteIdentificacion').val(valor).trigger('input');
+        }
+
+        $(document).ready(function() {
+            // Validación en tiempo real para identificación
+            $('#ClienteIdentificacion').on('input', function() {
+                clearTimeout(timeoutId);
+                var valor = $(this).val();
+                
+                $('#clienteIdentificacionError').removeClass('validation-success validation-error');
+                
+                if (!valor || valor.trim() === '') {
+                    $('#clienteIdentificacionError').html('<i class="fas fa-exclamation-circle"></i> La identificación del cliente es requerida')
+                        .addClass('validation-error');
+                    $('#clienteInfo').hide();
+                    $('#btnGuardar').prop('disabled', true);
+                    clienteValidado = false;
+                    $('#validacionSpinner').hide();
+                    return;
+                }
+                
+                $('#validacionSpinner').show();
+                $('#clienteIdentificacionError').html('<i class="fas fa-spinner fa-spin"></i> Validando...');
+                
+                timeoutId = setTimeout(function() {
+                    validarCliente(valor);
+                }, 300);
+            });
+
+            // Validación del tipo de cuenta
+            $('#TipoCuenta').on('change', function() {
+                console.log('TipoCuenta cambiado a: ' + $(this).val());
+                habilitarBotonGuardar();
+            });
+
+            // ========== MODIFICAR EL SUBMIT ==========
+            $('#createForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Obtener valores directamente
+                var identificacion = $('#ClienteIdentificacion').val();
+                var tipoCuenta = $('#TipoCuenta').val();
+                
+                // LOGS DE DEPURACIÓN EN CONSOLA
+                console.log('=== DATOS DEL FORMULARIO ===');
+                console.log('ClienteIdentificacion:', identificacion);
+                console.log('TipoCuenta:', tipoCuenta);
+                console.log('clienteValidado:', clienteValidado);
+                
+                var errores = [];
+                
+                if (!clienteValidado) {
+                    errores.push('Debe validar un cliente existente');
+                }
+                
+                if (!tipoCuenta || tipoCuenta === '') {
+                    errores.push('El tipo de cuenta es requerido');
+                    console.log('❌ TipoCuenta está vacío o es null');
+                }
+                
+                if (errores.length > 0) {
+                    showErrorModal('Por favor complete todos los campos requeridos:\n• ' + errores.join('\n• '));
+                    return false;
+                }
+                
+                // Mostrar modal de carga
+                var loadingModal = showLoadingModal();
+                
+                // FORZAR EL ENVÍO CON FormData en lugar de serialize
+                var formData = new FormData();
+                formData.append('ClienteIdentificacion', identificacion);
+                formData.append('TipoCuenta', tipoCuenta);
+                formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+                
+                console.log('Enviando FormData:');
+                for (var pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
+                
+                $.ajax({
+                    url: '@Url.Action("Create", "CuentasCore")',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        hideLoadingModal(loadingModal);
+                        console.log('Respuesta del servidor:', response);
+                        if (response.success) {
+                            showSuccessModal(response.message, '/CuentasCore/Index');
+                        } else {
+                            showErrorModal(response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        hideLoadingModal(loadingModal);
+                        console.error('Error:', xhr.responseText);
+                        showErrorModal('Error al crear la cuenta: ' + (xhr.responseText || 'Error desconocido'));
+                    }
+                });
+            });
+            // ========================================
+
+            function validarCliente(valor) {
+                $.ajax({
+                    url: '@Url.Action("ValidarCliente", "CuentasCore")',
+                    type: 'GET',
+                    data: { valor: valor },
+                    success: function(response) {
+                        $('#validacionSpinner').hide();
+                        
+                        if (response.existe) {
+                            $('#clienteIdentificacionError')
+                                .html('<i class="fas fa-check-circle"></i> ' + response.mensaje)
+                                .removeClass('validation-error')
+                                .addClass('validation-success');
+                            
+                            $('#clienteInfoText').html(`
+                                <strong>${response.cliente.nombreCompleto}</strong><br>
+                                <small>ID: ${response.cliente.id} | Identificación: ${response.cliente.identificacion}</small>
+                            `);
+                            $('#clienteInfo').show();
+                            
+                            clienteValidado = true;
+                        } else {
+                            $('#clienteIdentificacionError')
+                                .html('<i class="fas fa-exclamation-circle"></i> ' + response.mensaje)
+                                .removeClass('validation-success')
+                                .addClass('validation-error');
+                            
+                            $('#clienteInfo').hide();
+                            clienteValidado = false;
+                        }
+                        
+                        habilitarBotonGuardar();
+                    },
+                    error: function() {
+                        $('#validacionSpinner').hide();
+                        $('#clienteIdentificacionError')
+                            .html('<i class="fas fa-exclamation-circle"></i> Error al validar el cliente')
+                            .removeClass('validation-success')
+                            .addClass('validation-error');
+                        $('#clienteInfo').hide();
+                        clienteValidado = false;
+                        habilitarBotonGuardar();
+                    }
+                });
+            }
+
+            function habilitarBotonGuardar() {
+                var tipoCuentaValido = $('#TipoCuenta').val() && $('#TipoCuenta').val() !== '';
+                console.log('habilitarBotonGuardar - clienteValidado:', clienteValidado, 'tipoCuentaValido:', tipoCuentaValido);
+                $('#btnGuardar').prop('disabled', !(clienteValidado && tipoCuentaValido));
+            }
+
+            // Si ya hay un valor en el campo al cargar la página, validarlo
+            var valorInicial = $('#ClienteIdentificacion').val();
+            if (valorInicial && valorInicial.trim() !== '') {
+                validarCliente(valorInicial);
+            }
+        });
+    </script>
+}
+}

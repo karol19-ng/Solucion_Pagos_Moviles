@@ -1,0 +1,519 @@
+﻿@model Pegasos.Web.Administrador.Models.EditarClienteCoreViewModel
+@{
+    Layout = "_Layout";  
+    ViewData["Title"] = "Editar Cliente";
+}
+
+@section Styles {
+    <style>
+        /* Estilos con la paleta del sistema */
+        .form-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid var(--dorado-primario);
+            border-radius: 8px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+            .form-header h4 {
+                margin: 0;
+                font-size: 1.5rem;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .form-header i {
+                margin-right: 10px;
+                color: var(--dorado-primario);
+                font-size: 1.8rem;
+            }
+
+            .form-header .estado-badge {
+                display: inline-block;
+                padding: 5px 15px;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                margin-left: 15px;
+            }
+
+        .estado-activo {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        .estado-inactivo {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            color: var(--dorado-primario);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+            .form-label i {
+                margin-right: 8px;
+                color: var(--dorado-primario);
+            }
+
+        .form-control-custom, .form-select-custom {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+            .form-control-custom:focus, .form-select-custom:focus {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                box-shadow: 0 0 0 3px rgba(197, 163, 103, 0.1);
+                outline: none;
+            }
+
+            .form-control-custom::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+                font-style: italic;
+            }
+
+        select.form-select-custom option {
+            background: var(--vinotinto-sidebar);
+            color: white;
+        }
+
+        .text-danger {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+            color: #dc3545 !important;
+        }
+
+        .text-muted {
+            color: rgba(255, 255, 255, 0.5) !important;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(197, 163, 103, 0.2);
+        }
+
+        .btn-secondary-custom {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+            .btn-secondary-custom:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                transform: translateY(-2px);
+            }
+
+        .btn-warning-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 12px 35px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+            .btn-warning-custom:hover {
+                background: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(197, 163, 103, 0.3);
+            }
+
+            .btn-warning-custom i, .btn-secondary-custom i {
+                margin-right: 8px;
+            }
+
+        .info-box {
+            background: rgba(197, 163, 103, 0.1);
+            border-left: 4px solid var(--dorado-primario);
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+            .info-box i {
+                color: var(--dorado-primario);
+                margin-right: 10px;
+                font-size: 1.2rem;
+            }
+
+        .validation-summary-errors {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+        }
+
+            .validation-summary-errors ul {
+                margin: 0;
+                padding-left: 20px;
+            }
+
+        .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+
+        .row-custom {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .col-half {
+            flex: 1;
+        }
+
+        @@media (max-width: 768px) {
+            .row-custom {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+}
+
+
+@* <!-- DEBUG: Mostrar valores del modelo -->
+<div style="background-color: #333; color: #0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #0f0; font-family: monospace;">
+    <h5 style="color: #0f0; margin-top: 0;">📊 VALORES RECIBIDOS POR LA VISTA</h5>
+    <p><strong>ID:</strong> @Model.Id</p>
+    <p><strong>TipoIdentificacion:</strong> "@Model.TipoIdentificacion"</p>
+    <p><strong>Identificacion:</strong> "@Model.Identificacion"</p>
+    <p><strong>NombreCompleto:</strong> "@Model.NombreCompleto"</p>
+    <p><strong>Teléfono:</strong> "@Model.Telefono"</p>
+    <p><strong>FechaNacimiento:</strong> @Model.FechaNacimiento.ToString("yyyy-MM-dd")</p>
+    <p><strong>EstadoId:</strong> @Model.EstadoId</p>
+</div> *@
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <div class="form-header">
+                    <h4>
+                        <i class="fas fa-user-edit"></i>
+                        Editar Cliente #@Model.Id
+                        @if (Model.EstadoId == 1)
+                        {
+                            <span class="estado-badge estado-activo">ACTIVO</span>
+                        }
+                        else
+                        {
+                            <span class="estado-badge estado-inactivo">INACTIVO</span>
+                        }
+                    </h4>
+                </div>
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Modo Edición:</strong> Está modificando los datos del cliente. Los cambios se guardarán permanentemente.
+                </div>
+
+                <form asp-action="Edit" method="post" id="editForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="TipoIdentificacion" class="form-label">
+                            <i class="fas fa-id-card"></i> Tipo de Identificación <span class="required-field"></span>
+                        </label>
+                        <select asp-for="TipoIdentificacion" class="form-select form-select-custom" id="TipoIdentificacion" name="TipoIdentificacion">
+                            @foreach (var tipo in ViewBag.TiposIdentificacion)
+                            {
+                                <option value="@tipo" @(Model.TipoIdentificacion == tipo ? "selected" : "")>@tipo</option>
+                            }
+                        </select>
+                        <span asp-validation-for="TipoIdentificacion" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Identificacion" class="form-label">
+                            <i class="fas fa-hashtag"></i> Número de Identificación <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Identificacion" class="form-control form-control-custom"
+                               id="Identificacion" name="Identificacion"
+                               value="@Model.Identificacion"
+                               placeholder="Ej: 123456789" />
+                        <span asp-validation-for="Identificacion" class="text-danger" id="identificacionError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="NombreCompleto" class="form-label">
+                            <i class="fas fa-user"></i> Nombre Completo <span class="required-field"></span>
+                        </label>
+                        <input asp-for="NombreCompleto" class="form-control form-control-custom"
+                               id="NombreCompleto" name="NombreCompleto"
+                               value="@Model.NombreCompleto"
+                               placeholder="Ej: Juan Pérez González" />
+                        <span asp-validation-for="NombreCompleto" class="text-danger" id="nombreError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Telefono" class="form-label">
+                            <i class="fas fa-phone"></i> Teléfono <span class="required-field"></span>
+                        </label>
+                        <input asp-for="Telefono" class="form-control form-control-custom"
+                               id="Telefono" name="Telefono"
+                               value="@Model.Telefono"
+                               placeholder="Ej: 8888-8888" />
+                        <span asp-validation-for="Telefono" class="text-danger" id="telefonoError"></span>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Formato: 8888-8888 o 12345678
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="FechaNacimiento" class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Fecha de Nacimiento <span class="required-field"></span>
+                        </label>
+                        <input asp-for="FechaNacimiento" class="form-control form-control-custom"
+                               id="FechaNacimiento" name="FechaNacimiento"
+                               type="date"
+                               value="@(Model.FechaNacimiento != DateTime.MinValue ? Model.FechaNacimiento.ToString("yyyy-MM-dd") : "")" />
+                        <span asp-validation-for="FechaNacimiento" class="text-danger" id="fechaError"></span>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Formato: DD/MM/AAAA
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="EstadoId" class="form-label">
+                            <i class="fas fa-toggle-on"></i> Estado del Cliente
+                        </label>
+                        <select asp-for="EstadoId" class="form-select form-select-custom" id="EstadoId" name="EstadoId">
+                            <option value="1">Activo - Cliente habilitado para operaciones</option>
+                            <option value="2">Inactivo - Cliente bloqueado/deshabilitado</option>
+                        </select>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Los clientes inactivos no pueden realizar operaciones.
+                        </small>
+                    </div>
+
+                    <div class="btn-container">
+                        <a href="/ClientesCore/Index" class="btn-secondary-custom">
+                            <i class="fas fa-arrow-left"></i> Regresar al Listado
+                        </a>
+                        <button type="submit" class="btn-warning-custom" id="btnGuardar">
+                            <i class="fas fa-save"></i> Actualizar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Validación en tiempo real
+            $('#Identificacion').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#identificacionError').text('La identificación es requerida');
+                } else {
+                    $('#identificacionError').text('');
+                }
+            });
+
+            $('#NombreCompleto').on('input', function() {
+                var valor = $(this).val();
+                if (!valor || valor.trim() === '') {
+                    $('#nombreError').text('El nombre completo es requerido');
+                } else {
+                    $('#nombreError').text('');
+                }
+            });
+
+            // Validación de teléfono en tiempo real
+            $('#Telefono').on('input', function() {
+                var valor = $(this).val();
+                var regexTelefono = /^[0-9\-\(\)\s]+$/;
+
+                if (!valor || valor.trim() === '') {
+                    $('#telefonoError').text('El teléfono es requerido');
+                } else if (!regexTelefono.test(valor)) {
+                    $('#telefonoError').text('El teléfono solo puede contener números, guiones y paréntesis');
+                } else {
+                    $('#telefonoError').text('');
+                }
+            });
+
+            // 🆕 Validación de fecha en tiempo real
+            $('#FechaNacimiento').on('change', function() {
+                var valor = $(this).val();
+                if (!valor) {
+                    $('#fechaError').text('La fecha de nacimiento es requerida');
+                } else {
+                    var fecha = new Date(valor);
+                    var hoy = new Date();
+                    var edad = hoy.getFullYear() - fecha.getFullYear();
+                    var mesDiff = hoy.getMonth() - fecha.getMonth();
+
+                    if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fecha.getDate())) {
+                        edad--;
+                    }
+
+                    if (edad < 18) {
+                        $('#fechaError').text('El cliente debe ser mayor de 18 años');
+                    } else if (edad > 100) {
+                        $('#fechaError').text('Verifique la fecha de nacimiento');
+                    } else {
+                        $('#fechaError').text('');
+                    }
+                }
+            });
+
+            // Validación antes de enviar
+            $('#editForm').submit(function(e) {
+                var identificacion = $('#Identificacion').val();
+                var nombre = $('#NombreCompleto').val();
+                var telefono = $('#Telefono').val();
+                var fecha = $('#FechaNacimiento').val();
+                var errores = [];
+
+                if (!identificacion || identificacion.trim() === '') {
+                    errores.push('La identificación es requerida');
+                    $('#identificacionError').text('La identificación es requerida');
+                }
+
+                if (!nombre || nombre.trim() === '') {
+                    errores.push('El nombre completo es requerido');
+                    $('#nombreError').text('El nombre completo es requerido');
+                }
+
+                if (!telefono || telefono.trim() === '') {
+                    errores.push('El teléfono es requerido');
+                    $('#telefonoError').text('El teléfono es requerido');
+                }
+
+                if (!fecha) {
+                    errores.push('La fecha de nacimiento es requerida');
+                    $('#fechaError').text('La fecha de nacimiento es requerida');
+                }
+
+                if (errores.length > 0) {
+                    alert('Por favor complete todos los campos requeridos:\n- ' + errores.join('\n- '));
+                    e.preventDefault();
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Confirmar cambios antes de salir
+            var formModified = false;
+            $('input, select').on('change keyup', function() {
+                formModified = true;
+            });
+
+            $('a[asp-action="Index"]').click(function(e) {
+                if (formModified) {
+                    if (!confirm('¿Tiene cambios sin guardar. ¿Está seguro que desea salir?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            });
+
+            // Antes de enviar el formulario
+            $('#editForm').submit(function(e) {
+                console.log('=== DATOS DEL FORMULARIO ===');
+                console.log('ID:', $('#Id').val());
+                console.log('TipoIdentificacion:', $('#TipoIdentificacion').val());
+                console.log('Identificacion:', $('#Identificacion').val());
+                console.log('NombreCompleto:', $('#NombreCompleto').val());
+                console.log('Teléfono:', $('#Telefono').val());
+                console.log('FechaNacimiento:', $('#FechaNacimiento').val());
+                console.log('EstadoId:', $('#EstadoId').val());
+
+                // Mostrar indicador de carga
+                $('#btnGuardar').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...');
+            });
+
+            // Mostrar mensajes de TempData
+        @if (TempData["Success"] != null)
+        {
+            <text>
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: '@TempData["Success"]',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367',
+                        timer: 2500,
+                        showConfirmButton: true
+                    });
+            </text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: '@TempData["Error"]',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367'
+                    });
+            </text>
+        }
+        });
+    </script>
+}

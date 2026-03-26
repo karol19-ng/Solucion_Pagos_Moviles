@@ -1,2 +1,819 @@
-﻿module Index
+﻿@model IEnumerable<Pegasos.Web.Administrador.Models.RolViewModel>
 
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Administración de Roles";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        /* Mismos estilos que en ClientesCore e Index de Pantallas */
+        .page-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+            .page-header h1 {
+                color: var(--dorado-primario);
+                font-size: 1.8rem;
+                font-weight: 600;
+                margin: 0;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .page-header i {
+                margin-right: 15px;
+                color: var(--dorado-primario);
+                font-size: 2rem;
+            }
+
+        .btn-primary-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 10px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+            .btn-primary-custom:hover {
+                background: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(197, 163, 103, 0.3);
+            }
+
+            .btn-primary-custom i {
+                margin-right: 8px;
+            }
+
+        #dynamicNotification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-left: 4px solid #fff;
+        }
+
+        .notification-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: #1f060c;
+            border-left: 4px solid #fff;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-left: 10px;
+        }
+
+            .close-btn:hover {
+                opacity: 1;
+            }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-custom {
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--dorado-primario);
+            background: rgba(31, 6, 12, 0.8);
+            color: white;
+        }
+
+        .alert-success-custom {
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger-custom {
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-warning-custom {
+            border-left: 4px solid #ffc107;
+        }
+
+        .search-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+
+            .search-box:focus {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+                outline: none;
+            }
+
+        .btn-search {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+            .btn-search:hover {
+                background: #d4b574;
+                transform: translateY(-2px);
+            }
+
+        .btn-clear {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            padding: 10px 20px;
+            border-radius: 6px;
+        }
+
+            .btn-clear:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+            }
+
+        .table-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .table-custom thead th {
+                background: rgba(31, 6, 12, 0.8);
+                color: var(--dorado-primario);
+                padding: 12px 15px;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.85rem;
+                border-bottom: 2px solid var(--dorado-primario);
+            }
+
+            .table-custom tbody tr {
+                border-bottom: 1px solid rgba(197, 163, 103, 0.1);
+                transition: all 0.3s ease;
+            }
+
+                .table-custom tbody tr:hover {
+                    background: rgba(197, 163, 103, 0.1);
+                }
+
+            .table-custom tbody td {
+                padding: 12px 15px;
+                color: rgba(255, 255, 255, 0.9);
+                vertical-align: middle;
+            }
+
+        .badge-info {
+            background: rgba(23, 162, 184, 0.2);
+            color: #17a2b8;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #17a2b8;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin: 2px;
+        }
+
+        .descripcion-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .descripcion-cell:hover {
+            overflow: visible;
+            white-space: normal;
+            word-break: break-word;
+            background: rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-action-warning {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+        }
+
+        .btn-action-danger {
+            background: #dc3545;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .pagination-custom {
+            margin-top: 25px;
+        }
+
+        .page-link {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            margin: 0 3px;
+            border-radius: 4px !important;
+            transition: all 0.3s ease;
+        }
+
+            .page-link:hover {
+                background: var(--dorado-primario);
+                border-color: var(--dorado-primario);
+                color: var(--vinotinto-sidebar);
+            }
+
+        .page-item.active .page-link {
+            background: var(--dorado-primario);
+            border-color: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            font-weight: 600;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+            .no-data i {
+                font-size: 3rem;
+                margin-bottom: 15px;
+                color: rgba(197, 163, 103, 0.3);
+            }
+
+        /* Modal personalizado */
+        .modal-content-custom {
+            background: #1f060c;
+            border: 2px solid var(--dorado-primario);
+            color: white;
+        }
+
+        .modal-header-custom {
+            border-bottom: 1px solid rgba(197, 163, 103, 0.3);
+        }
+
+        .modal-footer-custom {
+            border-top: 1px solid rgba(197, 163, 103, 0.3);
+        }
+
+        .modal-title-custom {
+            font-family: 'Cinzel', serif;
+            color: var(--dorado-primario);
+        }
+
+        .btn-cancel-custom {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+            .btn-cancel-custom:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: var(--dorado-primario);
+                color: white;
+            }
+
+        .btn-delete-custom {
+            background: #dc3545;
+            border: none;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+            .btn-delete-custom:hover {
+                background: #c82333;
+                transform: translateY(-2px);
+            }
+
+        /* Fix z-index para modal de eliminar */
+        #modalEliminarRol {
+            z-index: 99999 !important;
+        }
+
+            #modalEliminarRol .modal-content {
+                z-index: 100000 !important;
+                position: relative;
+            }
+
+        /* SweetAlert2 siempre encima de todo */
+        .swal2-container {
+            z-index: 999999 !important;
+        }
+    </style>
+}
+
+<div class="container-fluid mt-4">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <h1>
+            <i class="fas fa-user-tag"></i>
+            Administración de Roles
+        </h1>
+        <a href="/Roles/Create" class="btn-primary-custom">
+            <i class="fas fa-plus-circle"></i>
+            Nuevo Rol
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-custom alert-success-custom alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-custom alert-danger-custom alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert-custom alert-warning-custom alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            @TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="search-container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" id="searchTerm" class="form-control search-box"
+                           placeholder="Buscar por nombre o descripción...">
+                    <button class="btn-search" type="button" id="searchButton">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                    <button class="btn-clear" type="button" id="clearButton">
+                        <i class="fas fa-times me-2"></i>Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Pantallas Asignadas</th>
+                        <th>Acciones</th>
+                    </thead>
+                <tbody id="rolesTableBody">
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var rol in Model)
+                        {
+                            <tr>
+                                <td style="vertical-align: middle;">#@rol.Id</td>
+                                <td style="vertical-align: middle;"><strong>@rol.Nombre</strong></td>
+                                <td class="descripcion-cell" style="vertical-align: middle;" title="@rol.Descripcion">
+                                    @(string.IsNullOrEmpty(rol.Descripcion) ? "Sin descripción" : rol.Descripcion)
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    @if (rol.Pantallas != null && rol.Pantallas.Any())
+                                    {
+                                        @foreach (var pantalla in rol.Pantallas.Take(3))
+                                        {
+                                            <span class="badge-info">@pantalla.Nombre</span>
+                                        }
+                                        @if (rol.Pantallas.Count > 3)
+                                        {
+                                            <span class="badge-info">+@(rol.Pantallas.Count - 3)</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Sin pantallas</span>
+                                    }
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <a href="/Roles/Edit/@rol.Id"
+                                       class="btn-action btn-action-warning"
+                                       title="Editar rol">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn-action btn-action-danger delete-btn"
+                                            onclick="abrirModalEliminar(@rol.Id, '@Html.Raw(rol.Nombre?.Replace("'", "\\'"))')"
+                                            title="Eliminar rol">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="no-data">
+                                <i class="fas fa-user-tag"></i>
+                                No hay roles registrados en el sistema
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPaginas > 1)
+        {
+            <nav class="pagination-custom">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(ViewBag.PaginaActual == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual - 1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPaginas; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.PaginaActual == ViewBag.TotalPaginas ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual + 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR -->
+<div class="modal fade" id="modalEliminarRol" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true" data-bs-backdrop="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-custom">
+                <h5 class="modal-title modal-title-custom" id="modalEliminarLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>CONFIRMAR ELIMINACIÓN
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-user-tag fa-4x mb-3" style="color: #dc3545;"></i>
+                <p style="color: white; font-size: 1.1rem;" id="modalMensajeEliminar">
+                    ¿Realmente desea eliminar el rol?
+                </p>
+                <p class="small text-danger" id="modalAdvertencia">
+                    Esta acción no se puede deshacer.
+                </p>
+                <p class="small text-warning mt-2" id="modalAdvertenciaUsuarios" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i> Este rol podría tener usuarios asignados.
+                </p>
+            </div>
+            <div class="modal-footer modal-footer-custom">
+                <button type="button" class="btn btn-cancel-custom" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>CANCELAR
+                </button>
+                <button type="button" class="btn btn-delete-custom" id="btnConfirmarEliminar">
+                    <i class="fas fa-trash-alt me-2"></i>SÍ, ELIMINAR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario oculto para el borrado -->
+<form id="deleteForm" method="post" asp-action="Delete">
+    <input type="hidden" id="deleteId" name="id" />
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Variable para almacenar el ID del rol a eliminar
+        let rolIdAEliminar = null;
+
+        // Función para obtener mensaje amigable según el código de estado HTTP
+        function obtenerMensajeError(statusCode, mensajeServidor) {
+            switch (statusCode) {
+                case 400:
+                    return {
+                        titulo: 'Datos Inválidos',
+                        mensaje: mensajeServidor || 'No se puede eliminar el rol. Verifique que los datos sean correctos.',
+                        icono: 'warning'
+                    };
+                case 401:
+                    return {
+                        titulo: 'Sesión Expirada',
+                        mensaje: 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.',
+                        icono: 'error'
+                    };
+                case 403:
+                    return {
+                        titulo: 'Acceso Denegado',
+                        mensaje: 'No tiene permisos para eliminar este rol.',
+                        icono: 'error'
+                    };
+                case 404:
+                    return {
+                        titulo: 'No Encontrado',
+                        mensaje: 'El rol que intenta eliminar no existe o ya fue eliminado.',
+                        icono: 'warning'
+                    };
+                case 409:
+                    return {
+                        titulo: 'Conflicto',
+                        mensaje: mensajeServidor || 'No se puede eliminar el rol porque tiene usuarios asignados. Primero debe reasignar los usuarios a otro rol.',
+                        icono: 'warning'
+                    };
+                case 500:
+                    return {
+                        titulo: 'Error del Servidor',
+                        mensaje: 'Ocurrió un error en el servidor. Por favor, intente más tarde.',
+                        icono: 'error'
+                    };
+                default:
+                    return {
+                        titulo: 'Error',
+                        mensaje: mensajeServidor || 'Ocurrió un error al intentar eliminar el rol.',
+                        icono: 'error'
+                    };
+            }
+        }
+
+        // Función para abrir el modal de confirmación
+        function abrirModalEliminar(id, nombre) {
+            rolIdAEliminar = id;
+            document.getElementById('modalMensajeEliminar').innerHTML =
+                `¿Realmente desea eliminar el rol <b style="color: var(--dorado-primario);">${nombre}</b>?`;
+            $('#modalEliminarRol').modal('show');
+        }
+
+        // Función para eliminar el rol
+        async function eliminarRol() {
+            if (!rolIdAEliminar) return;
+
+            // Mostrar loading en el botón
+            const btnConfirmar = document.getElementById('btnConfirmarEliminar');
+            const textoOriginal = btnConfirmar.innerHTML;
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ELIMINANDO...';
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                const response = await fetch(`/Roles/Delete/${rolIdAEliminar}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ id: rolIdAEliminar })
+                });
+
+                // Intentar obtener el mensaje de error del servidor
+                let mensajeServidor = '';
+                let data = null;
+                try {
+                    data = await response.json();
+                    mensajeServidor = data.message || data.descripcion || '';
+                } catch(e) {
+                    mensajeServidor = await response.text();
+                }
+
+                if (response.ok) {
+                    // Cerrar modal
+                    $('#modalEliminarRol').modal('hide');
+
+                    // Limpiar residuos de Bootstrap
+                    $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                    $('.modal-backdrop').remove();
+
+                    // Mostrar notificación de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡ELIMINADO!',
+                        text: data?.message || 'El rol ha sido eliminado exitosamente.',
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367',
+                        timer: 2000,
+                        showConfirmButton: true
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    // Error: obtener mensaje según código HTTP
+                    const errorInfo = obtenerMensajeError(response.status, mensajeServidor);
+                    
+                    // Cerrar modal
+                    $('#modalEliminarRol').modal('hide');
+
+                    // Limpiar residuos de Bootstrap
+                    $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                    $('.modal-backdrop').remove();
+
+                    // Mostrar mensaje de error con SweetAlert2
+                    Swal.fire({
+                        icon: errorInfo.icono,
+                        title: errorInfo.titulo,
+                        text: errorInfo.mensaje,
+                        background: '#1f060c',
+                        color: '#fff',
+                        confirmButtonColor: '#c5a367',
+                        confirmButtonText: 'Entendido'
+                    });
+
+                    console.error(`Error ${response.status}: ${mensajeServidor}`);
+                }
+            } catch (error) {
+                console.error('Error en la solicitud:', error);
+
+                $('#modalEliminarRol').modal('hide');
+                $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                $('.modal-backdrop').remove();
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo conectar con el servidor. Verifique su conexión a internet.',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonColor: '#c5a367',
+                    confirmButtonText: 'Entendido'
+                });
+            } finally {
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = textoOriginal;
+                rolIdAEliminar = null;
+            }
+        }
+
+        // Evento para el botón de confirmar eliminación
+        document.getElementById('btnConfirmarEliminar').addEventListener('click', eliminarRol);
+
+        function showNotification(type, message) {
+            let notification = $('#dynamicNotification');
+            if (notification.length === 0) {
+                $('body').append('<div id="dynamicNotification" class="notification"></div>');
+                notification = $('#dynamicNotification');
+            }
+
+            notification.removeClass('notification-success notification-error notification-warning');
+            if (type === 'success') {
+                notification.addClass('notification-success');
+            } else if (type === 'warning') {
+                notification.addClass('notification-warning');
+            } else {
+                notification.addClass('notification-error');
+            }
+
+            notification.html('<i class="fas ' + (type === 'success' ? 'fa-check-circle' : (type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle')) + ' me-2"></i>' + message + '<span class="close-btn" onclick="$(this).parent().fadeOut()">&times;</span>');
+            notification.fadeIn(300);
+
+            setTimeout(function() {
+                notification.fadeOut(300);
+            }, 5000);
+        }
+
+        $(document).ready(function() {
+            $('#searchTerm').on('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    buscarRoles();
+                }
+            });
+
+            $('#searchButton').click(buscarRoles);
+            $('#clearButton').click(limpiarBusqueda);
+
+            function buscarRoles() {
+                var termino = $('#searchTerm').val();
+                if (termino.length < 2 && termino.length > 0) return;
+
+                $('#searchButton').html('<i class="fas fa-spinner fa-spin me-2"></i>Buscando...').prop('disabled', true);
+
+                $.get('@Url.Action("Buscar", "Roles")', { termino: termino }, function(data) {
+                    var tbody = $('#rolesTableBody');
+                    tbody.empty();
+
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, rol) {
+                            var pantallasHtml = '';
+                            if (rol.pantallas && rol.pantallas.length > 0) {
+                                $.each(rol.pantallas.slice(0, 3), function(j, p) {
+                                    pantallasHtml += '<span class="badge-info">' + p.nombre + '</span> ';
+                                });
+                                if (rol.pantallas.length > 3) {
+                                    pantallasHtml += '<span class="badge-info">+' + (rol.pantallas.length - 3) + '</span>';
+                                }
+                            } else {
+                                pantallasHtml = '<span class="text-muted">Sin pantallas</span>';
+                            }
+
+                            var nombreSeguro = (rol.nombre || '').replace(/'/g, "\\'");
+                            var descripcionMostrar = rol.descripcion || '<span class="text-muted">Sin descripción</span>';
+
+                            var row = '<tr>' +
+                                '<td style="vertical-align: middle;">#' + rol.id + '</td>' +
+                                '<td style="vertical-align: middle;"><strong>' + (rol.nombre || '') + '</strong></td>' +
+                                '<td class="descripcion-cell" style="vertical-align: middle;" title="' + (rol.descripcion || '') + '">' + descripcionMostrar + '</td>' +
+                                '<td style="vertical-align: middle;">' + pantallasHtml + '</td>' +
+                                '<td style="vertical-align: middle;">' +
+                                '<a href="/Roles/Edit/' + rol.id + '" class="btn-action btn-action-warning"><i class="fas fa-edit"></i></a> ' +
+                                '<button type="button" class="btn-action btn-action-danger delete-btn" onclick="abrirModalEliminar(' + rol.id + ', \'' + nombreSeguro + '\')"><i class="fas fa-trash-alt"></i></button>' +
+                                '</td>' +
+                                '</tr>';
+                            tbody.append(row);
+                        });
+                    } else {
+                        tbody.append('<tr><td colspan="5" class="no-data"><i class="fas fa-search"></i> No se encontraron roles con el término "' + termino + '"</td></tr>');
+                    }
+                }).always(function() {
+                    $('#searchButton').html('<i class="fas fa-search me-2"></i>Buscar').prop('disabled', false);
+                });
+            }
+
+            function limpiarBusqueda() {
+                $('#searchTerm').val('');
+                location.reload();
+            }
+        });
+    </script>
+}

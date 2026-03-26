@@ -1,38 +1,58 @@
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using API_Gateway.Middleware;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using System.Text;
+using System.Text.Json.Nodes;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+// Configurar logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
-var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"] ??
-    "Pegasos_BancoPegasos_SecretKey_2026_CUC_ProgV_Avance2");
+// GTW1: Configurar Ocelot
+builder.Configuration.AddJsonFile("Configuration/ocelot.json", optional: false, reloadOnChange: true);
 
-builder.Services.AddAuthentication("Bearer")
+// GTW2: Configurar autenticación JWT para validación
+builder.Services.AddAuthentication("GatewayAuth")  // ← Especificar esquema por defecto
     .AddJwtBearer("GatewayAuth", options =>
     {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidateAudience = true,    
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
     });
 
-builder.Services.AddOcelot(builder.Configuration);
+// IMPORTANTE: Registrar HttpClientFactory
+builder.Services.AddHttpClient();
+
+builder.Services.AddOcelot();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseAuthentication();
-app.UseAuthorization();
+// IMPORTANTE: Agregar UseAuthentication y UseAuthorization ANTES del middleware
+app.UseRouting();
+app.UseAuthentication();  // ← NUEVO
+app.UseAuthorization();   // ← NUEVO
 
+// GTW2: Middleware de validación ANTES de Ocelot
+app.UseMiddleware<GatewayAuthenticationMiddleware>();
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseHttpsRedirection();
+
+// GTW1: Ocelot como middleware final
 await app.UseOcelot();
 
 app.Run();

@@ -1,2 +1,681 @@
-﻿module Index
+﻿@model IEnumerable<Pegasos.Web.Administrador.Models.ParametroViewModel>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Administración de Parámetros";
+}
 
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        :root {
+            --vinotinto-sidebar: #1f060c;
+            --vinotinto-fondo: #2b0811;
+            --dorado-primario: #c5a367;
+            --dorado-suave: rgba(197, 163, 103, 0.15);
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
+            border: 1px solid var(--dorado-primario);
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .page-header h1 {
+            color: var(--dorado-primario);
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .page-header i {
+            margin-right: 15px;
+            color: var(--dorado-primario);
+            font-size: 2rem;
+        }
+
+        .btn-primary-custom {
+            background: transparent;
+            border: 2px solid var(--dorado-primario);
+            color: var(--dorado-primario);
+            padding: 10px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(197, 163, 103, 0.3);
+        }
+
+        .btn-primary-custom i {
+            margin-right: 8px;
+        }
+
+        .alert-custom {
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--dorado-primario);
+            background: rgba(31, 6, 12, 0.8);
+            color: white;
+            backdrop-filter: blur(5px);
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-success-custom {
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger-custom {
+            border-left: 4px solid #dc3545;
+        }
+
+        .search-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(5px);
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+        .search-box:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            outline: none;
+        }
+
+        .btn-search {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .btn-search:hover {
+            background: #d4b574;
+        }
+
+        .btn-clear {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .btn-clear:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .table-container {
+            background: rgba(31, 6, 12, 0.5);
+            border: 1px solid rgba(197, 163, 103, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-custom thead th {
+            background: rgba(31, 6, 12, 0.8);
+            color: var(--dorado-primario);
+            padding: 12px 15px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--dorado-primario);
+        }
+
+        .table-custom tbody tr {
+            border-bottom: 1px solid rgba(197, 163, 103, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .table-custom tbody tr:hover {
+            background: rgba(197, 163, 103, 0.1);
+        }
+
+        .table-custom tbody td {
+            padding: 12px 15px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .badge-success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            border: 1px solid #28a745;
+        }
+
+        .badge-danger {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            border: 1px solid #dc3545;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn-action-warning {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+        }
+
+        .btn-action-danger {
+            background: #dc3545;
+        }
+
+        .btn-action-info {
+            background: #17a2b8;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: rgba(197, 163, 103, 0.3);
+        }
+
+        .pagination-custom {
+            margin-top: 25px;
+        }
+
+        .page-link {
+            background: transparent;
+            border: 1px solid rgba(197, 163, 103, 0.3);
+            color: white;
+            margin: 0 3px;
+            border-radius: 4px !important;
+            transition: all 0.3s ease;
+        }
+
+        .page-link:hover {
+            background: var(--dorado-primario);
+            border-color: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+        }
+
+        .page-item.active .page-link {
+            background: var(--dorado-primario);
+            border-color: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            font-weight: 600;
+        }
+
+        .id-badge {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        .fecha-creacion {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Animaciones */
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast-notification.fade-out {
+            animation: fadeOut 0.5s ease;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner-custom {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--dorado-primario);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Estilos para SweetAlert2 */
+        .swal2-popup {
+            font-size: 1rem !important;
+            border: 1px solid var(--dorado-primario) !important;
+        }
+
+        .swal2-title {
+            color: var(--dorado-primario) !important;
+        }
+
+        .swal2-html-container {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .swal2-confirm.btn-danger {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+        }
+
+        .swal2-cancel.btn-secondary {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+        }
+    </style>
+}
+
+<div class="container-fluid mt-4">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <h1>
+            <i class="fas fa-sliders-h"></i>
+            Parámetros del Sistema
+        </h1>
+        <a href="/Parametros/Create" class="btn-primary-custom">
+            <i class="fas fa-plus-circle"></i>
+            Nuevo Parámetro
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-custom alert-success-custom" id="tempSuccessAlert">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-custom alert-danger-custom" id="tempErrorAlert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <!-- Buscador por ID -->
+    <div class="search-container">
+        <div class="row">
+            <div class="col-md-8">
+                <form method="get" asp-action="Index" id="searchForm">
+                    <div class="input-group">
+                        <input type="text" name="searchId" id="searchId" class="form-control search-box"
+                               placeholder="Buscar por ID de parámetro (ej: COMISION, TIMEOUT...)"
+                               value="@ViewBag.SearchId">
+                        <button class="btn-search" type="submit">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchId?.ToString()))
+                        {
+                            <a href="@Url.Action("Index")" class="btn-clear">
+                                <i class="fas fa-times me-2"></i>Limpiar
+                            </a>
+                        }
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="text-muted">
+                    <i class="fas fa-database me-1"></i> Total: @ViewBag.TotalRegistros registros
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Valor</th>
+                        <th>Estado</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </thead>
+                <tbody id="parametrosTableBody">
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var parametro in Model)
+                        {
+                            <tr id="row-@parametro.Id">
+                                <td><span class="id-badge">@parametro.Id</span></td>
+                                <td><strong>@parametro.Valor</strong></td>
+                                <td>
+                                    @if (parametro.EstadoId == 1)
+                                    {
+                                        <span class="badge-success">ACTIVO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">INACTIVO</span>
+                                    }
+                                </td>
+                                <td class="fecha-creacion">
+                                    @if (parametro.FechaCreacion.HasValue)
+                                    {
+                                        @parametro.FechaCreacion.Value.ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/Parametros/Edit/@parametro.Id"
+                                       class="btn-action btn-action-warning"
+                                       title="Editar parámetro">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn-action btn-action-danger delete-btn"
+                                            onclick="confirmarEliminacion('@parametro.Id', '@parametro.Id')"
+                                            title="Eliminar parámetro">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="no-data">
+                                <i class="fas fa-sliders-h"></i>
+                                @if (!string.IsNullOrEmpty(ViewBag.SearchId?.ToString()))
+                                {
+                                    <span>No se encontraron parámetros con ID '@ViewBag.SearchId'</span>
+                                }
+                                else
+                                {
+                                    <span>No hay parámetros registrados en el sistema</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        @if (ViewBag.TotalPaginas != null && ViewBag.TotalPaginas > 1)
+        {
+            <nav class="pagination-custom">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(ViewBag.PaginaActual == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual - 1)" asp-route-searchId="@ViewBag.SearchId">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPaginas; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@i" asp-route-searchId="@ViewBag.SearchId">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.PaginaActual == ViewBag.TotalPaginas ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual + 1)" asp-route-searchId="@ViewBag.SearchId">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let parametroAEliminar = null;
+
+        function confirmarEliminacion(id, nombre) {
+            parametroAEliminar = { id: id, nombre: nombre };
+            
+            // Usar SweetAlert2 directamente
+            Swal.fire({
+                title: '¿Eliminar parámetro?',
+                html: `
+                    <div style="text-align: left;">
+                        <p><strong><i class="fas fa-tag"></i> ID del Parámetro:</strong> <span style="font-family: monospace; color: var(--dorado-primario);">${nombre}</span></p>
+                    </div>
+                    <hr>
+                    <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> <strong>Advertencia:</strong> Esta acción no se puede deshacer.</p>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Sí, eliminar',
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                background: '#1f060c',
+                color: '#fff',
+                backdrop: 'rgba(0,0,0,0.8)',
+                customClass: {
+                    popup: 'rounded-3',
+                    confirmButton: 'btn btn-danger',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    eliminarParametro();
+                }
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = $(`
+                <div class="toast-notification alert-custom alert-${type === 'success' ? 'success' : 'danger'}-custom">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    ${message}
+                </div>
+            `);
+            
+            $('body').append(toast);
+            
+            setTimeout(() => {
+                toast.addClass('fade-out');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function showLoading() {
+            $('#loadingOverlay').fadeIn(200);
+        }
+
+        function hideLoading() {
+            $('#loadingOverlay').fadeOut(200);
+        }
+
+        function eliminarParametro() {
+            if (!parametroAEliminar) return;
+
+            showLoading();
+
+            const token = $('input[name="__RequestVerificationToken"]').first().val();
+
+            $.ajax({
+                url: '/Parametros/Delete/' + encodeURIComponent(parametroAEliminar.id),
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    id: parametroAEliminar.id
+                },
+                success: function(response) {
+                    hideLoading();
+
+                    if (response.success) {
+                        // Eliminar la fila de la tabla con animación
+                        const row = $(`#row-${parametroAEliminar.id}`);
+                        row.fadeOut(300, function() {
+                            $(this).remove();
+                            
+                            // Verificar si no quedan registros
+                            if ($('#parametrosTableBody tr').length === 0) {
+                                location.reload();
+                            } else {
+                                // Actualizar contador
+                                const totalText = $('.text-muted').text();
+                                const match = totalText.match(/\d+/);
+                                if (match) {
+                                    const totalRegistros = parseInt(match[0]) - 1;
+                                    $('.text-muted').html(`<i class="fas fa-database me-1"></i> Total: ${totalRegistros} registros`);
+                                }
+                            }
+                        });
+                        
+                        showToast(response.message, 'success');
+                    } else {
+                        showToast(response.message || 'Error al eliminar el parámetro', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideLoading();
+                    
+                    let errorMessage = 'Error al eliminar el parámetro';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.message) errorMessage = response.message;
+                        } catch(e) {
+                            console.error('Error parsing response:', e);
+                        }
+                    }
+                    
+                    showToast(errorMessage, 'error');
+                    console.error('Error detallado:', xhr.responseText);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Auto-ocultar alertas después de 5 segundos
+            setTimeout(() => {
+                $('#tempSuccessAlert, #tempErrorAlert').fadeOut(500);
+            }, 5000);
+
+            // Búsqueda en tiempo real con debounce
+            let searchTimeout;
+            $('#searchId').on('keyup', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    $('#searchForm').submit();
+                }, 500);
+            });
+        });
+    </script>
+}
