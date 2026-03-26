@@ -1,0 +1,49 @@
+﻿<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: #2b0811; border: 2px solid #c5a367; border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(197, 163, 103, 0.3);">
+                <h5 class="modal-title" id="errorModalLabel" style="color: #ef4444;">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Error
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color: white;">
+                <div id="errorMessageContainer">
+                    <p id="errorStatusCode" style="color: #c5a367; font-weight: bold; margin-bottom: 10px;"></p>
+                    <p id="errorDescription" style="color: rgba(255,255,255,0.9);"></p>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(197, 163, 103, 0.3);">
+                <button type="button" class="btn btn-pegasos" data-bs-dismiss="modal">
+                    <i class="fas fa-check me-2"></i> Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-pegasos {
+        background: linear-gradient(135deg, #c5a367 0%, #8e6d31 100%);
+        border: none;
+        padding: 8px 20px;
+        border-radius: 5px;
+        color: #1a050a;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .btn-pegasos:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(197, 163, 103, 0.3);
+    }
+</style>
+
+<script>
+    function mostrarError(statusCode, mensaje) {
+        document.getElementById('errorStatusCode').innerHTML = '<i class="fas fa-code me-2"></i> Código: ' + statusCode;
+        document.getElementById('errorDescription').innerHTML = '<i class="fas fa-info-circle me-2"></i> ' + mensaje;
+        
+        var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+        errorModal.show();
+    }
+</script>

@@ -112,5 +112,17 @@
                 iniciarContadorSesion(5, '@Url.Action("Logout", "Auth")');
         </script>
     }
+
+    <!-- Modal de error reutilizable -->
+    <partial name="_ErrorModal" />
+
+    @if (TempData["ErrorStatusCode"] != null && TempData["ErrorMessage"] != null)
+    {
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    mostrarError('@TempData["ErrorStatusCode"]', '@TempData["ErrorMessage"]');
+                });
+        </script>
+    }
 </body>
 </html>

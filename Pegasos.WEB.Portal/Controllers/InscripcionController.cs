@@ -7,38 +7,30 @@ using System.Security.Claims;
 
 namespace Pegasos.WEB.Portal.Controllers
 {
-    [Authorize(Roles = "Cliente")]
+    [Authorize(Roles = "Cliente,Administrador")]
     public class InscripcionController : Controller
     {
         private readonly IPagosService _pagosService;
-        private readonly ICoreClienteService _coreClienteService;
         private readonly ILogger<InscripcionController> _logger;
 
         public InscripcionController(
             IPagosService pagosService,
-            ICoreClienteService coreClienteService,
             ILogger<InscripcionController> logger)
         {
             _pagosService = pagosService;
-            _coreClienteService = coreClienteService;
             _logger = logger;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var token = User.FindFirst("access_token")?.Value ?? "";
             var model = new InscripcionViewModel();
 
-            // Obtener el nombre del usuario del claim
-            model.NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Cliente";
-
-            // Intentar obtener la identificación del usuario (esto dependerá de cómo la guardes)
-            // Por ahora, la dejamos vacía para que el usuario la ingrese manualmente
-            // Idealmente, deberías tener la identificación en algún lado (BD, claim, etc.)
-
-            _logger.LogInformation("Mostrando formulario de inscripción para usuario: {User}",
-                User.Identity?.Name);
+            if (User.IsInRole("Cliente"))
+            {
+                model.NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Cliente";
+                model.Identificacion = User.FindFirst("identificacion")?.Value ?? "";
+            }
 
             return View(model);
         }
@@ -49,18 +41,27 @@ namespace Pegasos.WEB.Portal.Controllers
         {
             if (!ModelState.IsValid)
             {
+                TempData["ErrorStatusCode"] = "400";
+                TempData["ErrorMessage"] = "Datos incompletos. Por favor, complete todos los campos.";
                 return View("Index", model);
             }
 
             var token = User.FindFirst("access_token")?.Value ?? "";
 
-            _logger.LogInformation("Token obtenido del claim: {TokenPreview}",
-                token?.Substring(0, Math.Min(20, token?.Length ?? 0)) + "...");
-
             if (string.IsNullOrEmpty(token))
             {
-                _logger.LogWarning("Token vacío, redirigiendo a login");
+                TempData["ErrorStatusCode"] = "401";
+                TempData["ErrorMessage"] = "Sesión no válida. Por favor, inicie sesión nuevamente.";
                 return RedirectToAction("Login", "Auth");
+            }
+
+            if (User.IsInRole("Cliente"))
+            {
+                var userIdentificacion = User.FindFirst("identificacion")?.Value ?? "";
+                if (!string.IsNullOrEmpty(userIdentificacion) && string.IsNullOrEmpty(model.Identificacion))
+                {
+                    model.Identificacion = userIdentificacion;
+                }
             }
 
             var input = new InscribirInput
@@ -74,14 +75,20 @@ namespace Pegasos.WEB.Portal.Controllers
 
             if (result != null && result.Codigo == 0)
             {
-                _logger.LogInformation("Inscripción exitosa para teléfono: {Telefono}", model.Telefono);
                 TempData["SuccessMessage"] = result.Descripcion;
                 return RedirectToAction("Confirmacion", new { telefono = model.Telefono });
             }
             else
             {
-                _logger.LogWarning("Inscripción fallida: {Descripcion}", result?.Descripcion);
-                ModelState.AddModelError("", result?.Descripcion ?? "Error en la inscripción");
+                var errorMsg = result?.Descripcion ?? "Error en la inscripción";
+                TempData["ErrorStatusCode"] = result?.Codigo == -1 ? "400" : "500";
+                TempData["ErrorMessage"] = errorMsg;
+
+                if (User.IsInRole("Cliente"))
+                {
+                    model.NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Cliente";
+                }
+
                 return View("Index", model);
             }
         }
@@ -97,7 +104,13 @@ namespace Pegasos.WEB.Portal.Controllers
         public IActionResult Desinscribir()
         {
             var model = new InscripcionViewModel();
-            model.NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "";
+
+            if (User.IsInRole("Cliente"))
+            {
+                model.NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Cliente";
+                model.Identificacion = User.FindFirst("identificacion")?.Value ?? "";
+            }
+
             return View(model);
         }
 
@@ -107,13 +120,26 @@ namespace Pegasos.WEB.Portal.Controllers
         {
             if (!ModelState.IsValid)
             {
+                TempData["ErrorStatusCode"] = "400";
+                TempData["ErrorMessage"] = "Datos incompletos. Por favor, complete todos los campos.";
                 return View("Desinscribir", model);
             }
 
             var token = User.FindFirst("access_token")?.Value ?? "";
             if (string.IsNullOrEmpty(token))
             {
+                TempData["ErrorStatusCode"] = "401";
+                TempData["ErrorMessage"] = "Sesión no válida. Por favor, inicie sesión nuevamente.";
                 return RedirectToAction("Login", "Auth");
+            }
+
+            if (User.IsInRole("Cliente"))
+            {
+                var userIdentificacion = User.FindFirst("identificacion")?.Value ?? "";
+                if (!string.IsNullOrEmpty(userIdentificacion) && string.IsNullOrEmpty(model.Identificacion))
+                {
+                    model.Identificacion = userIdentificacion;
+                }
             }
 
             var input = new DesinscribirInput
@@ -127,14 +153,20 @@ namespace Pegasos.WEB.Portal.Controllers
 
             if (result != null && result.Codigo == 0)
             {
-                _logger.LogInformation("Desinscripción exitosa para teléfono: {Telefono}", model.Telefono);
                 TempData["SuccessMessage"] = result.Descripcion;
                 return RedirectToAction("Index", "Home");
             }
             else
             {
-                _logger.LogWarning("Desinscripción fallida: {Descripcion}", result?.Descripcion);
-                ModelState.AddModelError("", result?.Descripcion ?? "Error en la desinscripción");
+                var errorMsg = result?.Descripcion ?? "Error en la desinscripción";
+                TempData["ErrorStatusCode"] = result?.Codigo == -1 ? "400" : "500";
+                TempData["ErrorMessage"] = errorMsg;
+
+                if (User.IsInRole("Cliente"))
+                {
+                    model.NombreCompleto = User.FindFirst("nombreCompleto")?.Value ?? "Cliente";
+                }
+
                 return View("Desinscribir", model);
             }
         }
