@@ -168,7 +168,6 @@
                 <form asp-action="Edit" method="post" id="editForm">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
-                    <input type="hidden" asp-for="TipoCuenta" id="TipoCuentaHidden" />
 
                     <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
 
@@ -189,17 +188,17 @@
                         <small class="text-muted">No es posible cambiar el cliente dueño de la cuenta.</small>
                     </div>
 
-                    <!-- Campo Tipo de Cuenta -->
+                    <!-- Campo Tipo de Cuenta - CORREGIDO con selección basada en el modelo -->
                     <div class="form-group">
-                        <label class="form-label">
+                        <label asp-for="TipoCuenta" class="form-label">
                             <i class="fas fa-tag"></i> Tipo de Cuenta <span class="required-field"></span>
                         </label>
-                        <select class="form-select form-select-custom" id="TipoCuentaVisual">
+                        <select asp-for="TipoCuenta" class="form-select form-select-custom" id="TipoCuenta" name="TipoCuenta">
                             <option value="">-- Seleccione un tipo --</option>
-                            <option value="CORRIENTE" @(ViewBag.CuentaInfo?.TipoCuenta == "CORRIENTE" ? "selected" : "")>CORRIENTE</option>
-                            <option value="AHORROS" @(ViewBag.CuentaInfo?.TipoCuenta == "AHORROS" ? "selected" : "")>AHORROS</option>
+                            <option value="CORRIENTE" @(Model.TipoCuenta == "CORRIENTE" ? "selected" : "")>CORRIENTE</option>
+                            <option value="AHORROS" @(Model.TipoCuenta == "AHORROS" ? "selected" : "")>AHORROS</option>
                         </select>
-                        <span class="text-danger" id="tipoCuentaVisualError"></span>
+                        <span asp-validation-for="TipoCuenta" class="text-danger"></span>
                         <small class="text-muted">Seleccione el tipo de cuenta.</small>
                     </div>
 
@@ -232,70 +231,103 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
-            // Sincronizar el campo visual con el campo oculto
-            $('#TipoCuentaVisual').on('change', function() {
-                var valor = $(this).val();
-                $('#TipoCuentaHidden').val(valor);
-                
-                if (!valor || valor === '') {
-                    $('#tipoCuentaVisualError').text('El tipo de cuenta es requerido');
-                } else {
-                    $('#tipoCuentaVisualError').text('');
-                }
-            });
-
+            // Debug: Mostrar el valor actual del select
+            console.log('Valor actual de TipoCuenta en el modelo:', '@Model.TipoCuenta');
+            console.log('Valor seleccionado en el select:', $('#TipoCuenta').val());
+            
             // Validación al enviar el formulario
             $('#editForm').on('submit', function(e) {
                 e.preventDefault();
                 
-                var tipoCuenta = $('#TipoCuentaVisual').val();
+                var tipoCuenta = $('#TipoCuenta').val();
+                var estadoId = $('#EstadoId').val();
                 var errores = [];
-
+                
+                console.log('TipoCuenta seleccionado:', tipoCuenta);
+                
                 if (!tipoCuenta || tipoCuenta === '') {
                     errores.push('El tipo de cuenta es requerido');
-                    $('#tipoCuentaVisualError').text('El tipo de cuenta es requerido');
                 }
-
+                
                 if (errores.length > 0) {
-                    showErrorModal('Por favor complete todos los campos requeridos:\n• ' + errores.join('\n• '));
+                    Swal.fire({
+                        title: 'Campos incompletos',
+                        html: 'Por favor complete todos los campos requeridos:<br>• ' + errores.join('<br>• '),
+                        icon: 'warning',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff'
+                    });
                     return false;
                 }
-
-                $('#TipoCuentaHidden').val(tipoCuenta);
                 
-                // Mostrar modal de carga
-                var loadingModal = showLoadingModal();
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Actualizando cuenta...',
+                    text: 'Por favor espere',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
                 
                 var form = $(this);
                 var url = form.attr('action');
                 var data = form.serialize();
+                
+                console.log('Datos a enviar:', data);
                 
                 $.ajax({
                     url: url,
                     type: 'POST',
                     data: data,
                     success: function(response) {
-                        hideLoadingModal(loadingModal);
                         if (response.success) {
-                            showSuccessModal(response.message, '/CuentasCore/Index');
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonColor: '#c5a367',
+                                background: '#1f060c',
+                                color: '#fff'
+                            }).then(() => {
+                                window.location.href = '/CuentasCore/Index';
+                            });
                         } else {
-                            showErrorModal(response.message);
+                            Swal.fire({
+                                title: 'Error',
+                                text: response.message,
+                                icon: 'error',
+                                confirmButtonColor: '#c5a367',
+                                background: '#1f060c',
+                                color: '#fff'
+                            });
                         }
                     },
                     error: function(xhr) {
-                        hideLoadingModal(loadingModal);
-                        if (xhr.status === 502 || xhr.status === 504) {
-                            showGatewayError();
-                        } else {
-                            let errorMsg = 'Error al actualizar la cuenta';
-                            try {
-                                const response = JSON.parse(xhr.responseText);
-                                if (response.message) errorMsg = response.message;
-                            } catch(e) {}
-                            showErrorModal(errorMsg);
+                        let errorMsg = 'Error al actualizar la cuenta';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.message) errorMsg = response.message;
+                        } catch(e) {
+                            if (xhr.status === 500) {
+                                errorMsg = 'Error interno del servidor. Por favor, intente nuevamente.';
+                            } else if (xhr.status === 502 || xhr.status === 504) {
+                                errorMsg = 'Error de conexión con el servidor.';
+                            }
                         }
+                        
+                        Swal.fire({
+                            title: 'Error de Operación',
+                            text: errorMsg,
+                            icon: 'error',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff'
+                        });
                     }
                 });
             });
@@ -308,14 +340,22 @@
             $('a[asp-action="Index"]').click(function(e) {
                 if (formModified) {
                     e.preventDefault();
-                    showConfirmModal(
-                        '¿Tiene cambios sin guardar. ¿Está seguro que desea salir?',
-                        function() {
+                    Swal.fire({
+                        title: '¿Salir sin guardar?',
+                        text: 'Tiene cambios sin guardar. ¿Está seguro que desea salir?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#c5a367',
+                        cancelButtonColor: '#dc3545',
+                        confirmButtonText: '<i class="fas fa-sign-out-alt me-2"></i>Sí, salir',
+                        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                        background: '#1f060c',
+                        color: '#fff'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
                             window.location.href = $(this).attr('href');
-                        }.bind(this),
-                        '',
-                        'Sí, Salir'
-                    );
+                        }
+                    });
                 }
             });
         });

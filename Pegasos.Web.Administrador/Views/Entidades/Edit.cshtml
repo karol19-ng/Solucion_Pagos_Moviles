@@ -196,6 +196,48 @@
             margin-left: 4px;
             font-weight: bold;
         }
+
+        /* Estilos para SweetAlert2 */
+        .swal2-popup {
+            font-size: 1rem !important;
+            border: 1px solid var(--dorado-primario) !important;
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a12 100%) !important;
+        }
+
+        .swal2-title {
+            color: var(--dorado-primario) !important;
+        }
+
+        .swal2-html-container {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner-custom {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--dorado-primario);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 }
 
@@ -263,7 +305,7 @@
                         <a asp-action="Index" class="btn-secondary-custom">
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
-                        <button type="submit" class="btn-warning-custom">
+                        <button type="submit" class="btn-warning-custom" id="btnActualizar">
                             <i class="fas fa-save"></i> Actualizar Entidad
                         </button>
                     </div>
@@ -273,9 +315,23 @@
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        function showLoading() {
+            $('#loadingOverlay').fadeIn(200);
+        }
+
+        function hideLoading() {
+            $('#loadingOverlay').fadeOut(200);
+        }
+
         $(document).ready(function() {
             // Validación en tiempo real
             $('#Identificador').on('input', function() {
@@ -296,63 +352,118 @@
                 }
             });
 
-            // Validación al enviar
-            $('#editForm').submit(function(e) {
+            // Validación al enviar con SweetAlert2
+            $('#editForm').on('submit', function(e) {
+                e.preventDefault();
+                
                 var identificador = $('#Identificador').val();
                 var nombre = $('#Nombre').val();
                 var errores = [];
 
                 if (!identificador || identificador.trim() === '') {
                     errores.push('El identificador es requerido');
-                    $('#identificadorError').text('El identificador es requerido');
                 }
 
                 if (!nombre || nombre.trim() === '') {
                     errores.push('El nombre es requerido');
-                    $('#nombreError').text('El nombre es requerido');
                 }
 
                 if (errores.length > 0) {
-                    alert('Por favor complete todos los campos requeridos:\n- ' + errores.join('\n- '));
-                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Campos incompletos',
+                        html: '<div style="text-align: left;">Por favor complete todos los campos requeridos:<br>• ' + errores.join('<br>• ') + '</div>',
+                        icon: 'warning',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff'
+                    });
                     return false;
                 }
 
-                return true;
+                showLoading();
+                
+                var form = $(this);
+                var url = form.attr('action');
+                var data = form.serialize();
+                
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: data,
+                    success: function(response) {
+                        hideLoading();
+                        if (response.success) {
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonColor: '#c5a367',
+                                background: '#1f060c',
+                                color: '#fff'
+                            }).then(() => {
+                                window.location.href = '/Entidades/Index';
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: response.message,
+                                icon: 'error',
+                                confirmButtonColor: '#c5a367',
+                                background: '#1f060c',
+                                color: '#fff'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        hideLoading();
+                        let errorMsg = 'Error al actualizar la entidad';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.message) errorMsg = response.message;
+                        } catch(e) {
+                            if (xhr.status === 500) {
+                                errorMsg = 'Error interno del servidor. Por favor, intente nuevamente.';
+                            }
+                        }
+                        
+                        Swal.fire({
+                            title: 'Error de Operación',
+                            text: errorMsg,
+                            icon: 'error',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff'
+                        });
+                    }
+                });
             });
 
             // Confirmar cambios antes de salir
             var formModified = false;
-
-            $('input, select').on('change', function() {
-                formModified = true;
-            });
-
-            $('input').on('keyup', function() {
-                formModified = true;
-            });
+            $('input, select').on('change', function() { formModified = true; });
+            $('input').on('keyup', function() { formModified = true; });
 
             $('a[asp-action="Index"]').click(function(e) {
                 if (formModified) {
-                    if (!confirm('¿Tiene cambios sin guardar. ¿Está seguro que desea salir?')) {
-                        e.preventDefault();
-                        return false;
-                    }
+                    e.preventDefault();
+                    Swal.fire({
+                        title: '¿Salir sin guardar?',
+                        text: 'Tiene cambios sin guardar. ¿Está seguro que desea salir?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#c5a367',
+                        cancelButtonColor: '#dc3545',
+                        confirmButtonText: '<i class="fas fa-sign-out-alt me-2"></i>Sí, salir',
+                        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                        background: '#1f060c',
+                        color: '#fff'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = $(this).attr('href');
+                        }
+                    });
                 }
             });
-
-        @if (TempData["Success"] != null)
-        {
-                <text>
-                            alert('@TempData["Success"]');
-                </text>
-        }
-        @if (TempData["Error"] != null)
-        {
-                <text>
-                            alert('Error: @TempData["Error"]');
-                </text>
-        }
         });
     </script>
 }

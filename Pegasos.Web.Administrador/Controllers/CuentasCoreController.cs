@@ -191,52 +191,49 @@ namespace Pegasos.Web.Administrador.Controllers
             }
         }
 
-        // POST: CuentasCore/Edit/5 - Procesar edición
+        // POST: CuentasCore/Edit/5 - Procesar edición (CORREGIDO)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditarCuentaCoreViewModel model)
         {
+            _logger.LogInformation("=== EDITANDO CUENTA ===");
+            _logger.LogInformation("ID recibido: {Id}", id);
+            _logger.LogInformation("Model - Id: {ModelId}, TipoCuenta: {TipoCuenta}, EstadoId: {EstadoId}",
+                model?.Id, model?.TipoCuenta, model?.EstadoId);
+
+            // Validar que el ID coincide
             if (id != model.Id)
             {
-                return NotFound();
+                _logger.LogWarning("ID no coincide: URL={UrlId}, Model={ModelId}", id, model.Id);
+                return Json(new { success = false, message = "El ID de la cuenta no coincide" });
             }
 
+            // Validar TipoCuenta
             if (string.IsNullOrWhiteSpace(model.TipoCuenta))
             {
-                ModelState.AddModelError("TipoCuenta", "El tipo de cuenta es requerido");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                ViewBag.TiposCuenta = await _cuentaService.ObtenerTiposCuentaAsync()
-                    ?? new List<string>();
-                var cuenta = await _cuentaService.ObtenerPorIdAsync(id);
-                ViewBag.CuentaInfo = cuenta;
-                return View(model);
+                _logger.LogWarning("TipoCuenta está vacío");
+                return Json(new { success = false, message = "El tipo de cuenta es requerido" });
             }
 
             try
             {
+                // Intentar actualizar la cuenta
                 var resultado = await _cuentaService.ActualizarAsync(model);
+
                 if (resultado)
                 {
-                    TempData["Success"] = "Cuenta actualizada exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    _logger.LogInformation("✅ Cuenta {Id} actualizada exitosamente", id);
+                    return Json(new { success = true, message = "Cuenta actualizada exitosamente" });
                 }
 
-                ModelState.AddModelError(string.Empty, "No se pudo actualizar la cuenta");
+                _logger.LogWarning("❌ No se pudo actualizar la cuenta {Id}", id);
+                return Json(new { success = false, message = "No se pudo actualizar la cuenta" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar cuenta {Id}", id);
-                ModelState.AddModelError(string.Empty, "Error al actualizar la cuenta");
+                _logger.LogError(ex, "❌ Error al actualizar cuenta {Id}", id);
+                return Json(new { success = false, message = $"Error al actualizar la cuenta: {ex.Message}" });
             }
-
-            ViewBag.TiposCuenta = await _cuentaService.ObtenerTiposCuentaAsync()
-                ?? new List<string>();
-            var cuentaInfo = await _cuentaService.ObtenerPorIdAsync(id);
-            ViewBag.CuentaInfo = cuentaInfo;
-            return View(model);
         }
 
         // POST: CuentasCore/Delete/5 - Eliminar cuenta

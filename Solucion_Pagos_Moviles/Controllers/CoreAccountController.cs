@@ -71,6 +71,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                                      from cliente in clienteJoin.DefaultIfEmpty()
                                      join est in _context.EstadosCore on c.ID_Estado equals est.ID_Estado into estadoJoin
                                      from estado in estadoJoin.DefaultIfEmpty()
+                                     orderby c.ID_Cuenta
                                      select new CuentaDTO
                                      {
                                          Id = c.ID_Cuenta,
@@ -84,6 +85,8 @@ namespace Solucion_Pagos_Moviles.Controllers
                                          EstadoDescripcion = estado != null ? estado.Descripcion : ""
                                      })
                                       .ToListAsync();
+
+                _logger.LogInformation("Total de cuentas encontradas: {Count}", cuentas.Count);
 
                 await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
                 {
@@ -336,7 +339,6 @@ namespace Solucion_Pagos_Moviles.Controllers
             }
         }
 
-
         // POST: api/coreaccount - CREAR CUENTA
         [HttpPost]
         public async Task<ActionResult<CuentaResponse>> Crear([FromBody] CrearCuentaRequest request)
@@ -406,7 +408,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                 _logger.LogInformation("Cliente encontrado: ID={Id}, Nombre={Nombre}, Identificacion={Identificacion}",
                     cliente.ID_Cliente, cliente.Nombre_Completo, cliente.Identificacion);
 
-                // Generar número de cuenta (sin usar ID, porque la BD lo genera automáticamente)
+                // Generar número de cuenta
                 string numeroCuenta = GenerarNumeroCuenta(cliente.ID_Cliente, request.TipoCuenta);
                 _logger.LogInformation("Número de cuenta generado: {NumeroCuenta}", numeroCuenta);
 
@@ -421,7 +423,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     _logger.LogInformation("Número alternativo generado: {NumeroCuenta}", numeroCuenta);
                 }
 
-                // Crear nueva cuenta (SIN ESPECIFICAR ID_Cuenta - la BD lo genera automáticamente)
+                // Crear nueva cuenta
                 var nuevaCuenta = new Cuenta
                 {
                     Numero_Cuenta = numeroCuenta,
@@ -534,7 +536,6 @@ namespace Solucion_Pagos_Moviles.Controllers
 
             string numero = $"CR{codigoCliente}{timestamp}{codigoTipo}";
 
-            // Limitar a 22 caracteres (máximo de la columna)
             if (numero.Length > 22) numero = numero.Substring(0, 22);
 
             return numero;
@@ -553,13 +554,17 @@ namespace Solucion_Pagos_Moviles.Controllers
             return numero;
         }
 
-        // PUT: api/coreaccount/{id}
+        // PUT: api/coreaccount/{id} - ACTUALIZAR CUENTA (SOLO TIPO Y ESTADO)
         [HttpPut("{id}")]
         public async Task<ActionResult<CuentaResponse>> Actualizar(int id, [FromBody] ActualizarCuentaRequest request)
         {
             try
             {
                 var usuario = User.Identity?.Name ?? "Sistema";
+
+                _logger.LogInformation("=== ACTUALIZANDO CUENTA ===");
+                _logger.LogInformation("ID: {Id}", id);
+                _logger.LogInformation("Request: {@Request}", new { request?.Id, request?.EstadoId, request?.TipoCuenta });
 
                 if (request == null)
                 {
@@ -572,6 +577,7 @@ namespace Solucion_Pagos_Moviles.Controllers
 
                 if (id != request.Id)
                 {
+                    _logger.LogWarning("ID no coincide: URL={UrlId}, Request={RequestId}", id, request.Id);
                     return BadRequest(new CuentaResponse
                     {
                         Codigo = -1,
@@ -579,11 +585,13 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
+                // Buscar cuenta existente
                 var cuentaExistente = await _context.Cuentas
                     .FirstOrDefaultAsync(c => c.ID_Cuenta == id);
 
                 if (cuentaExistente == null)
                 {
+                    _logger.LogWarning("Cuenta con ID {Id} no encontrada", id);
                     return NotFound(new CuentaResponse
                     {
                         Codigo = -1,
@@ -591,6 +599,7 @@ namespace Solucion_Pagos_Moviles.Controllers
                     });
                 }
 
+                // Guardar copia para bitácora
                 var cuentaAnterior = new
                 {
                     cuentaExistente.Numero_Cuenta,
@@ -600,25 +609,9 @@ namespace Solucion_Pagos_Moviles.Controllers
                     cuentaExistente.ID_Estado
                 };
 
-                if (request.EstadoId.HasValue)
-                {
-                    var estadoValido = await _context.EstadosCore.AnyAsync(e => e.ID_Estado == request.EstadoId.Value);
-                    if (!estadoValido)
-                    {
-                        return BadRequest(new CuentaResponse
-                        {
-                            Codigo = -1,
-                            Descripcion = $"El estado con ID {request.EstadoId} no existe"
-                        });
-                    }
-                    cuentaExistente.ID_Estado = request.EstadoId.Value;
-                }
+                bool huboCambios = false;
 
-                if (request.Saldo.HasValue)
-                {
-                    cuentaExistente.Saldo = request.Saldo.Value;
-                }
-
+                // ========== SOLO ACTUALIZAR TIPO DE CUENTA ==========
                 if (!string.IsNullOrWhiteSpace(request.TipoCuenta))
                 {
                     var tiposValidos = new List<string> { "CORRIENTE", "AHORROS" };
@@ -630,14 +623,76 @@ namespace Solucion_Pagos_Moviles.Controllers
                             Descripcion = $"Tipo de cuenta inválido. Los tipos válidos son: {string.Join(", ", tiposValidos)}"
                         });
                     }
-                    cuentaExistente.Tipo_Cuenta = request.TipoCuenta.ToUpper();
+
+                    if (cuentaExistente.Tipo_Cuenta != request.TipoCuenta.ToUpper())
+                    {
+                        cuentaExistente.Tipo_Cuenta = request.TipoCuenta.ToUpper();
+                        huboCambios = true;
+                        _logger.LogInformation("✅ Cambiando Tipo_Cuenta de '{Anterior}' a '{Nuevo}'",
+                            cuentaAnterior.Tipo_Cuenta, request.TipoCuenta.ToUpper());
+                    }
                 }
 
-                await _context.SaveChangesAsync();
+                // ========== SOLO ACTUALIZAR ESTADO ==========
+                if (request.EstadoId.HasValue)
+                {
+                    // Validar que el estado existe (1 = Activo, 2 = Inactivo)
+                    if (request.EstadoId.Value != 1 && request.EstadoId.Value != 2)
+                    {
+                        return BadRequest(new CuentaResponse
+                        {
+                            Codigo = -1,
+                            Descripcion = "Estado inválido. Los estados válidos son: 1 (Activo), 2 (Inactivo)"
+                        });
+                    }
 
-                var cliente = await _context.ClientesBanco
-                    .FirstOrDefaultAsync(c => c.ID_Cliente == cuentaExistente.Identificacion_Cliente);
+                    if (cuentaExistente.ID_Estado != request.EstadoId.Value)
+                    {
+                        cuentaExistente.ID_Estado = request.EstadoId.Value;
+                        huboCambios = true;
+                        _logger.LogInformation("✅ Cambiando Estado de '{Anterior}' a '{Nuevo}'",
+                            cuentaAnterior.ID_Estado, request.EstadoId.Value);
+                    }
+                }
 
+                // NOTA: El saldo NO se puede modificar desde esta API
+                // Si se envía Saldo en la petición, se ignora intencionalmente
+                if (request.Saldo.HasValue)
+                {
+                    _logger.LogWarning("⚠️ Se intentó modificar el saldo de la cuenta {Id} pero esta operación no está permitida. Valor ignorado: {Saldo}",
+                        id, request.Saldo.Value);
+                }
+
+                if (!huboCambios)
+                {
+                    _logger.LogInformation("ℹ️ No hay cambios para aplicar en la cuenta {Id}", id);
+                    return Ok(new CuentaResponse
+                    {
+                        Codigo = 0,
+                        Descripcion = "No se detectaron cambios en la cuenta"
+                    });
+                }
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ Cambios guardados exitosamente para cuenta {Id}", id);
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    _logger.LogError(dbEx, "❌ Error al guardar cambios en cuenta {Id}", id);
+                    if (dbEx.InnerException != null)
+                    {
+                        _logger.LogError("InnerException: {InnerMessage}", dbEx.InnerException.Message);
+                    }
+                    return StatusCode(500, new CuentaResponse
+                    {
+                        Codigo = -1,
+                        Descripcion = $"Error al guardar: {dbEx.InnerException?.Message ?? dbEx.Message}"
+                    });
+                }
+
+                // Registrar en bitácora
                 var jsonAnterior = System.Text.Json.JsonSerializer.Serialize(cuentaAnterior);
                 var jsonActual = System.Text.Json.JsonSerializer.Serialize(new
                 {
@@ -656,6 +711,10 @@ namespace Solucion_Pagos_Moviles.Controllers
                     Servicio = "/core/account",
                     Resultado = "OK"
                 });
+
+                // Obtener datos del cliente para el DTO
+                var cliente = await _context.ClientesBanco
+                    .FirstOrDefaultAsync(c => c.ID_Cliente == cuentaExistente.Identificacion_Cliente);
 
                 var cuentaDto = new CuentaDTO
                 {
@@ -678,11 +737,11 @@ namespace Solucion_Pagos_Moviles.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al actualizar cuenta {id}");
+                _logger.LogError(ex, $"❌ Error al actualizar cuenta {id}");
                 return StatusCode(500, new CuentaResponse
                 {
                     Codigo = -1,
-                    Descripcion = "Error interno del servidor"
+                    Descripcion = $"Error interno del servidor: {ex.Message}"
                 });
             }
         }
