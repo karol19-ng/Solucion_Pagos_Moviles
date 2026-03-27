@@ -57,6 +57,7 @@ namespace Services.Implementations
             
             int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
 
+            // logger para ver los tipos de datos que devuelve
             _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
 
             var pantalla = new TablaPantalla
@@ -103,7 +104,7 @@ namespace Services.Implementations
                 pantalla.Estado
             });
 
-            // Actualizar propiedades
+            // Actualiza las propiedades
             pantalla.Nombre = request.Nombre;
             pantalla.Descripcion = request.Descripcion;
             pantalla.Ruta = request.Ruta;
@@ -113,7 +114,7 @@ namespace Services.Implementations
 
             _logger.LogInformation("Pantalla actualizada - Nuevo Estado: {Estado}", pantalla.Estado);
 
-            // Registrar bitácora
+            // Registra en bitácora
             await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
             {
                 Usuario = usuarioEjecutor,

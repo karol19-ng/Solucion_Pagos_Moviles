@@ -82,7 +82,7 @@ namespace Pegasos.Web.Administrador.Services
                     var json = await response.Content.ReadAsStringAsync();
                     _logger.LogInformation("Respuesta JSON: {Json}", json);
 
-                    // Usar JsonDocument para mapear manualmente
+                    
                     using JsonDocument doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
 
@@ -94,7 +94,7 @@ namespace Pegasos.Web.Administrador.Services
                         {
                             var pantalla = new PantallaViewModel();
 
-                            // Mapear ID (puede venir como iD_Pantalla, ID_Pantalla, etc.)
+                            
                             if (item.TryGetProperty("iD_Pantalla", out var idProp))
                                 pantalla.Id = idProp.GetInt32();
                             else if (item.TryGetProperty("ID_Pantalla", out idProp))
@@ -102,25 +102,25 @@ namespace Pegasos.Web.Administrador.Services
                             else if (item.TryGetProperty("id", out idProp))
                                 pantalla.Id = idProp.GetInt32();
 
-                            // Mapear Nombre
+                            
                             if (item.TryGetProperty("nombre", out var nombreProp))
                                 pantalla.Nombre = nombreProp.GetString() ?? "";
                             else if (item.TryGetProperty("Nombre", out nombreProp))
                                 pantalla.Nombre = nombreProp.GetString() ?? "";
 
-                            // Mapear Descripción
+                            
                             if (item.TryGetProperty("descripcion", out var descProp))
                                 pantalla.Descripcion = descProp.GetString() ?? "";
                             else if (item.TryGetProperty("Descripcion", out descProp))
                                 pantalla.Descripcion = descProp.GetString() ?? "";
 
-                            // Mapear Ruta
+                            
                             if (item.TryGetProperty("ruta", out var rutaProp))
                                 pantalla.Ruta = rutaProp.GetString() ?? "";
                             else if (item.TryGetProperty("Ruta", out rutaProp))
                                 pantalla.Ruta = rutaProp.GetString() ?? "";
 
-                            // Mapear Estado
+                            
                             if (item.TryGetProperty("estado", out var estadoProp))
                                 pantalla.Estado = estadoProp.GetInt32();
                             else if (item.TryGetProperty("Estado", out estadoProp))
@@ -170,31 +170,31 @@ namespace Pegasos.Web.Administrador.Services
 
                     var pantalla = new PantallaViewModel();
 
-                    // Mapear ID
+                    
                     if (root.TryGetProperty("iD_Pantalla", out var idProp))
                         pantalla.Id = idProp.GetInt32();
                     else if (root.TryGetProperty("ID_Pantalla", out idProp))
                         pantalla.Id = idProp.GetInt32();
 
-                    // Mapear Nombre
+                    
                     if (root.TryGetProperty("nombre", out var nombreProp))
                         pantalla.Nombre = nombreProp.GetString() ?? "";
                     else if (root.TryGetProperty("Nombre", out nombreProp))
                         pantalla.Nombre = nombreProp.GetString() ?? "";
 
-                    // Mapear Descripción
+                    
                     if (root.TryGetProperty("descripcion", out var descProp))
                         pantalla.Descripcion = descProp.GetString() ?? "";
                     else if (root.TryGetProperty("Descripcion", out descProp))
                         pantalla.Descripcion = descProp.GetString() ?? "";
 
-                    // Mapear Ruta
+                    
                     if (root.TryGetProperty("ruta", out var rutaProp))
                         pantalla.Ruta = rutaProp.GetString() ?? "";
                     else if (root.TryGetProperty("Ruta", out rutaProp))
                         pantalla.Ruta = rutaProp.GetString() ?? "";
 
-                    // Mapear Estado
+                    
                     if (root.TryGetProperty("estado", out var estadoProp))
                         pantalla.Estado = estadoProp.GetInt32();
                     else if (root.TryGetProperty("Estado", out estadoProp))
@@ -238,7 +238,7 @@ namespace Pegasos.Web.Administrador.Services
                 var responseContent = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("Contenido: {ResponseContent}", responseContent);
 
-                // Mostrar todos los headers de la respuesta
+                
                 _logger.LogInformation("Headers de respuesta:");
                 foreach (var header in response.Headers)
                 {
@@ -248,8 +248,7 @@ namespace Pegasos.Web.Administrador.Services
                 if (response.IsSuccessStatusCode)
                 {
                     _logger.LogInformation("Pantalla creada");
-
-                    // Intentar deserializar la respuesta para ver si obtenemos el ID
+                                        
                     try
                     {
                         var pantallaCreada = JsonSerializer.Deserialize<PantallaViewModel>(responseContent, new JsonSerializerOptions
@@ -267,7 +266,7 @@ namespace Pegasos.Web.Administrador.Services
                 }
                 else
                 {
-                    _logger.LogWarning("❌ ERROR - Código: {StatusCode}", response.StatusCode);
+                    _logger.LogWarning("Ocurrio un error, Código: {StatusCode}", response.StatusCode);
                     _logger.LogWarning("Detalle: {ResponseContent}", responseContent);
 
                     if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
