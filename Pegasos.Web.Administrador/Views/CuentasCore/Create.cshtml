@@ -468,6 +468,56 @@
                 justify-content: center;
             }
         }
+
+        /* Estilos para el modal de éxito personalizado */
+        .custom-success-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid var(--primary-gold);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .custom-success-modal .swal2-title {
+            color: var(--primary-gold);
+            font-size: 1.8rem;
+        }
+
+        .custom-success-modal .swal2-html-container {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .custom-success-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid var(--primary-gold) !important;
+            color: var(--primary-gold) !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-success-modal .swal2-confirm:hover {
+            background: var(--primary-gold) !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
+
+        .custom-success-modal .swal2-success-circular-line-left,
+        .custom-success-modal .swal2-success-circular-line-right,
+        .custom-success-modal .swal2-success-fix,
+        .custom-success-modal .swal2-success-ring {
+            background: transparent !important;
+        }
+
+        .custom-success-modal .swal2-success-line-tip,
+        .custom-success-modal .swal2-success-line-long {
+            background-color: var(--success-green) !important;
+        }
+
+        .custom-success-modal .swal2-icon.swal2-success {
+            border-color: var(--success-green) !important;
+        }
     </style>
 }
 
@@ -568,7 +618,7 @@
                 </div>
             </div>
 
-            <!-- Campo Tipo de Cuenta - CORREGIDO -->
+            <!-- Campo Tipo de Cuenta -->
             <div class="form-group-modern">
                 <label asp-for="TipoCuenta" class="form-label-modern">
                     <i class="fas fa-tag"></i> Tipo de Cuenta <span class="required-field"></span>
@@ -600,10 +650,9 @@
     </div>
 </div>
 
-<!-- Mantén todo el HTML igual, solo modifica el script -->
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let clienteValidado = false;
         let timeoutId;
@@ -645,7 +694,7 @@
                 habilitarBotonGuardar();
             });
 
-            // ========== MODIFICAR EL SUBMIT ==========
+            // ========== SUBMIT MODIFICADO - CON MODAL DE ÉXITO ==========
             $('#createForm').on('submit', function(e) {
                 e.preventDefault();
                 
@@ -671,14 +720,23 @@
                 }
                 
                 if (errores.length > 0) {
-                    showErrorModal('Por favor complete todos los campos requeridos:\n• ' + errores.join('\n• '));
+                    Swal.fire({
+                        title: 'Campos incompletos',
+                        html: 'Por favor complete todos los campos requeridos:<br>• ' + errores.join('<br>• '),
+                        icon: 'warning',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff'
+                    });
                     return false;
                 }
                 
-                // Mostrar modal de carga
-                var loadingModal = showLoadingModal();
+                // Mostrar loading en el botón
+                var $btn = $('#btnGuardar');
+                var textoOriginal = $btn.html();
+                $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Creando cuenta...').prop('disabled', true);
                 
-                // FORZAR EL ENVÍO CON FormData en lugar de serialize
+                // FORZAR EL ENVÍO CON FormData
                 var formData = new FormData();
                 formData.append('ClienteIdentificacion', identificacion);
                 formData.append('TipoCuenta', tipoCuenta);
@@ -696,18 +754,60 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        hideLoadingModal(loadingModal);
                         console.log('Respuesta del servidor:', response);
                         if (response.success) {
-                            showSuccessModal(response.message, '/CuentasCore/Index');
+                            // Mostrar modal de éxito personalizado
+                            Swal.fire({
+                                title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Operación Exitosa!',
+                                html: `
+                                    <div style="padding: 10px;">
+                                        <p style="font-size: 1.1rem; margin-bottom: 15px;">${response.message}</p>
+                                        <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                            <i class="fas fa-credit-card" style="color: #c5a367; margin-right: 8px;"></i>
+                                            <strong style="color: #c5a367;">La cuenta ha sido creada exitosamente</strong>
+                                        </div>
+                                    </div>
+                                `,
+                                icon: 'success',
+                                confirmButtonText: '<i class="fas fa-arrow-right me-2"></i>Ir al Listado',
+                                confirmButtonColor: '#c5a367',
+                                background: '#1f060c',
+                                color: '#fff',
+                                customClass: {
+                                    popup: 'custom-success-modal'
+                                },
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = '/CuentasCore/Index';
+                                }
+                            });
                         } else {
-                            showErrorModal(response.message);
+                            // Restaurar botón
+                            $btn.html(textoOriginal).prop('disabled', false);
+                            // Mostrar error
+                            Swal.fire({
+                                title: 'Error',
+                                text: response.message,
+                                icon: 'error',
+                                confirmButtonColor: '#c5a367',
+                                background: '#1f060c',
+                                color: '#fff'
+                            });
                         }
                     },
                     error: function(xhr) {
-                        hideLoadingModal(loadingModal);
+                        // Restaurar botón
+                        $btn.html(textoOriginal).prop('disabled', false);
                         console.error('Error:', xhr.responseText);
-                        showErrorModal('Error al crear la cuenta: ' + (xhr.responseText || 'Error desconocido'));
+                        Swal.fire({
+                            title: 'Error de Operación',
+                            text: 'Error al crear la cuenta: ' + (xhr.responseText || 'Error desconocido'),
+                            icon: 'error',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff'
+                        });
                     }
                 });
             });
@@ -772,5 +872,4 @@
             }
         });
     </script>
-}
 }

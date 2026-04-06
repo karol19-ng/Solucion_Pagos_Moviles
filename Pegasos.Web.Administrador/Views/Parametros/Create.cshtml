@@ -329,100 +329,15 @@
                 }
             });
 
-            // Validación al enviar el formulario con SweetAlert2
+            // Envío normal del formulario (sin AJAX para evitar problemas)
             $('#createForm').on('submit', function(e) {
-                e.preventDefault();
-                
-                var id = $('#Id').val();
-                var valor = $('#Valor').val();
-                var errores = [];
-
-                // Validar ID
-                if (!id || id.trim() === '') {
-                    errores.push('El ID del parámetro es requerido');
-                } else {
-                    var formatoValido = /^[A-Z0-9_]+$/.test(id);
-                    if (!formatoValido) {
-                        errores.push('El ID solo puede contener mayúsculas, números y guiones bajos');
-                    }
-                }
-
-                // Validar valor
-                if (!valor || valor.trim() === '') {
-                    errores.push('El valor es requerido');
-                }
-
-                if (errores.length > 0) {
-                    Swal.fire({
-                        title: 'Campos incompletos',
-                        html: '<div style="text-align: left;">Por favor complete todos los campos requeridos:<br>• ' + errores.join('<br>• ') + '</div>',
-                        icon: 'warning',
-                        confirmButtonColor: '#c5a367',
-                        background: '#1f060c',
-                        color: '#fff'
-                    });
-                    return false;
-                }
-
-                // Mostrar loading
+                // No prevenimos el envío, dejamos que el formulario se envíe normalmente
+                // pero mostramos loading antes
                 showLoading();
                 
-                var form = $(this);
-                var url = form.attr('action');
-                var data = form.serialize();
-                
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: data,
-                    success: function(response) {
-                        hideLoading();
-                        if (response.success) {
-                            Swal.fire({
-                                title: '¡Éxito!',
-                                text: response.message,
-                                icon: 'success',
-                                confirmButtonColor: '#c5a367',
-                                background: '#1f060c',
-                                color: '#fff'
-                            }).then(() => {
-                                window.location.href = '/Parametros/Index';
-                            });
-                        } else {
-                            Swal.fire({
-                                title: 'Error',
-                                text: response.message,
-                                icon: 'error',
-                                confirmButtonColor: '#c5a367',
-                                background: '#1f060c',
-                                color: '#fff'
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        hideLoading();
-                        let errorMsg = 'Error al crear el parámetro';
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.message) errorMsg = response.message;
-                        } catch(e) {
-                            if (xhr.status === 409) {
-                                errorMsg = 'Ya existe un parámetro con ese ID';
-                            } else if (xhr.status === 500) {
-                                errorMsg = 'Error interno del servidor. Por favor, intente nuevamente.';
-                            }
-                        }
-                        
-                        Swal.fire({
-                            title: 'Error de Operación',
-                            text: errorMsg,
-                            icon: 'error',
-                            confirmButtonColor: '#c5a367',
-                            background: '#1f060c',
-                            color: '#fff'
-                        });
-                    }
-                });
+                // Permitir que el formulario se envíe normalmente
+                // El servidor redirigirá con TempData
+                return true;
             });
         });
     </script>
