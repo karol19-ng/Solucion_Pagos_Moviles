@@ -16,12 +16,12 @@ namespace Services.Implementations
     {
         private readonly PagosMovilesDbContext _context;
         private readonly IBitacoraService _bitacoraService;
-        private readonly ILogger<RolService> _logger; // Agregar logger
+        private readonly ILogger<RolService> _logger; 
 
         public RolService(
             PagosMovilesDbContext context,
             IBitacoraService bitacoraService,
-            ILogger<RolService> logger) // Inyectar logger
+            ILogger<RolService> logger) 
         {
             _context = context;
             _bitacoraService = bitacoraService;
@@ -35,6 +35,7 @@ namespace Services.Implementations
 
             foreach (var rol in roles)
             {
+                
                 var pantallas = await _context.RolPorPantallas
                     .Where(rp => rp.ID_Rol == rol.ID_Rol)
                     .Select(rp => rp.ID_Pantalla)
@@ -55,7 +56,7 @@ namespace Services.Implementations
                 {
                     ID_Rol = rol.ID_Rol,
                     Nombre = rol.Nombre,
-                    Descripcion = rol.Descripcion ?? "",  // ✅ Incluir Descripcion
+                    Descripcion = rol.Descripcion ?? "",
                     Pantallas = pantallasDetalle
                 });
             }
@@ -68,6 +69,7 @@ namespace Services.Implementations
             var rol = await _context.Roles.FindAsync(id);
             if (rol == null) return null;
 
+            
             var pantallas = await _context.RolPorPantallas
                 .Where(rp => rp.ID_Rol == rol.ID_Rol)
                 .Select(rp => rp.ID_Pantalla)
@@ -88,7 +90,7 @@ namespace Services.Implementations
             {
                 ID_Rol = rol.ID_Rol,
                 Nombre = rol.Nombre,
-                Descripcion = rol.Descripcion ?? "",  // ✅ Incluir Descripcion
+                Descripcion = rol.Descripcion ?? "",
                 Pantallas = pantallasDetalle
             };
         }
@@ -115,8 +117,9 @@ namespace Services.Implementations
 
                 var rol = new Rol
                 {
-                    ID_Rol = nuevoId,  // Asignar ID manualmente
-                    Nombre = request.Nombre
+                    ID_Rol = nuevoId,  // Asigna el ID manualmente
+                    Nombre = request.Nombre,
+                    Descripcion = request.Descripcion ?? ""
                 };
 
                 _context.Roles.Add(rol);
@@ -162,62 +165,105 @@ namespace Services.Implementations
             }
         }
 
-        public async Task<RolResponse> UpdateAsync(int id, RolRequest request, string usuarioEjecutor)
+        private async Task ActualizarPantallasRolAsync(int rolId, List<int> pantallasIds)
         {
             try
             {
-                _logger.LogInformation("=== ACTUALIZANDO ROL {Id} ===", id);
-                _logger.LogInformation("Nombre: {Nombre}, Pantallas: {Pantallas}",
-                    request.Nombre, string.Join(",", request.Pantallas));
+                _logger.LogInformation("=== ACTUALIZANDO PANTALLAS DEL ROL {RolId} ===", rolId);
+                _logger.LogInformation("Pantallas IDs a asignar: {Ids}", string.Join(",", pantallasIds));
 
-                ValidarRol(request);
+                // Obtener las pantallas actuales del rol
+                var pantallasActuales = await _context.RolPorPantallas
+                    .Where(rp => rp.ID_Rol == rolId)
+                    .ToListAsync();
 
-                var rol = await _context.Roles.FindAsync(id);
-                if (rol == null)
+                _logger.LogInformation("Pantallas actuales encontradas: {Count}", pantallasActuales.Count);
+
+                // Eliminar pantallas que ya no están seleccionadas
+                var pantallasAEliminar = pantallasActuales
+                    .Where(p => !pantallasIds.Contains(p.ID_Pantalla))
+                    .ToList();
+
+                if (pantallasAEliminar.Any())
                 {
-                    _logger.LogWarning("Rol {Id} no encontrado", id);
-                    return null;
+                    _context.RolPorPantallas.RemoveRange(pantallasAEliminar);
+                    _logger.LogInformation("Se eliminaron {Count} pantallas del rol {RolId}", pantallasAEliminar.Count, rolId);
                 }
 
-                var anterior = System.Text.Json.JsonSerializer.Serialize(await GetByIdAsync(id));
+                // Agregar nuevas pantallas
+                var pantallasAAgregar = pantallasIds
+                    .Where(id => !pantallasActuales.Any(p => p.ID_Pantalla == id))
+                    .ToList();
 
-                rol.Nombre = request.Nombre;
-
-                // Actualizar pantallas
-                var existentes = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
-                _context.RolPorPantallas.RemoveRange(existentes);
-
-                foreach (var pantallaId in request.Pantallas)
+                foreach (var pantallaId in pantallasAAgregar)
                 {
                     _context.RolPorPantallas.Add(new RolPorPantalla
                     {
-                        ID_Rol = id,
-                        ID_Pantalla = pantallaId
+                        ID_Rol = rolId,
+                        ID_Pantalla = pantallaId                        
                     });
+                    _logger.LogInformation("Se agregó pantalla {PantallaId} al rol {RolId}", pantallaId, rolId);
                 }
 
                 await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Rol {Id} actualizado exitosamente", id);
-
-                await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
-                {
-                    Usuario = usuarioEjecutor,
-                    Accion = "MODIFICAR_ROL",
-                    Descripcion = $"Anterior: {anterior} | Actual: {System.Text.Json.JsonSerializer.Serialize(request)}",
-                    Servicio = "/rol",
-                    Resultado = "OK"
-                });
-
-                return await GetByIdAsync(id);
+                _logger.LogInformation("Pantallas del rol {RolId} actualizadas correctamente", rolId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar rol {Id}", id);
+                _logger.LogError(ex, "Error al actualizar pantallas del rol {RolId}", rolId);
                 throw;
             }
         }
 
+        public async Task<RolResponse> UpdateAsync(int id, RolRequest request, string usuarioEjecutor)
+        {
+            var rol = await _context.Roles.FindAsync(id);
+            if (rol == null) return null;
+
+            _logger.LogInformation("=== ACTUALIZANDO ROL EN BD ===");
+            _logger.LogInformation("Rol actual - ID: {Id}, Nombre: {Nombre}, Descripción: {Desc}",
+                rol.ID_Rol, rol.Nombre, rol.Descripcion);
+            _logger.LogInformation("Request - Nombre: {Nombre}, Descripción del Rol: {Descripcion}",
+                request.Nombre, request.Descripcion);
+
+            var rolAnterior = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                rol.ID_Rol,
+                rol.Nombre,
+                rol.Descripcion
+            });
+
+            // Actualizar propiedades del rol
+            rol.Nombre = request.Nombre;
+            rol.Descripcion = request.Descripcion ?? "";
+
+            // ✅ Solo actualizar pantallas (sin descripciones)
+            await ActualizarPantallasRolAsync(rol.ID_Rol, request.Pantallas ?? new List<int>());
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Rol actualizado - ID: {Id}, Nombre: {Nombre}, Descripción: {Desc}",
+                rol.ID_Rol, rol.Nombre, rol.Descripcion);
+
+            // Registrar bitácora
+            var rolActual = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                rol.ID_Rol,
+                rol.Nombre,
+                rol.Descripcion
+            });
+
+            await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
+            {
+                Usuario = usuarioEjecutor,
+                Accion = "ACTUALIZAR_ROL",
+                Descripcion = $"Anterior: {rolAnterior} | Actual: {rolActual}",
+                Servicio = "/rol",
+                Resultado = "OK"
+            });
+
+            return await GetByIdAsync(id);
+        }
         public async Task<bool> DeleteAsync(int id, string usuarioEjecutor)
         {
             try
@@ -231,13 +277,10 @@ namespace Services.Implementations
                     return false;
                 }
 
-                var eliminado = System.Text.Json.JsonSerializer.Serialize(await GetByIdAsync(id));
-
-                // Primero eliminar las relaciones en Rol_Por_Pantalla
+                // ✅ Usar ID_Rol correctamente
                 var pantallasRelacionadas = _context.RolPorPantallas.Where(rp => rp.ID_Rol == id);
                 _context.RolPorPantallas.RemoveRange(pantallasRelacionadas);
 
-                // Luego eliminar el rol
                 _context.Roles.Remove(rol);
                 await _context.SaveChangesAsync();
 

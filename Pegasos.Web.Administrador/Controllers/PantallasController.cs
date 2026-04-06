@@ -78,7 +78,7 @@ namespace Pegasos.Web.Administrador.Controllers
                     return View(model);
                 }
 
-                // Validaciones manuales
+                // Validaciones 
                 if (string.IsNullOrWhiteSpace(model.Nombre))
                 {
                     _logger.LogWarning("Nombre vacío");
@@ -122,17 +122,17 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 if (resultado)
                 {
-                    _logger.LogInformation("✅ Pantalla creada exitosamente");
+                    _logger.LogInformation("Pantalla creada exitosamente");
                     TempData["Success"] = "Pantalla creada exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
 
-                _logger.LogWarning("❌ Servicio devolvió false");
+                _logger.LogWarning("Servicio devolvió false");
                 ModelState.AddModelError(string.Empty, "No se pudo crear la pantalla. Verifique los datos.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error al crear pantalla");
+                _logger.LogError(ex, "Error al crear pantalla");
                 ModelState.AddModelError(string.Empty, "Error al crear la pantalla: " + ex.Message);
             }
 
@@ -175,7 +175,7 @@ namespace Pegasos.Web.Administrador.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditarPantallaViewModel model)
         {
-            _logger.LogInformation("=== PROCESANDO EDICIÓN DE PANTALLA ===");
+            _logger.LogInformation("=== PROCESAR EDICIÓN DE PANTALLA ===");
             _logger.LogInformation("ID recibido: {Id}", id);
             _logger.LogInformation("Modelo - Id: {ModelId}, Nombre: {Nombre}, Descripción: {Descripcion}, Ruta: {Ruta}, Estado: {Estado}",
                 model?.Id, model?.Nombre, model?.Descripcion, model?.Ruta, model?.Estado);
@@ -209,17 +209,17 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 if (resultado)
                 {
-                    _logger.LogInformation("✅ Pantalla {Id} actualizada exitosamente", id);
+                    _logger.LogInformation("Pantalla {Id} actualizada exitosamente", id);
                     TempData["Success"] = "Pantalla actualizada exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
 
-                _logger.LogWarning("❌ No se pudo actualizar la pantalla {Id}", id);
+                _logger.LogWarning("No se pudo actualizar la pantalla {Id}", id);
                 ModelState.AddModelError(string.Empty, "No se pudo actualizar la pantalla");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error al actualizar pantalla {Id}", id);
+                _logger.LogError(ex, "Error al actualizar pantalla {Id}", id);
                 ModelState.AddModelError(string.Empty, "Error al actualizar la pantalla: " + ex.Message);
             }
 
@@ -240,18 +240,18 @@ namespace Pegasos.Web.Administrador.Controllers
 
                 if (resultado)
                 {
-                    _logger.LogInformation("✅ Pantalla {Id} eliminada exitosamente", id);
+                    _logger.LogInformation("Pantalla {Id} eliminada exitosamente", id);
                     return Json(new { success = true, message = "Pantalla eliminada exitosamente" });
                 }
                 else
                 {
-                    _logger.LogWarning("❌ No se pudo eliminar la pantalla {Id}", id);
+                    _logger.LogWarning("No se pudo eliminar la pantalla {Id}", id);
                     return Json(new { success = false, message = "No se pudo eliminar la pantalla" });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error al eliminar pantalla {Id}", id);
+                _logger.LogError(ex, "Error al eliminar pantalla {Id}", id);
                 return Json(new { success = false, message = ex.Message });
             }
         }

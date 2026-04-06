@@ -78,7 +78,6 @@ namespace Pegasos.Web.Administrador.Services
                     var json = await response.Content.ReadAsStringAsync();
                     _logger.LogInformation("Respuesta JSON: {Json}", json);
 
-                    // Usar JsonDocument para mapear manualmente
                     using JsonDocument doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
 
@@ -90,11 +89,13 @@ namespace Pegasos.Web.Administrador.Services
                         {
                             var rol = new RolViewModel
                             {
-                                // Mapear explícitamente ID_Rol a Id
                                 Id = item.TryGetProperty("iD_Rol", out var idProp) ? idProp.GetInt32() :
                                      item.TryGetProperty("ID_Rol", out idProp) ? idProp.GetInt32() : 0,
                                 Nombre = item.TryGetProperty("nombre", out var nombreProp) ? nombreProp.GetString() ?? "" :
-                                         item.TryGetProperty("Nombre", out nombreProp) ? nombreProp.GetString() ?? "" : ""
+                                         item.TryGetProperty("Nombre", out nombreProp) ? nombreProp.GetString() ?? "" : "",
+                                // 🆕 MAPEAR DESCRIPCION
+                                Descripcion = item.TryGetProperty("descripcion", out var descProp) ? descProp.GetString() ?? "" :
+                                              item.TryGetProperty("Descripcion", out descProp) ? descProp.GetString() ?? "" : ""
                             };
 
                             // Mapear pantallas si existen
@@ -111,6 +112,8 @@ namespace Pegasos.Web.Administrador.Services
                                                  p.TryGetProperty("ID_Pantalla", out pid) ? pid.GetInt32() : 0,
                                             Nombre = p.TryGetProperty("nombre", out var pnombre) ? pnombre.GetString() ?? "" :
                                                      p.TryGetProperty("Nombre", out pnombre) ? pnombre.GetString() ?? "" : "",
+                                            Descripcion = p.TryGetProperty("descripcion", out var pdesc) ? pdesc.GetString() ?? "" :
+                                                          p.TryGetProperty("Descripcion", out pdesc) ? pdesc.GetString() ?? "" : "",
                                             Asignada = true
                                         };
                                         rol.Pantallas.Add(pantalla);
@@ -125,7 +128,8 @@ namespace Pegasos.Web.Administrador.Services
                     _logger.LogInformation("Roles mapeados: {Count}", roles.Count);
                     foreach (var rol in roles)
                     {
-                        _logger.LogInformation("Rol mapeado - ID: {Id}, Nombre: {Nombre}", rol.Id, rol.Nombre);
+                        _logger.LogInformation("Rol mapeado - ID: {Id}, Nombre: {Nombre}, Descripción: {Descripcion}",
+                            rol.Id, rol.Nombre, rol.Descripcion);
                     }
 
                     return roles;
@@ -384,7 +388,6 @@ namespace Pegasos.Web.Administrador.Services
             {
                 AgregarTokenAlHeader();
 
-                // Filtrar IDs válidos (mayores a 0)
                 var pantallasValidas = model.PantallasSeleccionadas?.Where(id => id > 0).ToList() ?? new List<int>();
 
                 var request = new
@@ -393,6 +396,7 @@ namespace Pegasos.Web.Administrador.Services
                     nombre = model.Nombre,
                     descripcion = model.Descripcion ?? "",
                     pantallas = pantallasValidas
+                    // ❌ ELIMINAR descripcionesPorPantalla
                 };
 
                 var json = JsonSerializer.Serialize(request);

@@ -59,9 +59,6 @@
                     <i class="fas fa-user-circle me-2" style="color: var(--dorado-primario)"></i>
                     Cliente: <strong>@User.FindFirst("nombreCompleto")?.Value</strong>
                 </span>
-                <span class="ms-3" id="sessionTimer" style="font-size: 0.9rem; color: var(--dorado-primario);">
-                    <i class="fas fa-clock me-1"></i> <span id="timerDisplay">05:00</span>
-                </span>
             </header>
 
             <main role="main" class="main-content">
@@ -108,8 +105,19 @@
     {
         <script src="~/js/session-timeout.js"></script>
         <script>
-                // Iniciar contador de sesión (5 minutos)
                 iniciarContadorSesion(5, '@Url.Action("Logout", "Auth")');
+        </script>
+    }
+
+    <!-- Modal de error reutilizable -->
+    <partial name="_ErrorModal" />
+
+    @if (TempData["ErrorStatusCode"] != null && TempData["ErrorMessage"] != null)
+    {
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    mostrarError('@TempData["ErrorStatusCode"]', '@TempData["ErrorMessage"]');
+                });
         </script>
     }
 </body>

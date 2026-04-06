@@ -87,7 +87,8 @@ body {
         color: var(--dorado-primario);
     }
 
-    .menu-item:hover, .menu-item.active {
+    .menu-item:hover,
+    .menu-item.active {
         background-color: var(--dorado-suave);
         color: white;
         border-left-color: var(--dorado-primario);
@@ -128,12 +129,14 @@ body {
 
 footer {
     padding: 1rem 2rem;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     font-size: 0.8rem;
     border-top: 1px solid rgba(197, 163, 103, 0.1);
 }
 
-/* Botones y elementos de formulario */
+/* ============================================
+   BOTONES
+   ============================================ */
 .btn-pegasos {
     background: linear-gradient(135deg, #c5a367 0%, #8e6d31 100%);
     border: none;
@@ -177,21 +180,95 @@ footer {
         color: white;
     }
 
+/* ============================================
+   FORMULARIOS - CORREGIDOS
+   ============================================ */
+
+/* Estilo base para inputs - texto en blanco siempre */
 .form-control {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(197, 163, 103, 0.3);
     border-radius: 5px;
     padding: 12px 15px;
-    color: #fff;
+    color: #ffffff !important;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
 }
 
+    /* Placeholder - texto más claro pero visible */
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    /* Texto al enfocar - sigue siendo blanco */
     .form-control:focus {
         outline: none;
         border-color: var(--dorado-primario);
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.5);
         box-shadow: 0 0 10px rgba(197, 163, 103, 0.2);
+        color: #ffffff !important;
     }
 
+    /* Estilo para inputs de solo lectura (autollenados) - texto dorado */
+    .form-control[readonly] {
+        background: rgba(197, 163, 103, 0.15);
+        border-color: rgba(197, 163, 103, 0.4);
+        color: var(--dorado-primario) !important;
+        font-weight: 500;
+        cursor: default;
+    }
+
+    /* Estilo para inputs deshabilitados */
+    .form-control:disabled {
+        background: rgba(197, 163, 103, 0.1);
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: not-allowed;
+    }
+
+/* Estilo para textareas */
+textarea.form-control {
+    background: rgba(0, 0, 0, 0.3);
+    color: #ffffff !important;
+}
+
+/* Estilo para selects */
+.form-select {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(197, 163, 103, 0.3);
+    color: #ffffff !important;
+}
+
+    .form-select option {
+        background: #2b0811;
+        color: #ffffff;
+    }
+
+    /* Estilo para selects deshabilitados */
+    .form-select:disabled {
+        background: rgba(197, 163, 103, 0.1);
+        color: var(--dorado-primario);
+    }
+
+/* Estilo para input-group-text */
+.input-group-text {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(197, 163, 103, 0.3);
+    color: var(--dorado-primario);
+}
+
+/* Estilo para inputs inválidos */
+.form-control.is-invalid {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Estilo para inputs válidos */
+.form-control.is-valid {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+/* Estilo para etiquetas de formulario */
 .form-label {
     color: var(--dorado-primario);
     font-size: 0.85rem;
@@ -199,7 +276,16 @@ footer {
     margin-bottom: 0.5rem;
 }
 
-/* Tablas */
+/* Mensajes de validación */
+.text-danger {
+    color: #ef4444 !important;
+    font-size: 0.75rem;
+    margin-top: 5px;
+}
+
+/* ============================================
+   TABLAS
+   ============================================ */
 .table {
     color: white;
 }
@@ -221,7 +307,9 @@ footer {
     background: rgba(197, 163, 103, 0.1);
 }
 
-/* Alertas */
+/* ============================================
+   ALERTAS
+   ============================================ */
 .alert-success {
     background: rgba(16, 185, 129, 0.1);
     border: 1px solid #10b981;
@@ -246,17 +334,17 @@ footer {
     color: var(--dorado-primario);
 }
 
-/* Texto */
+/* ============================================
+   TEXTOS
+   ============================================ */
 .text-muted {
     color: rgba(255, 255, 255, 0.6) !important;
 }
 
-.text-danger {
-    color: #ef4444 !important;
-}
-
-/* Responsive */
-@@media (max-width: 768px) {
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
     .sidebar {
         width: 0;
         overflow: hidden;

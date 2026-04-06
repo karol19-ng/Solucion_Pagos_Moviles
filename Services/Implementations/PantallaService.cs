@@ -57,6 +57,7 @@ namespace Services.Implementations
             
             int nuevoId = maxId.HasValue ? maxId.Value + 1 : 1;
 
+            // logger para ver los tipos de datos que devuelve
             _logger.LogInformation("Máximo ID actual: {MaxId}, Nuevo ID asignado: {NuevoId}", maxId, nuevoId);
 
             var pantalla = new TablaPantalla
@@ -87,30 +88,43 @@ namespace Services.Implementations
 
         public async Task<PantallaResponse> UpdateAsync(int id, PantallaRequest request, string usuarioEjecutor)
         {
-            ValidarPantalla(request);
+            _logger.LogInformation("=== ACTUALIZANDO PANTALLA EN BD ===");
+            _logger.LogInformation("ID: {Id}, Nombre: {Nombre}, Estado: {Estado}",
+                id, request.Nombre, request.Estado);
 
             var pantalla = await _context.TablaPantallas.FindAsync(id);
             if (pantalla == null) return null;
 
-            var anterior = System.Text.Json.JsonSerializer.Serialize(MapToResponse(pantalla));
+            var pantallaAnterior = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                pantalla.ID_Pantalla,
+                pantalla.Nombre,
+                pantalla.Descripcion,
+                pantalla.Ruta,
+                pantalla.Estado
+            });
 
+            // Actualiza las propiedades
             pantalla.Nombre = request.Nombre;
             pantalla.Descripcion = request.Descripcion;
             pantalla.Ruta = request.Ruta;
-            pantalla.Estado = request.Estado;  
+            pantalla.Estado = request.Estado;
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Pantalla actualizada - Nuevo Estado: {Estado}", pantalla.Estado);
+
+            // Registra en bitácora
             await _bitacoraService.RegistrarBitacoraAsync(new BitacoraRegistroRequest
             {
                 Usuario = usuarioEjecutor,
-                Accion = "MODIFICAR_PANTALLA",
-                Descripcion = $"Anterior: {anterior} | Actual: {System.Text.Json.JsonSerializer.Serialize(request)}",
-                Servicio = "/screen",
+                Accion = "ACTUALIZAR_PANTALLA",
+                Descripcion = $"Anterior: {pantallaAnterior} | Actual: {System.Text.Json.JsonSerializer.Serialize(request)}",
+                Servicio = "/api/screen",
                 Resultado = "OK"
             });
 
-            return MapToResponse(pantalla);
+            return await GetByIdAsync(id);
         }
 
         public async Task<bool> DeleteAsync(int id, string usuarioEjecutor)
@@ -178,7 +192,8 @@ namespace Services.Implementations
                 ID_Pantalla = p.ID_Pantalla,
                 Nombre = p.Nombre,
                 Descripcion = p.Descripcion,
-                Ruta = p.Ruta
+                Ruta = p.Ruta,
+                Estado = p.Estado
             };
         }
     }

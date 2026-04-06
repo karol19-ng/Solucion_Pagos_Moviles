@@ -6,7 +6,7 @@ namespace Pegasos.Web.Administrador.Models
     {
         public int Id { get; set; }
         public string Nombre { get; set; } = string.Empty;
-        public string Descripcion { get; set; } = string.Empty;  // Agregar Descripcion
+        public string Descripcion { get; set; } = string.Empty;  
         public List<PantallaAsignadaViewModel> Pantallas { get; set; } = new List<PantallaAsignadaViewModel>();
     }
 
@@ -14,7 +14,7 @@ namespace Pegasos.Web.Administrador.Models
     {
         public int Id { get; set; }
         public string Nombre { get; set; } = string.Empty;
-        public string Descripcion { get; set; } = string.Empty;  // Agregar Descripcion
+        public string Descripcion { get; set; } = string.Empty;  
         public bool Asignada { get; set; }
     }
 
@@ -25,7 +25,7 @@ namespace Pegasos.Web.Administrador.Models
         public string Nombre { get; set; } = string.Empty;
 
         [Display(Name = "Descripción")]
-        public string Descripcion { get; set; } = string.Empty;  // Agregar Descripcion
+        public string Descripcion { get; set; } = string.Empty;  
 
         public List<int> PantallasSeleccionadas { get; set; } = new List<int>();
     }
@@ -39,7 +39,7 @@ namespace Pegasos.Web.Administrador.Models
         public string Nombre { get; set; } = string.Empty;
 
         [Display(Name = "Descripción")]
-        public string Descripcion { get; set; } = string.Empty;  // Agregar Descripcion
+        public string Descripcion { get; set; } = string.Empty;
 
         public List<int> PantallasSeleccionadas { get; set; } = new List<int>();
     }
