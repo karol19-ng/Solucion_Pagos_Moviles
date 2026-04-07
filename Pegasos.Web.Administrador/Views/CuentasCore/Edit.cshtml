@@ -14,6 +14,7 @@
             backdrop-filter: blur(5px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
+
         .form-header {
             background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
             border: 1px solid var(--dorado-primario);
@@ -21,9 +22,22 @@
             padding: 20px 25px;
             border-radius: 8px;
             margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-        .form-header h4 { margin: 0; font-size: 1.5rem; }
-        .form-header i { margin-right: 10px; font-size: 1.8rem; }
+
+        .form-header h4 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .form-header i {
+            margin-right: 10px;
+            color: var(--dorado-primario);
+            font-size: 1.8rem;
+        }
+
         .form-header .estado-badge {
             display: inline-block;
             padding: 5px 15px;
@@ -32,16 +46,19 @@
             font-weight: 600;
             margin-left: 15px;
         }
+
         .estado-activo {
             background: rgba(40, 167, 69, 0.2);
             color: #28a745;
             border: 1px solid #28a745;
         }
+
         .estado-inactivo {
             background: rgba(220, 53, 69, 0.2);
             color: #dc3545;
             border: 1px solid #dc3545;
         }
+
         .info-box {
             background: rgba(197, 163, 103, 0.1);
             border-left: 4px solid var(--dorado-primario);
@@ -49,35 +66,73 @@
             margin-bottom: 25px;
             border-radius: 4px;
         }
-        .info-box i { color: var(--dorado-primario); margin-right: 10px; }
-        .form-group { margin-bottom: 25px; }
+
+        .info-box i {
+            color: var(--dorado-primario);
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
         .form-label {
             color: var(--dorado-primario);
             font-weight: 600;
             margin-bottom: 8px;
             font-size: 0.95rem;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .form-label i { margin-right: 8px; }
+
+        .form-label i {
+            margin-right: 8px;
+            color: var(--dorado-primario);
+        }
+
         .form-control-custom, .form-select-custom {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(197, 163, 103, 0.3);
             color: white;
             padding: 12px 15px;
             border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
         }
+
         .form-control-custom:focus, .form-select-custom:focus {
             background: rgba(255, 255, 255, 0.1);
             border-color: var(--dorado-primario);
             color: white;
+            box-shadow: 0 0 0 3px rgba(197, 163, 103, 0.1);
             outline: none;
         }
+
+        .form-control-custom::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
         select.form-select-custom option {
             background: var(--vinotinto-sidebar);
             color: white;
         }
-        .text-danger { font-size: 0.85rem; margin-top: 5px; display: block; color: #dc3545 !important; }
-        .text-muted { color: rgba(255, 255, 255, 0.5) !important; font-size: 0.85rem; margin-top: 5px; }
+
+        .text-danger {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+            color: #dc3545 !important;
+        }
+
+        .text-muted {
+            color: rgba(255, 255, 255, 0.5) !important;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+        }
+
         .btn-container {
             display: flex;
             justify-content: space-between;
@@ -85,6 +140,7 @@
             padding-top: 20px;
             border-top: 2px solid rgba(197, 163, 103, 0.2);
         }
+
         .btn-secondary-custom {
             background: transparent;
             border: 1px solid rgba(197, 163, 103, 0.3);
@@ -95,12 +151,14 @@
             transition: all 0.3s ease;
             text-decoration: none;
         }
+
         .btn-secondary-custom:hover {
             background: rgba(255, 255, 255, 0.1);
             border-color: var(--dorado-primario);
             color: white;
             transform: translateY(-2px);
         }
+
         .btn-warning-custom {
             background: transparent;
             border: 2px solid var(--dorado-primario);
@@ -109,13 +167,20 @@
             border-radius: 6px;
             font-weight: 600;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
+
         .btn-warning-custom:hover {
             background: var(--dorado-primario);
             color: var(--vinotinto-sidebar);
             transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(197, 163, 103, 0.3);
         }
-        .btn-warning-custom i, .btn-secondary-custom i { margin-right: 8px; }
+
+        .btn-warning-custom i, .btn-secondary-custom i {
+            margin-right: 8px;
+        }
+
         .validation-summary-errors {
             background: rgba(220, 53, 69, 0.1);
             border: 1px solid #dc3545;
@@ -124,17 +189,68 @@
             border-radius: 6px;
             margin-bottom: 25px;
         }
+
         .required-field::after {
             content: "*";
             color: #dc3545;
             margin-left: 4px;
             font-weight: bold;
         }
+
         .readonly-field {
             background: rgba(255, 255, 255, 0.02) !important;
             border: 1px solid rgba(197, 163, 103, 0.1) !important;
             color: rgba(255, 255, 255, 0.7) !important;
             cursor: not-allowed;
+        }
+
+        /* Estilos para SweetAlert2 */
+        .custom-success-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .custom-success-modal .swal2-title {
+            color: #c5a367;
+            font-size: 1.8rem;
+        }
+
+        .custom-success-modal .swal2-html-container {
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .custom-success-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-success-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
+
+        .custom-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .custom-modal .swal2-title {
+            color: #c5a367;
+        }
+
+        .custom-modal .swal2-html-container {
+            color: #ffffff;
         }
     </style>
 }
@@ -188,7 +304,6 @@
                         <small class="text-muted">No es posible cambiar el cliente dueño de la cuenta.</small>
                     </div>
 
-                    <!-- Campo Tipo de Cuenta - CORREGIDO con selección basada en el modelo -->
                     <div class="form-group">
                         <label asp-for="TipoCuenta" class="form-label">
                             <i class="fas fa-tag"></i> Tipo de Cuenta <span class="required-field"></span>
@@ -216,7 +331,7 @@
                     </div>
 
                     <div class="btn-container">
-                        <a asp-action="Index" class="btn-secondary-custom">
+                        <a asp-action="Index" class="btn-secondary-custom" id="btnRegresar">
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
                         <button type="submit" class="btn-warning-custom" id="btnActualizar">
@@ -234,24 +349,27 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
-            // Debug: Mostrar el valor actual del select
-            console.log('Valor actual de TipoCuenta en el modelo:', '@Model.TipoCuenta');
-            console.log('Valor seleccionado en el select:', $('#TipoCuenta').val());
-            
-            // Validación al enviar el formulario
+            var formModified = false;
+
+            $('#TipoCuenta').on('change', function() {
+                formModified = true;
+            });
+
+            $('#EstadoId').on('change', function() {
+                formModified = true;
+            });
+
+            // Envío del formulario con AJAX y modal de éxito
             $('#editForm').on('submit', function(e) {
                 e.preventDefault();
-                
+
                 var tipoCuenta = $('#TipoCuenta').val();
-                var estadoId = $('#EstadoId').val();
                 var errores = [];
-                
-                console.log('TipoCuenta seleccionado:', tipoCuenta);
-                
+
                 if (!tipoCuenta || tipoCuenta === '') {
                     errores.push('El tipo de cuenta es requerido');
                 }
-                
+
                 if (errores.length > 0) {
                     Swal.fire({
                         title: 'Campos incompletos',
@@ -259,27 +377,21 @@
                         icon: 'warning',
                         confirmButtonColor: '#c5a367',
                         background: '#1f060c',
-                        color: '#fff'
+                        color: '#fff',
+                        customClass: { popup: 'custom-modal' }
                     });
                     return false;
                 }
-                
+
                 // Mostrar loading
-                Swal.fire({
-                    title: 'Actualizando cuenta...',
-                    text: 'Por favor espere',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-                
+                var $btn = $('#btnActualizar');
+                var textoOriginal = $btn.html();
+                $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Actualizando...').prop('disabled', true);
+
                 var form = $(this);
                 var url = form.attr('action');
                 var data = form.serialize();
-                
-                console.log('Datos a enviar:', data);
-                
+
                 $.ajax({
                     url: url,
                     type: 'POST',
@@ -287,57 +399,63 @@
                     success: function(response) {
                         if (response.success) {
                             Swal.fire({
-                                title: '¡Éxito!',
-                                text: response.message,
+                                title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Operación Exitosa!',
+                                html: `
+                                    <div style="padding: 10px;">
+                                        <p style="font-size: 1.1rem; margin-bottom: 15px;">${response.message || 'Cuenta actualizada exitosamente'}</p>
+                                        <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                            <i class="fas fa-credit-card" style="color: #c5a367; margin-right: 8px;"></i>
+                                            <strong style="color: #c5a367;">Cuenta actualizada correctamente</strong>
+                                        </div>
+                                    </div>
+                                `,
                                 icon: 'success',
+                                confirmButtonText: '<i class="fas fa-arrow-right me-2"></i>Ir al Listado',
                                 confirmButtonColor: '#c5a367',
                                 background: '#1f060c',
-                                color: '#fff'
+                                color: '#fff',
+                                customClass: { popup: 'custom-success-modal' },
+                                allowOutsideClick: false
                             }).then(() => {
                                 window.location.href = '/CuentasCore/Index';
                             });
                         } else {
+                            $btn.html(textoOriginal).prop('disabled', false);
                             Swal.fire({
                                 title: 'Error',
-                                text: response.message,
+                                text: response.message || 'Error al actualizar la cuenta',
                                 icon: 'error',
                                 confirmButtonColor: '#c5a367',
                                 background: '#1f060c',
-                                color: '#fff'
+                                color: '#fff',
+                                customClass: { popup: 'custom-modal' }
                             });
                         }
                     },
                     error: function(xhr) {
+                        $btn.html(textoOriginal).prop('disabled', false);
                         let errorMsg = 'Error al actualizar la cuenta';
                         try {
                             const response = JSON.parse(xhr.responseText);
                             if (response.message) errorMsg = response.message;
                         } catch(e) {
-                            if (xhr.status === 500) {
-                                errorMsg = 'Error interno del servidor. Por favor, intente nuevamente.';
-                            } else if (xhr.status === 502 || xhr.status === 504) {
-                                errorMsg = 'Error de conexión con el servidor.';
-                            }
+                            if (xhr.status === 500) errorMsg = 'Error interno del servidor';
                         }
-                        
                         Swal.fire({
-                            title: 'Error de Operación',
+                            title: 'Error',
                             text: errorMsg,
                             icon: 'error',
                             confirmButtonColor: '#c5a367',
                             background: '#1f060c',
-                            color: '#fff'
+                            color: '#fff',
+                            customClass: { popup: 'custom-modal' }
                         });
                     }
                 });
             });
 
             // Confirmar cambios antes de salir
-            var formModified = false;
-            $('input, select').on('change', function() { formModified = true; });
-            $('input').on('keyup', function() { formModified = true; });
-
-            $('a[asp-action="Index"]').click(function(e) {
+            $('#btnRegresar').click(function(e) {
                 if (formModified) {
                     e.preventDefault();
                     Swal.fire({
@@ -350,10 +468,11 @@
                         confirmButtonText: '<i class="fas fa-sign-out-alt me-2"></i>Sí, salir',
                         cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
                         background: '#1f060c',
-                        color: '#fff'
+                        color: '#fff',
+                        customClass: { popup: 'custom-modal' }
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = $(this).attr('href');
+                            window.location.href = '/CuentasCore/Index';
                         }
                     });
                 }

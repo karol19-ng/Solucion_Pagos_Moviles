@@ -288,29 +288,6 @@
             }
         }
 
-        @@keyframes fadeOut {
-            from {
-                opacity: 1;
-            }
-            to {
-                opacity: 0;
-            }
-        }
-
-        .toast-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            min-width: 300px;
-            max-width: 400px;
-            animation: slideIn 0.3s ease;
-        }
-
-        .toast-notification.fade-out {
-            animation: fadeOut 0.5s ease;
-        }
-
         /* Loading overlay */
         .loading-overlay {
             position: fixed;
@@ -339,28 +316,100 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Estilos para SweetAlert2 */
-        .swal2-popup {
-            font-size: 1rem !important;
-            border: 1px solid var(--dorado-primario) !important;
+        /* Modal de éxito personalizado */
+        .custom-success-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
         }
 
-        .swal2-title {
-            color: var(--dorado-primario) !important;
+        .custom-success-modal .swal2-title {
+            color: #c5a367;
+            font-size: 1.8rem;
         }
 
-        .swal2-html-container {
-            color: rgba(255, 255, 255, 0.9) !important;
+        .custom-success-modal .swal2-html-container {
+            color: #ffffff;
+            font-size: 1.1rem;
         }
 
-        .swal2-confirm.btn-danger {
-            background-color: #dc3545 !important;
+        .custom-success-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-success-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
+
+        .custom-success-modal .swal2-success-circular-line-left,
+        .custom-success-modal .swal2-success-circular-line-right,
+        .custom-success-modal .swal2-success-fix,
+        .custom-success-modal .swal2-success-ring {
+            background: transparent !important;
+        }
+
+        .custom-success-modal .swal2-success-line-tip,
+        .custom-success-modal .swal2-success-line-long {
+            background-color: #28a745 !important;
+        }
+
+        .custom-success-modal .swal2-icon.swal2-success {
+            border-color: #28a745 !important;
+        }
+
+        .custom-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .custom-modal .swal2-title {
+            color: #c5a367;
+        }
+
+        .custom-modal .swal2-html-container {
+            color: #ffffff;
+        }
+
+        .custom-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
+
+        .custom-modal .swal2-cancel {
+            background: transparent !important;
+            border: 1px solid rgba(220, 53, 69, 0.5) !important;
+            color: #dc3545 !important;
+            border-radius: 8px !important;
+            padding: 10px 25px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-modal .swal2-cancel:hover {
+            background: rgba(220, 53, 69, 0.2) !important;
             border-color: #dc3545 !important;
-        }
-
-        .swal2-cancel.btn-secondary {
-            background-color: #6c757d !important;
-            border-color: #6c757d !important;
         }
     </style>
 }
@@ -449,7 +498,7 @@
                                     {
                                         <span class="badge-danger">INACTIVO</span>
                                     }
-                                </td>
+                                 </td>
                                 <td>
                                     <a href="/Entidades/Edit/@entidad.Id"
                                        class="btn-action btn-action-warning"
@@ -458,11 +507,11 @@
                                     </a>
                                     <button type="button"
                                             class="btn-action btn-action-danger delete-btn"
-                                            onclick="confirmarEliminacion(@entidad.Id, '@entidad.Identificador', '@entidad.Nombre')"
+                                            onclick="abrirModalEliminar(@entidad.Id, '@entidad.Identificador', '@Html.Raw(entidad.Nombre?.Replace("'", "\\'"))')"
                                             title="Eliminar entidad">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
-                                </td>
+                                 </td>
                             </tr>
                         }
                     }
@@ -521,59 +570,6 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        let entidadAEliminar = null;
-
-        function confirmarEliminacion(id, identificador, nombre) {
-            entidadAEliminar = { id: id, identificador: identificador, nombre: nombre };
-            
-            // Usar SweetAlert2 directamente
-            Swal.fire({
-                title: '¿Eliminar entidad?',
-                html: `
-                    <div style="text-align: left;">
-                        <p><strong><i class="fas fa-building"></i> Entidad:</strong> ${nombre}</p>
-                        <p><strong><i class="fas fa-hashtag"></i> Identificador:</strong> ${identificador}</p>
-                    </div>
-                    <hr>
-                    <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> <strong>Advertencia:</strong> Esta acción no se puede deshacer.</p>
-                `,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Sí, eliminar',
-                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                background: '#1f060c',
-                color: '#fff',
-                backdrop: 'rgba(0,0,0,0.8)',
-                customClass: {
-                    popup: 'rounded-3',
-                    confirmButton: 'btn btn-danger',
-                    cancelButton: 'btn btn-secondary'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    eliminarEntidad();
-                }
-            });
-        }
-
-        function showToast(message, type = 'success') {
-            const toast = $(`
-                <div class="toast-notification alert-custom alert-${type === 'success' ? 'success' : 'danger'}-custom">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                    ${message}
-                </div>
-            `);
-            
-            $('body').append(toast);
-            
-            setTimeout(() => {
-                toast.addClass('fade-out');
-                setTimeout(() => toast.remove(), 500);
-            }, 3000);
-        }
-
         function showLoading() {
             $('#loadingOverlay').fadeIn(200);
         }
@@ -582,76 +578,137 @@
             $('#loadingOverlay').fadeOut(200);
         }
 
-        function eliminarEntidad() {
-            if (!entidadAEliminar) return;
+        // Esta es la función que necesita tu botón de eliminar
+        function abrirModalEliminar(id, identificador, nombre) {
+            Swal.fire({
+                title: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 2rem;"></i><br>¿Eliminar entidad?',
+                html: `
+                    <div style="padding: 10px;">
+                        <p style="font-size: 1rem; margin-bottom: 15px;">¿Está seguro que desea eliminar la entidad?</p>
+                        <div style="background: rgba(220, 53, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                            <i class="fas fa-university" style="color: #c5a367; margin-right: 8px;"></i>
+                            <strong style="color: #c5a367;">Entidad: ${nombre}</strong><br>
+                            <strong style="color: #c5a367;">Identificador: ${identificador}</strong>
+                        </div>
+                        <p style="font-size: 0.9rem; margin-top: 15px; color: #dc3545;">
+                            <i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Sí, Eliminar',
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                background: '#1f060c',
+                color: '#fff',
+                customClass: {
+                    popup: 'custom-modal'
+                },
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmarEliminacion(id, identificador, nombre);
+                }
+            });
+        }
 
+        function confirmarEliminacion(id, identificador, nombre) {
             showLoading();
 
             const token = $('input[name="__RequestVerificationToken"]').first().val();
 
             $.ajax({
-                url: '/Entidades/Delete/' + entidadAEliminar.id,
+                url: '/Entidades/Delete/' + id,
                 type: 'POST',
                 data: {
                     __RequestVerificationToken: token,
-                    id: entidadAEliminar.id
+                    id: id
                 },
                 success: function(response) {
                     hideLoading();
-
                     if (response.success) {
-                        // Eliminar la fila de la tabla con animación
-                        const row = $(`#row-${entidadAEliminar.id}`);
-                        row.fadeOut(300, function() {
-                            $(this).remove();
-                            
-                            // Verificar si no quedan registros
-                            if ($('#entidadesTableBody tr').length === 0) {
-                                location.reload();
-                            } else {
-                                // Actualizar contador
-                                const totalText = $('.text-muted').text();
-                                const match = totalText.match(/\d+/);
-                                if (match) {
-                                    const totalRegistros = parseInt(match[0]) - 1;
-                                    $('.text-muted').html(`<i class="fas fa-database me-1"></i> Total: ${totalRegistros} registros`);
+                        Swal.fire({
+                            title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Eliminación Exitosa!',
+                            html: `
+                                <div style="padding: 10px;">
+                                    <p style="font-size: 1.1rem; margin-bottom: 15px;">${response.message || 'Entidad eliminada correctamente'}</p>
+                                    <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                        <i class="fas fa-university" style="color: #c5a367; margin-right: 8px;"></i>
+                                        <strong style="color: #c5a367;">Entidad: ${nombre}</strong><br>
+                                        <strong style="color: #c5a367;">Identificador: ${identificador}</strong>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'success',
+                            confirmButtonText: '<i class="fas fa-check me-2"></i>Aceptar',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff',
+                            customClass: {
+                                popup: 'custom-modal'
+                            },
+                            allowOutsideClick: false
+                        }).then(() => {
+                            const row = $(`#row-${id}`);
+                            row.css('background-color', '#dc3545');
+                            row.fadeOut(400, function() {
+                                $(this).remove();
+
+                                if ($('#entidadesTableBody tr').length === 0) {
+                                    setTimeout(() => location.reload(), 500);
+                                } else {
+                                    const totalText = $('.text-muted').text();
+                                    const match = totalText.match(/\d+/);
+                                    if (match) {
+                                        const totalRegistros = parseInt(match[0]) - 1;
+                                        $('.text-muted').html(`<i class="fas fa-database me-1"></i> Total: ${totalRegistros} registros`);
+                                    }
                                 }
+                            });
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message || 'No se pudo eliminar la entidad',
+                            icon: 'error',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff',
+                            customClass: {
+                                popup: 'custom-modal'
                             }
                         });
-                        
-                        showToast(response.message, 'success');
-                    } else {
-                        showToast(response.message || 'Error al eliminar la entidad', 'error');
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function(xhr) {
                     hideLoading();
-                    
-                    let errorMessage = 'Error al eliminar la entidad';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (xhr.responseText) {
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.message) errorMessage = response.message;
-                        } catch(e) {
-                            console.error('Error parsing response:', e);
-                        }
+                    let errorMsg = 'Error al eliminar la entidad';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) errorMsg = response.message;
+                    } catch(e) {
+                        if (xhr.status === 500) errorMsg = 'Error interno del servidor';
+                        else if (xhr.status === 409) errorMsg = 'No se puede eliminar la entidad porque tiene registros asociados';
                     }
-                    
-                    showToast(errorMessage, 'error');
-                    console.error('Error detallado:', xhr.responseText);
+                    Swal.fire({
+                        title: 'Error',
+                        text: errorMsg,
+                        icon: 'error',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'custom-modal'
+                        }
+                    });
                 }
             });
         }
 
         $(document).ready(function() {
-            // Auto-ocultar alertas después de 5 segundos
-            setTimeout(() => {
-                $('#tempSuccessAlert, #tempErrorAlert').fadeOut(500);
-            }, 5000);
-
-            // Búsqueda en tiempo real con debounce
+            // Búsqueda con debounce
             let searchTimeout;
             $('#searchId').on('keyup', function() {
                 clearTimeout(searchTimeout);
@@ -659,6 +716,42 @@
                     $('#searchForm').submit();
                 }, 500);
             });
+
+            // Cerrar alerts después de 5 segundos
+            setTimeout(() => {
+                $('#tempSuccessAlert, #tempErrorAlert').fadeOut(500);
+            }, 5000);
+
+            // Mostrar mensaje de éxito desde TempData
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: '¡Operación Exitosa!',
+                    text: '@TempData["Success"]',
+                    icon: 'success',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Aceptar'
+                });
+                </text>
+            }
+            
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'Error',
+                    text: '@TempData["Error"]',
+                    icon: 'error',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Aceptar'
+                });
+                </text>
+            }
         });
     </script>
 }

@@ -298,60 +298,6 @@
             }
         }
 
-        @@keyframes fadeOut {
-            from {
-                opacity: 1;
-            }
-            to {
-                opacity: 0;
-            }
-        }
-
-        @@keyframes shrinkWidth {
-            from { width: 100%; }
-            to { width: 0%; }
-        }
-
-        .toast-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            min-width: 350px;
-            max-width: 450px;
-            animation: slideIn 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        }
-
-        .toast-notification.fade-out {
-            animation: fadeOut 0.5s ease;
-        }
-
-        .toast-progress-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            animation: shrinkWidth 4s linear forwards;
-        }
-
-        .close-toast {
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            padding: 0;
-            font-size: 1rem;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-        }
-
-        .close-toast:hover {
-            opacity: 1;
-        }
-
         /* Loading overlay */
         .loading-overlay {
             position: fixed;
@@ -380,29 +326,100 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Estilos para SweetAlert2 */
-        .swal2-popup {
-            font-size: 1rem !important;
-            border: 1px solid var(--dorado-primario) !important;
-            background: linear-gradient(135deg, #1f060c 0%, #2a0a12 100%) !important;
+        /* Modal de éxito personalizado */
+        .custom-success-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
         }
 
-        .swal2-title {
-            color: var(--dorado-primario) !important;
+        .custom-success-modal .swal2-title {
+            color: #c5a367;
+            font-size: 1.8rem;
         }
 
-        .swal2-html-container {
-            color: rgba(255, 255, 255, 0.9) !important;
+        .custom-success-modal .swal2-html-container {
+            color: #ffffff;
+            font-size: 1.1rem;
         }
 
-        .swal2-confirm.btn-danger {
-            background-color: #dc3545 !important;
+        .custom-success-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-success-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
+
+        .custom-success-modal .swal2-success-circular-line-left,
+        .custom-success-modal .swal2-success-circular-line-right,
+        .custom-success-modal .swal2-success-fix,
+        .custom-success-modal .swal2-success-ring {
+            background: transparent !important;
+        }
+
+        .custom-success-modal .swal2-success-line-tip,
+        .custom-success-modal .swal2-success-line-long {
+            background-color: #28a745 !important;
+        }
+
+        .custom-success-modal .swal2-icon.swal2-success {
+            border-color: #28a745 !important;
+        }
+
+        .custom-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .custom-modal .swal2-title {
+            color: #c5a367;
+        }
+
+        .custom-modal .swal2-html-container {
+            color: #ffffff;
+        }
+
+        .custom-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
+
+        .custom-modal .swal2-cancel {
+            background: transparent !important;
+            border: 1px solid rgba(220, 53, 69, 0.5) !important;
+            color: #dc3545 !important;
+            border-radius: 8px !important;
+            padding: 10px 25px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-modal .swal2-cancel:hover {
+            background: rgba(220, 53, 69, 0.2) !important;
             border-color: #dc3545 !important;
-        }
-
-        .swal2-cancel.btn-secondary {
-            background-color: #6c757d !important;
-            border-color: #6c757d !important;
         }
     </style>
 }
@@ -508,7 +525,7 @@
                                     </a>
                                     <button type="button"
                                             class="btn-action btn-action-danger delete-btn"
-                                            onclick="confirmarEliminacion('@parametro.Id', '@parametro.Id')"
+                                            onclick="abrirModalEliminar('@parametro.Id', '@parametro.Id')"
                                             title="Eliminar parámetro">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
@@ -571,106 +588,9 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        let parametroAEliminar = null;
-
-        function confirmarEliminacion(id, nombre) {
-            parametroAEliminar = { id: id, nombre: nombre };
-            
-            Swal.fire({
-                title: '¿Eliminar parámetro?',
-                html: `
-                    <div style="text-align: left; margin: 20px 0;">
-                        <div style="background: rgba(220, 53, 69, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
-                            <p style="margin: 0 0 10px 0;">
-                                <strong><i class="fas fa-tag"></i> ID del Parámetro:</strong> 
-                                <span style="font-family: monospace; color: #dc3545; font-size: 1.1rem;">${nombre}</span>
-                            </p>
-                        </div>
-                        <div style="margin-top: 15px; padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px;">
-                            <p class="text-warning mb-0">
-                                <i class="fas fa-exclamation-triangle"></i> 
-                                <strong>Advertencia:</strong> Esta acción es irreversible
-                            </p>
-                            <small class="text-muted">Se eliminará permanentemente este parámetro del sistema</small>
-                        </div>
-                    </div>
-                `,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Eliminar permanentemente',
-                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                background: '#1f060c',
-                color: '#fff',
-                backdrop: 'rgba(0,0,0,0.8)',
-                showClass: {
-                    popup: 'animate__animated animate__fadeInDown'
-                },
-                hideClass: {
-                    popup: 'animate__animated animate__fadeOutUp'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    eliminarParametro();
-                }
-            });
-        }
-
-        function showToast(message, type = 'success') {
-            const iconMap = {
-                'success': 'fa-check-circle',
-                'error': 'fa-exclamation-triangle',
-                'warning': 'fa-exclamation-circle',
-                'info': 'fa-info-circle'
-            };
-            
-            const titleMap = {
-                'success': '¡Éxito!',
-                'error': 'Error',
-                'warning': 'Advertencia',
-                'info': 'Información'
-            };
-            
-            const colorMap = {
-                'success': '#28a745',
-                'error': '#dc3545',
-                'warning': '#ffc107',
-                'info': '#17a2b8'
-            };
-            
-            const toast = $(`
-                <div class="toast-notification alert-custom alert-${type === 'success' ? 'success' : 'danger'}-custom">
-                    <div style="display: flex; align-items: flex-start; gap: 12px;">
-                        <div style="flex-shrink: 0;">
-                            <i class="fas ${iconMap[type]}" style="font-size: 1.5rem; color: ${colorMap[type]}"></i>
-                        </div>
-                        <div style="flex-grow: 1;">
-                            <strong style="font-size: 1rem; display: block; margin-bottom: 5px;">${titleMap[type]}</strong>
-                            <span style="font-size: 0.9rem;">${message}</span>
-                        </div>
-                        <div style="flex-shrink: 0;">
-                            <button type="button" class="close-toast">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="toast-progress-bar" style="background: ${colorMap[type]}"></div>
-                </div>
-            `);
-            
-            $('body').append(toast);
-            
-            toast.find('.close-toast').on('click', function() {
-                toast.addClass('fade-out');
-                setTimeout(() => toast.remove(), 500);
-            });
-            
-            setTimeout(() => {
-                toast.addClass('fade-out');
-                setTimeout(() => toast.remove(), 500);
-            }, 4000);
-        }
+        let parametroIdAEliminar = null;
+        let parametroNombreAEliminar = null;
+        let parametroValorAEliminar = null;
 
         function showLoading() {
             $('#loadingOverlay').fadeIn(200);
@@ -680,81 +600,137 @@
             $('#loadingOverlay').fadeOut(200);
         }
 
+        // Función para abrir el modal de confirmación para PARÁMETROS
+        function abrirModalEliminar(id, nombre, valor) {
+            parametroIdAEliminar = id;
+            parametroNombreAEliminar = nombre;
+            parametroValorAEliminar = valor;
+
+            Swal.fire({
+                title: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 2rem;"></i><br>¿Eliminar parámetro?',
+                html: `
+                    <div style="padding: 10px;">
+                        <p style="font-size: 1rem; margin-bottom: 15px;">¿Está seguro que desea eliminar el parámetro?</p>
+                        <div style="background: rgba(220, 53, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                            <i class="fas fa-tag" style="color: #c5a367; margin-right: 8px;"></i>
+                            <strong style="color: #c5a367;">ID: ${nombre}</strong><br>
+                            <strong style="color: #c5a367;">Valor: ${valor}</strong>
+                        </div>
+                        <p style="font-size: 0.9rem; margin-top: 15px; color: #dc3545;">
+                            <i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Sí, Eliminar',
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                background: '#1f060c',
+                color: '#fff',
+                customClass: {
+                    popup: 'custom-modal'
+                },
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    eliminarParametro();
+                }
+            });
+        }
+
         function eliminarParametro() {
-            if (!parametroAEliminar) return;
+            if (!parametroIdAEliminar) return;
 
             showLoading();
 
             const token = $('input[name="__RequestVerificationToken"]').first().val();
 
             $.ajax({
-                url: '/Parametros/Delete/' + encodeURIComponent(parametroAEliminar.id),
+                url: '/Parametros/Delete/' + encodeURIComponent(parametroIdAEliminar),
                 type: 'POST',
                 data: {
                     __RequestVerificationToken: token,
-                    id: parametroAEliminar.id
+                    id: parametroIdAEliminar
                 },
                 success: function(response) {
                     hideLoading();
-
                     if (response.success) {
-                        const successMessage = `
-                            <strong>Parámetro eliminado correctamente</strong><br>
-                            🏷️ ID: ${parametroAEliminar.nombre}<br>
-                            ✅ Operación completada con éxito
-                        `;
-                        
-                        const row = $(`#row-${parametroAEliminar.id}`);
-                        row.css('background-color', '#dc3545');
-                        row.fadeOut(400, function() {
-                            $(this).remove();
-                            
-                            if ($('#parametrosTableBody tr').length === 0) {
-                                setTimeout(() => {
-                                    location.reload();
-                                }, 500);
-                            } else {
-                                const totalText = $('.text-muted').text();
-                                const match = totalText.match(/\d+/);
-                                if (match) {
-                                    const totalRegistros = parseInt(match[0]) - 1;
-                                    $('.text-muted').html(`<i class="fas fa-database me-1"></i> Total: ${totalRegistros} registros`);
+                        Swal.fire({
+                            title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Eliminación Exitosa!',
+                            html: `
+                                <div style="padding: 10px;">
+                                    <p style="font-size: 1.1rem; margin-bottom: 15px;">${response.message || 'Parámetro eliminado correctamente'}</p>
+                                    <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                        <i class="fas fa-tag" style="color: #c5a367; margin-right: 8px;"></i>
+                                        <strong style="color: #c5a367;">ID: ${parametroNombreAEliminar}</strong><br>
+                                        <strong style="color: #c5a367;">Valor: ${parametroValorAEliminar}</strong>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'success',
+                            confirmButtonText: '<i class="fas fa-arrow-right me-2"></i>Continuar',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff',
+                            customClass: {
+                                popup: 'custom-success-modal'
+                            },
+                            allowOutsideClick: false
+                        }).then(() => {
+                            const row = $(`#row-${parametroIdAEliminar}`);
+                            row.css('background-color', '#dc3545');
+                            row.fadeOut(400, function() {
+                                $(this).remove();
+
+                                if ($('#parametrosTableBody tr').length === 0) {
+                                    setTimeout(() => location.reload(), 500);
+                                } else {
+                                    const totalText = $('.text-muted').text();
+                                    const match = totalText.match(/\d+/);
+                                    if (match) {
+                                        const totalRegistros = parseInt(match[0]) - 1;
+                                        $('.text-muted').html(`<i class="fas fa-database me-1"></i> Total: ${totalRegistros} registros`);
+                                    }
                                 }
+                            });
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message || 'No se pudo eliminar el parámetro',
+                            icon: 'error',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff',
+                            customClass: {
+                                popup: 'custom-modal'
                             }
                         });
-                        
-                        showToast(successMessage, 'success');
-                    } else {
-                        let errorMessage = 'No se pudo eliminar el parámetro';
-                        if (response.message) {
-                            errorMessage = response.message;
-                        }
-                        showToast(errorMessage, 'error');
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function(xhr) {
                     hideLoading();
-                    
-                    let errorMessage = 'Error al eliminar el parámetro';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (xhr.responseText) {
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.message) errorMessage = response.message;
-                        } catch(e) {
-                            console.error('Error parsing response:', e);
-                        }
+                    let errorMsg = 'Error al eliminar el parámetro';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) errorMsg = response.message;
+                    } catch(e) {
+                        if (xhr.status === 500) errorMsg = 'Error interno del servidor';
+                        else if (xhr.status === 409) errorMsg = 'No se puede eliminar el parámetro porque tiene registros asociados';
                     }
-                    
-                    const detailedError = `
-                        <strong>Error al eliminar</strong><br>
-                        ${errorMessage}<br>
-                        <small>Código: ${xhr.status}</small>
-                    `;
-                    
-                    showToast(detailedError, 'error');
-                    console.error('Error detallado:', xhr.responseText);
+                    Swal.fire({
+                        title: 'Error',
+                        text: errorMsg,
+                        icon: 'error',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'custom-modal'
+                        }
+                    });
                 }
             });
         }

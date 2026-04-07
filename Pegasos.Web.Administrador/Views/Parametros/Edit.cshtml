@@ -340,10 +340,11 @@
 
         $(document).ready(function() {
             var formModified = false;
-            
+
+            // Validación en tiempo real para PARÁMETROS
             $('#Valor').on('input', function() {
-                var valor = $(this).val();
                 formModified = true;
+                var valor = $(this).val();
                 if (!valor || valor.trim() === '') {
                     $('#valorError').text('El valor es requerido');
                 } else {
@@ -355,7 +356,42 @@
                 formModified = true;
             });
 
-            // Envío normal del formulario (sin AJAX)
+            // Mostrar mensaje de éxito si existe en TempData
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: '¡Operación Exitosa!',
+                    text: '@TempData["Success"]',
+                    icon: 'success',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Ir al Listado'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/Parametros/Index';
+                    }
+                });
+                </text>
+            }
+            
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'Error',
+                    text: '@TempData["Error"]',
+                    icon: 'error',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Aceptar'
+                });
+                </text>
+            }
+
+            // Envío del formulario para PARÁMETROS
             $('#editForm').on('submit', function(e) {
                 var valor = $('#Valor').val();
                 
@@ -382,15 +418,16 @@
                     e.preventDefault();
                     Swal.fire({
                         title: '¿Salir sin guardar?',
-                        text: 'Tiene cambios sin guardar. ¿Está seguro que desea salir?',
+                        text: 'Tiene cambios sin guardar',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#c5a367',
-                        cancelButtonColor: '#dc3545',
-                        confirmButtonText: '<i class="fas fa-sign-out-alt me-2"></i>Sí, salir',
-                        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, salir',
+                        cancelButtonText: 'Cancelar',
                         background: '#1f060c',
-                        color: '#fff'
+                        color: '#fff',
+                        customClass: { popup: 'custom-modal' }
                     }).then((result) => {
                         if (result.isConfirmed) {
                             window.location.href = '/Parametros/Index';
@@ -400,4 +437,5 @@
             });
         });
     </script>
+    
 }

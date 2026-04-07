@@ -8,7 +8,13 @@
 
 @section Styles {
     <style>
-        /* Estilos con la paleta del sistema - Misma que en Clientes */
+        :root {
+            --vinotinto-sidebar: #1f060c;
+            --vinotinto-fondo: #2b0811;
+            --dorado-primario: #c5a367;
+            --dorado-suave: rgba(197, 163, 103, 0.15);
+        }
+
         .page-header {
             background: linear-gradient(135deg, var(--vinotinto-sidebar) 0%, #4a0d1f 100%);
             border: 1px solid var(--dorado-primario);
@@ -18,19 +24,19 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-            .page-header h1 {
-                color: var(--dorado-primario);
-                font-size: 1.8rem;
-                font-weight: 600;
-                margin: 0;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            }
+        .page-header h1 {
+            color: var(--dorado-primario);
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
 
-            .page-header i {
-                margin-right: 15px;
-                color: var(--dorado-primario);
-                font-size: 2rem;
-            }
+        .page-header i {
+            margin-right: 15px;
+            color: var(--dorado-primario);
+            font-size: 2rem;
+        }
 
         .btn-primary-custom {
             background: transparent;
@@ -39,24 +45,41 @@
             padding: 10px 25px;
             border-radius: 6px;
             font-weight: 600;
-            font-size: 0.95rem;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
         }
 
-            .btn-primary-custom:hover {
-                background: var(--dorado-primario);
-                color: var(--vinotinto-sidebar);
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(197, 163, 103, 0.3);
-            }
+        .btn-primary-custom:hover {
+            background: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(197, 163, 103, 0.3);
+        }
 
-            .btn-primary-custom i {
-                margin-right: 8px;
-                font-size: 1.1rem;
-            }
+        .btn-primary-custom i {
+            margin-right: 8px;
+        }
+
+        .alert-custom {
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--dorado-primario);
+            background: rgba(31, 6, 12, 0.8);
+            color: white;
+            backdrop-filter: blur(5px);
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-success-custom {
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger-custom {
+            border-left: 4px solid #dc3545;
+        }
 
         .search-container {
             background: rgba(31, 6, 12, 0.5);
@@ -73,22 +96,15 @@
             color: white;
             padding: 10px 15px;
             border-radius: 6px;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
+            width: 100%;
         }
 
-            .search-box:focus {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: var(--dorado-primario);
-                color: white;
-                box-shadow: 0 0 0 3px rgba(197, 163, 103, 0.1);
-                outline: none;
-            }
-
-            .search-box::placeholder {
-                color: rgba(255, 255, 255, 0.5);
-                font-style: italic;
-            }
+        .search-box:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--dorado-primario);
+            color: white;
+            outline: none;
+        }
 
         .btn-search {
             background: var(--dorado-primario);
@@ -97,13 +113,12 @@
             padding: 10px 20px;
             border-radius: 6px;
             font-weight: 600;
-            transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
-            .btn-search:hover {
-                background: #d4b574;
-                transform: translateY(-2px);
-            }
+        .btn-search:hover {
+            background: #d4b574;
+        }
 
         .btn-clear {
             background: transparent;
@@ -112,13 +127,15 @@
             padding: 10px 20px;
             border-radius: 6px;
             font-weight: 600;
-            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
         }
 
-            .btn-clear:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: var(--dorado-primario);
-            }
+        .btn-clear:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
 
         .table-container {
             background: rgba(31, 6, 12, 0.5);
@@ -133,30 +150,29 @@
             border-collapse: collapse;
         }
 
-            .table-custom thead th {
-                background: rgba(31, 6, 12, 0.8);
-                color: var(--dorado-primario);
-                padding: 12px 15px;
-                font-weight: 600;
-                font-size: 0.85rem;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                border-bottom: 2px solid var(--dorado-primario);
-            }
+        .table-custom thead th {
+            background: rgba(31, 6, 12, 0.8);
+            color: var(--dorado-primario);
+            padding: 12px 15px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--dorado-primario);
+        }
 
-            .table-custom tbody tr {
-                border-bottom: 1px solid rgba(197, 163, 103, 0.1);
-                transition: all 0.3s ease;
-            }
+        .table-custom tbody tr {
+            border-bottom: 1px solid rgba(197, 163, 103, 0.1);
+            transition: all 0.3s ease;
+        }
 
-                .table-custom tbody tr:hover {
-                    background: rgba(197, 163, 103, 0.1);
-                }
+        .table-custom tbody tr:hover {
+            background: rgba(197, 163, 103, 0.1);
+        }
 
-            .table-custom tbody td {
-                padding: 12px 15px;
-                color: rgba(255, 255, 255, 0.9);
-            }
+        .table-custom tbody td {
+            padding: 12px 15px;
+            color: rgba(255, 255, 255, 0.9);
+        }
 
         .badge-success {
             background: rgba(40, 167, 69, 0.2);
@@ -176,26 +192,6 @@
             font-weight: 600;
             font-size: 0.75rem;
             border: 1px solid #dc3545;
-        }
-
-        .badge-info {
-            background: rgba(23, 162, 184, 0.2);
-            color: #17a2b8;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            border: 1px solid #17a2b8;
-        }
-
-        .badge-warning {
-            background: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            border: 1px solid #ffc107;
         }
 
         .btn-action {
@@ -230,15 +226,18 @@
         .btn-action:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-            opacity: 0.9;
         }
 
-        /* Asegurar que los enlaces sean clickeables */
-        .btn-action {
-            pointer-events: auto !important;
-            cursor: pointer !important;
-            z-index: 10;
-            position: relative;
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: rgba(197, 163, 103, 0.3);
         }
 
         .pagination-custom {
@@ -254,11 +253,11 @@
             transition: all 0.3s ease;
         }
 
-            .page-link:hover {
-                background: var(--dorado-primario);
-                border-color: var(--dorado-primario);
-                color: var(--vinotinto-sidebar);
-            }
+        .page-link:hover {
+            background: var(--dorado-primario);
+            border-color: var(--dorado-primario);
+            color: var(--vinotinto-sidebar);
+        }
 
         .page-item.active .page-link {
             background: var(--dorado-primario);
@@ -272,49 +271,131 @@
             pointer-events: none;
         }
 
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: rgba(255, 255, 255, 0.5);
+        .input-group {
+            display: flex;
+            gap: 10px;
         }
 
-            .no-data i {
-                font-size: 3rem;
-                margin-bottom: 15px;
-                color: rgba(197, 163, 103, 0.3);
+        /* Animaciones */
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
             }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
-        /* Estilos para el modal de confirmación y éxito */
-        .custom-modal .swal2-popup {
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner-custom {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--dorado-primario);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal de éxito personalizado */
+        .custom-success-modal .swal2-popup {
             background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
-            border: 2px solid var(--dorado-primario);
+            border: 2px solid #c5a367;
             border-radius: 15px;
             color: white;
         }
 
-        .custom-modal .swal2-title {
-            color: var(--dorado-primario);
+        .custom-success-modal .swal2-title {
+            color: #c5a367;
+            font-size: 1.8rem;
         }
 
-        .custom-modal .swal2-html-container {
-            color: var(--text-light);
+        .custom-success-modal .swal2-html-container {
+            color: #ffffff;
+            font-size: 1.1rem;
         }
 
-        .custom-modal .swal2-confirm {
+        .custom-success-modal .swal2-confirm {
             background: transparent !important;
-            border: 2px solid var(--dorado-primario) !important;
-            color: var(--dorado-primario) !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
             border-radius: 8px !important;
             padding: 10px 30px !important;
             font-weight: 600 !important;
             transition: all 0.3s ease !important;
         }
 
-            .custom-modal .swal2-confirm:hover {
-                background: var(--dorado-primario) !important;
-                color: #1f060c !important;
-                transform: translateY(-2px);
-            }
+        .custom-success-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
+
+        .custom-success-modal .swal2-success-circular-line-left,
+        .custom-success-modal .swal2-success-circular-line-right,
+        .custom-success-modal .swal2-success-fix,
+        .custom-success-modal .swal2-success-ring {
+            background: transparent !important;
+        }
+
+        .custom-success-modal .swal2-success-line-tip,
+        .custom-success-modal .swal2-success-line-long {
+            background-color: #28a745 !important;
+        }
+
+        .custom-success-modal .swal2-icon.swal2-success {
+            border-color: #28a745 !important;
+        }
+
+        .custom-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .custom-modal .swal2-title {
+            color: #c5a367;
+        }
+
+        .custom-modal .swal2-html-container {
+            color: #ffffff;
+        }
+
+        .custom-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .custom-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
+        }
 
         .custom-modal .swal2-cancel {
             background: transparent !important;
@@ -326,58 +407,9 @@
             transition: all 0.3s ease !important;
         }
 
-            .custom-modal .swal2-cancel:hover {
-                background: rgba(220, 53, 69, 0.2) !important;
-                border-color: #dc3545 !important;
-            }
-
-        .custom-success-modal .swal2-popup {
-            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
-            border: 2px solid var(--dorado-primario);
-            border-radius: 15px;
-            color: white;
-        }
-
-        .custom-success-modal .swal2-title {
-            color: var(--dorado-primario);
-            font-size: 1.8rem;
-        }
-
-        .custom-success-modal .swal2-html-container {
-            color: var(--text-light);
-            font-size: 1.1rem;
-        }
-
-        .custom-success-modal .swal2-confirm {
-            background: transparent !important;
-            border: 2px solid var(--dorado-primario) !important;
-            color: var(--dorado-primario) !important;
-            border-radius: 8px !important;
-            padding: 10px 30px !important;
-            font-weight: 600 !important;
-            transition: all 0.3s ease !important;
-        }
-
-            .custom-success-modal .swal2-confirm:hover {
-                background: var(--dorado-primario) !important;
-                color: #1f060c !important;
-                transform: translateY(-2px);
-            }
-
-        .custom-success-modal .swal2-success-circular-line-left,
-        .custom-success-modal .swal2-success-circular-line-right,
-        .custom-success-modal .swal2-success-fix,
-        .custom-success-modal .swal2-success-ring {
-            background: transparent !important;
-        }
-
-        .custom-success-modal .swal2-success-line-tip,
-        .custom-success-modal .swal2-success-line-long {
-            background-color: var(--success-green) !important;
-        }
-
-        .custom-success-modal .swal2-icon.swal2-success {
-            border-color: var(--success-green) !important;
+        .custom-modal .swal2-cancel:hover {
+            background: rgba(220, 53, 69, 0.2) !important;
+            border-color: #dc3545 !important;
         }
     </style>
 }
@@ -395,6 +427,19 @@
             </a>
         </div>
     </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-custom alert-success-custom" id="tempSuccessAlert">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-custom alert-danger-custom" id="tempErrorAlert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
 
     <div class="search-container">
         <div class="row">
@@ -450,20 +495,21 @@
                                 </td>
                                 <td>
                                     <a href="/CuentasCore/Detalles/@cuenta.Id"
-                                           class="btn-action btn-action-info"
-                                           title="Ver detalles">
+                                       class="btn-action btn-action-info"
+                                       title="Ver detalles">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <a href="/CuentasCore/Edit/@cuenta.Id"
-                                           class="btn-action btn-action-warning"
-                                           title="Editar cuenta">
+                                       class="btn-action btn-action-warning"
+                                       title="Editar cuenta">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button type="button"
                                             class="btn-action btn-action-danger btn-eliminar"
                                             title="Eliminar cuenta"
                                             data-id="@cuenta.Id"
-                                            data-numero="@cuenta.NumeroCuenta">
+                                            data-numero="@cuenta.NumeroCuenta"
+                                            data-cliente="@cuenta.ClienteNombre">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </td>
@@ -509,204 +555,217 @@
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-custom"></div>
+</div>
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Función para eliminar cuenta con modal de confirmación y éxito moderno
-        function eliminarCuenta(id, numeroCuenta) {
-        // Modal de confirmación
-        Swal.fire({
-        title: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 2rem;"></i><br>¿Eliminar cuenta?',
-        html: `
-        <div style="padding: 10px;">
-        <p style="font-size: 1rem; margin-bottom: 15px;">¿Está seguro que desea eliminar la cuenta?</p>
-        <div style="background: rgba(220, 53, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
-        <i class="fas fa-credit-card" style="color: #c5a367; margin-right: 8px;"></i>
-        <strong style="color: #c5a367;">Número: ${numeroCuenta}</strong>
-        </div>
-        <p style="font-size: 0.9rem; margin-top: 15px; color: #dc3545;">
-        <i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.
-        </p>
-        </div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Sí, Eliminar',
-        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        background: '#1f060c',
-        color: '#fff',
-        customClass: {
-        popup: 'custom-modal'
-        },
-        reverseButtons: true
-        }).then((result) => {
-        if (result.isConfirmed) {
-        // Mostrar loading
-        Swal.fire({
-        title: '<i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i><br>Eliminando cuenta...',
-        html: 'Por favor espere',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: false,
-        background: '#1f060c',
-        color: '#fff',
-        customClass: {
-        popup: 'custom-modal'
-        }
-        });
+        let cuentaIdAEliminar = null;
+        let cuentaNumeroAEliminar = null;
+        let cuentaClienteAEliminar = null;
 
-        const token = $('input[name="__RequestVerificationToken"]').first().val();
-                    
-        $.ajax({
-        url: '/CuentasCore/Delete/' + id,
-        type: 'POST',
-        data: {
-        __RequestVerificationToken: token,
-        id: id
-        },
-        success: function(response) {
-        if (response.success) {
-        // Mostrar modal de éxito
-        Swal.fire({
-        title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Eliminación Exitosa!',
-        html: `
-        <div style="padding: 10px;">
-        <p style="font-size: 1.1rem; margin-bottom: 15px;">${response.message}</p>
-        <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
-        <i class="fas fa-trash-alt" style="color: #c5a367; margin-right: 8px;"></i>
-        <strong style="color: #c5a367;">Cuenta ${numeroCuenta} eliminada</strong>
-        </div>
-        </div>
-        `,
-        icon: 'success',
-        confirmButtonText: '<i class="fas fa-sync-alt me-2"></i>Actualizar Listado',
-        confirmButtonColor: '#c5a367',
-        background: '#1f060c',
-        color: '#fff',
-        customClass: {
-        popup: 'custom-success-modal'
-        },
-        allowOutsideClick: false
-        }).then((result) => {
-        if (result.isConfirmed) {
-        location.reload();
+        // Función para abrir el modal de confirmación
+        function abrirModalEliminar(id, numeroCuenta, clienteNombre) {
+            cuentaIdAEliminar = id;
+            cuentaNumeroAEliminar = numeroCuenta;
+            cuentaClienteAEliminar = clienteNombre;
+
+            Swal.fire({
+                title: '<i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 2rem;"></i><br>¿Eliminar cuenta?',
+                html: `
+                    <div style="padding: 10px;">
+                        <p style="font-size: 1rem; margin-bottom: 15px;">¿Está seguro que desea eliminar la cuenta?</p>
+                        <div style="background: rgba(220, 53, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                            <i class="fas fa-credit-card" style="color: #c5a367; margin-right: 8px;"></i>
+                            <strong style="color: #c5a367;">Número: ${numeroCuenta}</strong><br>
+                            <strong style="color: #c5a367;">Cliente: ${clienteNombre}</strong>
+                        </div>
+                        <p style="font-size: 0.9rem; margin-top: 15px; color: #dc3545;">
+                            <i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Sí, Eliminar',
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                background: '#1f060c',
+                color: '#fff',
+                customClass: {
+                    popup: 'custom-modal'
+                },
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    eliminarCuenta();
+                }
+            });
         }
-        });
-        } else {
-        Swal.fire({
-        title: 'Error',
-        text: response.message,
-        icon: 'error',
-        confirmButtonColor: '#c5a367',
-        background: '#1f060c',
-        color: '#fff',
-        customClass: {
-        popup: 'custom-modal'
-        }
-        });
-        }
-        },
-        error: function(xhr) {
-        let errorMsg = 'Error al eliminar la cuenta';
-        try {
-        const response = JSON.parse(xhr.responseText);
-        if (response.message) errorMsg = response.message;
-        } catch(e) {
-        if (xhr.status === 400) {
-        errorMsg = 'No se puede eliminar la cuenta porque tiene movimientos asociados.';
-        } else if (xhr.status === 502 || xhr.status === 504) {
-        errorMsg = 'Error de conexión con el servidor. Por favor, intente nuevamente.';
-        }
-        }
-                            
-        Swal.fire({
-        title: 'Error de Operación',
-        html: `
-        <div style="padding: 10px;">
-        <p>${errorMsg}</p>
-        <div style="background: rgba(220, 53, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
-        <i class="fas fa-info-circle"></i>
-        <small>La cuenta podría tener transacciones asociadas</small>
-        </div>
-        </div>
-        `,
-        icon: 'error',
-        confirmButtonColor: '#c5a367',
-        background: '#1f060c',
-        color: '#fff',
-        customClass: {
-        popup: 'custom-modal'
-        }
-        });
-        }
-        });
-        }
-        });
+
+        function eliminarCuenta() {
+            if (!cuentaIdAEliminar) return;
+
+            // Mostrar loading
+            Swal.fire({
+                title: '<i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i><br>Eliminando cuenta...',
+                html: 'Por favor espere',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                background: '#1f060c',
+                color: '#fff',
+                customClass: {
+                    popup: 'custom-modal'
+                }
+            });
+
+            const token = $('input[name="__RequestVerificationToken"]').first().val();
+
+            $.ajax({
+                url: '/CuentasCore/Delete/' + cuentaIdAEliminar,
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    id: cuentaIdAEliminar
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Modal de éxito personalizado
+                        Swal.fire({
+                            title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Eliminación Exitosa!',
+                            html: `
+                                <div style="padding: 10px;">
+                                    <p style="font-size: 1.1rem; margin-bottom: 15px;">${response.message || 'Cuenta eliminada correctamente'}</p>
+                                    <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                        <i class="fas fa-credit-card" style="color: #c5a367; margin-right: 8px;"></i>
+                                        <strong style="color: #c5a367;">Cuenta ${cuentaNumeroAEliminar}</strong><br>
+                                        <strong style="color: #c5a367;">Cliente: ${cuentaClienteAEliminar}</strong>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'success',
+                            confirmButtonText: '<i class="fas fa-arrow-right me-2"></i>Continuar',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff',
+                            customClass: {
+                                popup: 'custom-success-modal'
+                            },
+                            allowOutsideClick: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message || 'No se pudo eliminar la cuenta',
+                            icon: 'error',
+                            confirmButtonColor: '#c5a367',
+                            background: '#1f060c',
+                            color: '#fff',
+                            customClass: {
+                                popup: 'custom-modal'
+                            }
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Error al eliminar la cuenta';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) errorMsg = response.message;
+                    } catch(e) {
+                        if (xhr.status === 500) errorMsg = 'Error interno del servidor';
+                        else if (xhr.status === 409) errorMsg = 'No se puede eliminar la cuenta porque tiene movimientos asociados';
+                    }
+                    Swal.fire({
+                        title: 'Error',
+                        text: errorMsg,
+                        icon: 'error',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'custom-modal'
+                        }
+                    });
+                }
+            });
         }
 
         $(document).ready(function() {
-        // Evento para botones de eliminar
-        $(document).on('click', '.btn-eliminar', function() {
-        const id = $(this).data('id');
-        const numero = $(this).data('numero');
-        eliminarCuenta(id, numero);
-        });
+            // Evento para botones de eliminar
+            $(document).on('click', '.btn-eliminar', function() {
+                const id = $(this).data('id');
+                const numero = $(this).data('numero');
+                const cliente = $(this).data('cliente');
+                abrirModalEliminar(id, numero, cliente);
+            });
 
-        // Búsqueda en tiempo real
-        $('#searchTerm').on('keyup', function(e) {
-        if (e.key === 'Enter') {
-        buscarCuentas();
-        }
-        });
+            setTimeout(() => {
+                $('#tempSuccessAlert, #tempErrorAlert').fadeOut(500);
+            }, 5000);
 
-        $('#searchButton').click(buscarCuentas);
-        $('#clearButton').click(limpiarBusqueda);
+            // Búsqueda en tiempo real
+            let searchTimeout;
+            $('#searchTerm').on('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    buscarCuentas();
+                }
+            });
 
-        function buscarCuentas() {
-        var termino = $('#searchTerm').val();
-        if (termino.length < 2 && termino.length > 0) return;
+            $('#searchButton').click(buscarCuentas);
+            $('#clearButton').click(limpiarBusqueda);
 
-        $('#searchButton').html('<i class="fas fa-spinner fa-spin me-2"></i>Buscando...').prop('disabled', true);
+            function buscarCuentas() {
+                var termino = $('#searchTerm').val();
+                if (termino.length < 2 && termino.length > 0) return;
 
-        $.get('@Url.Action("Buscar", "CuentasCore")', { termino: termino }, function(data) {
-        var tbody = $('#cuentasTableBody');
-        tbody.empty();
+                $('#searchButton').html('<i class="fas fa-spinner fa-spin me-2"></i>Buscando...').prop('disabled', true);
 
-        if (data && data.length > 0) {
-        $.each(data, function(i, cuenta) {
-        var estadoBadge = cuenta.estadoId == 1 ? 'badge-success' : 'badge-danger';
-        var estadoTexto = cuenta.estadoId == 1 ? 'ACTIVA' : 'INACTIVA';
-        var numeroSeguro = (cuenta.numeroCuenta || '').replace(/'/g, "\\'");
+                $.get('/CuentasCore/Buscar', { termino: termino }, function(data) {
+                    var tbody = $('#cuentasTableBody');
+                    tbody.empty();
 
-        var row = '<tr>' +
-        '<td>#' + cuenta.id + '</td>' +
-        '<td><strong>' + (cuenta.numeroCuenta || '') + '</strong></td>' +
-        '<td>' + (cuenta.clienteNombre || '') + '</td>' +
-        '<td>' + (cuenta.clienteIdentificacion || '') + '</td>' +
-        '<td>₡' + (cuenta.saldo || 0).toLocaleString('es-CR', {minimumFractionDigits: 2}) + '</td>' +
-        '<td><span class="' + estadoBadge + '">' + estadoTexto + '</span></td>' +
-        '<td>' +
-        '<a href="/CuentasCore/Detalles/' + cuenta.id + '" class="btn-action btn-action-info" title="Ver detalles"><i class="fas fa-eye"></i></a> ' +
-        '<a href="/CuentasCore/Edit/' + cuenta.id + '" class="btn-action btn-action-warning" title="Editar cuenta"><i class="fas fa-edit"></i></a> ' +
-        '<button type="button" class="btn-action btn-action-danger btn-eliminar" title="Eliminar cuenta" data-id="' + cuenta.id + '" data-numero="' + numeroSeguro + '"><i class="fas fa-trash-alt"></i></button>' +
-        '</td>' +
-        '</tr>';
-        tbody.append(row);
-        });
-        } else {
-        tbody.append('<tr><td colspan="7" class="no-data"><i class="fas fa-search"></i> No se encontraron cuentas con el término "' + termino + '"</td></tr>');
-        }
-        }).always(function() {
-        $('#searchButton').html('<i class="fas fa-search me-2"></i>Buscar').prop('disabled', false);
-        });
-        }
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, cuenta) {
+                            var estadoBadge = cuenta.estadoId == 1 ? 'badge-success' : 'badge-danger';
+                            var estadoTexto = cuenta.estadoId == 1 ? 'ACTIVA' : 'INACTIVA';
+                            var numeroSeguro = (cuenta.numeroCuenta || '').replace(/'/g, "\\'");
+                            var clienteSeguro = (cuenta.clienteNombre || '').replace(/'/g, "\\'");
 
-        function limpiarBusqueda() {
-        $('#searchTerm').val('');
-        location.reload();
-        }
+                            var row = '<tr>' +
+                                '<td>#' + cuenta.id + '</td>' +
+                                '<td><strong>' + (cuenta.numeroCuenta || '') + '</strong></td>' +
+                                '<td>' + (cuenta.clienteNombre || '') + '</td>' +
+                                '<td>' + (cuenta.clienteIdentificacion || '') + '</td>' +
+                                '<td>₡' + (cuenta.saldo || 0).toLocaleString('es-CR', {minimumFractionDigits: 2}) + '</td>' +
+                                '<td><span class="' + estadoBadge + '">' + estadoTexto + '</span></td>' +
+                                '<td>' +
+                                '<a href="/CuentasCore/Detalles/' + cuenta.id + '" class="btn-action btn-action-info" title="Ver detalles"><i class="fas fa-eye"></i></a> ' +
+                                '<a href="/CuentasCore/Edit/' + cuenta.id + '" class="btn-action btn-action-warning" title="Editar cuenta"><i class="fas fa-edit"></i></a> ' +
+                                '<button type="button" class="btn-action btn-action-danger btn-eliminar" title="Eliminar cuenta" data-id="' + cuenta.id + '" data-numero="' + numeroSeguro + '" data-cliente="' + clienteSeguro + '"><i class="fas fa-trash-alt"></i></button>' +
+                                '</td>' +
+                                '</tr>';
+                            tbody.append(row);
+                        });
+                    } else {
+                        tbody.append('<tr><td colspan="7" class="no-data"><i class="fas fa-search"></i> No se encontraron cuentas con el término "' + termino + '"</td></tr>');
+                    }
+                }).always(function() {
+                    $('#searchButton').html('<i class="fas fa-search me-2"></i>Buscar').prop('disabled', false);
+                });
+            }
+
+            function limpiarBusqueda() {
+                $('#searchTerm').val('');
+                location.reload();
+            }
         });
     </script>
 }
