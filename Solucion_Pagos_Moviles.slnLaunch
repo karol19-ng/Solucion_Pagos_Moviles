@@ -11,10 +11,6 @@
         "Action": "Start"
       },
       {
-        "Path": "Pegasos.WEB.Portal\\Pegasos.WEB.Portal.csproj",
-        "Action": "Start"
-      },
-      {
         "Path": "API_Gateway\\API_Gateway.csproj",
         "Action": "Start"
       },
