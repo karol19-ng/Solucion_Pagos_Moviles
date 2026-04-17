@@ -17,5 +17,9 @@ namespace AbstractDataAccess.Models
         public DateTime FechaRegistro { get; set; }
         public string Servicio { get; set; }
         public string Resultado { get; set; }
+
+        public int Monto { get; set; }
+        public int TelefonoDestino { get; set; }
+        public int TelefonoOrigen { get; set; }
     }
 }

@@ -11,6 +11,10 @@ namespace Entities.DTOs
         public string Usuario { get; set; }
         public string Descripcion { get; set; }
         public string Accion { get; set; }
+
+        public int Monto { get; set; }
+        public int TelefonoDestino { get; set; }
+        public int TelefonoOrigen { get; set; }
     }
 
     public class BitacoraResponse
@@ -22,6 +26,10 @@ namespace Entities.DTOs
         public DateTime FechaRegistro { get; set; }
         public string Servicio { get; set; }
         public string Resultado { get; set; }
+
+        public int Monto { get; set; }
+        public int TelefonoDestino { get; set; }
+        public int TelefonoOrigen { get; set; }
     }
 
     public class BitacoraRegistroRequest
@@ -31,5 +39,8 @@ namespace Entities.DTOs
         public string Descripcion { get; set; }
         public string Servicio { get; set; }
         public string Resultado { get; set; }
+        public int Monto { get; set; }
+        public int TelefonoDestino { get; set; }
+        public int TelefonoOrigen { get; set; }
     }
 }

@@ -12,5 +12,6 @@ namespace Services.Interfaces
         Task<TransaccionResponse> RecibirTransaccionAsync(RecibirTransaccionRequest request, string usuarioEjecutor);
         Task<TransaccionResponse> EnviarTransaccionAsync(EnviarTransaccionRequest request, string usuarioEjecutor);
         Task<TransaccionResponse> RouteTransactionAsync(RouteTransactionRequest request, string usuarioEjecutor);
+        Task<ReporteTransaccionDTO> ConsultarTransaccionesPorFechaAsync(DateTime fecha);
     }
 }
