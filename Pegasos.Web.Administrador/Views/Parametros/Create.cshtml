@@ -6,6 +6,7 @@
 
 @section Styles {
     <style>
+        /* Estilos con la paleta del sistema - mismos que en ClientesCore */
         .form-container {
             background: rgba(31, 6, 12, 0.5);
             border: 1px solid var(--dorado-primario);
@@ -105,6 +106,13 @@
             color: #dc3545 !important;
         }
 
+        .text-muted {
+            color: rgba(255, 255, 255, 0.5) !important;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+        }
+
         .btn-container {
             display: flex;
             justify-content: space-between;
@@ -170,50 +178,52 @@
         }
 
         /* Estilos para SweetAlert2 */
-        .swal2-popup {
-            font-size: 1rem !important;
-            border: 1px solid var(--dorado-primario) !important;
-            background: linear-gradient(135deg, #1f060c 0%, #2a0a12 100%) !important;
+        .custom-success-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
         }
 
-        .swal2-title {
-            color: var(--dorado-primario) !important;
+        .custom-success-modal .swal2-title {
+            color: #c5a367;
+            font-size: 1.8rem;
         }
 
-        .swal2-html-container {
-            color: rgba(255, 255, 255, 0.9) !important;
+        .custom-success-modal .swal2-html-container {
+            color: #ffffff;
+            font-size: 1.1rem;
         }
 
-        .swal2-confirm {
-            background-color: var(--dorado-primario) !important;
-            color: var(--vinotinto-sidebar) !important;
+        .custom-success-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
         }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 10000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
+        .custom-success-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
         }
 
-        .spinner-custom {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--dorado-primario);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        .custom-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
         }
 
-        @@keyframes spin {
-            to { transform: rotate(360deg); }
+        .custom-modal .swal2-title {
+            color: #c5a367;
+        }
+
+        .custom-modal .swal2-html-container {
+            color: #ffffff;
         }
     </style>
 }
@@ -287,12 +297,8 @@
     </div>
 </div>
 
-<!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner-custom"></div>
-</div>
 
-@section Scripts {
+  @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
@@ -305,12 +311,16 @@
         }
 
         $(document).ready(function() {
-            // Validación en tiempo real
+            var formModified = false;
+
+            // Validación en tiempo real para PARÁMETROS
             $('#Id').on('input', function() {
+                formModified = true;
                 var valor = $(this).val();
                 if (!valor || valor.trim() === '') {
                     $('#idError').text('El ID del parámetro es requerido');
                 } else {
+                    // Validar formato: solo mayúsculas, números y guiones bajos
                     var formatoValido = /^[A-Z0-9_]+$/.test(valor);
                     if (!formatoValido) {
                         $('#idError').text('Solo mayúsculas, números y guiones bajos');
@@ -321,6 +331,7 @@
             });
 
             $('#Valor').on('input', function() {
+                formModified = true;
                 var valor = $(this).val();
                 if (!valor || valor.trim() === '') {
                     $('#valorError').text('El valor es requerido');
@@ -329,33 +340,51 @@
                 }
             });
 
-            // Validación al enviar el formulario con SweetAlert2
+            // Mostrar mensaje de éxito si existe en TempData
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: '¡Operación Exitosa!',
+                    text: '@TempData["Success"]',
+                    icon: 'success',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Ir al Listado'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/Parametros/Index';
+                    }
+                });
+                </text>
+            }
+            
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'Error',
+                    text: '@TempData["Error"]',
+                    icon: 'error',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Aceptar'
+                });
+                </text>
+            }
+
+            // Envío del formulario para PARÁMETROS
             $('#createForm').on('submit', function(e) {
-                e.preventDefault();
-                
                 var id = $('#Id').val();
                 var valor = $('#Valor').val();
-                var errores = [];
-
-                // Validar ID
+                
                 if (!id || id.trim() === '') {
-                    errores.push('El ID del parámetro es requerido');
-                } else {
-                    var formatoValido = /^[A-Z0-9_]+$/.test(id);
-                    if (!formatoValido) {
-                        errores.push('El ID solo puede contener mayúsculas, números y guiones bajos');
-                    }
-                }
-
-                // Validar valor
-                if (!valor || valor.trim() === '') {
-                    errores.push('El valor es requerido');
-                }
-
-                if (errores.length > 0) {
+                    e.preventDefault();
                     Swal.fire({
-                        title: 'Campos incompletos',
-                        html: '<div style="text-align: left;">Por favor complete todos los campos requeridos:<br>• ' + errores.join('<br>• ') + '</div>',
+                        title: 'Campo requerido',
+                        text: 'El ID del parámetro es requerido',
                         icon: 'warning',
                         confirmButtonColor: '#c5a367',
                         background: '#1f060c',
@@ -363,67 +392,61 @@
                     });
                     return false;
                 }
-
-                // Mostrar loading
+                
+                // Validar formato del ID
+                var formatoValido = /^[A-Z0-9_]+$/.test(id);
+                if (!formatoValido) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Formato inválido',
+                        text: 'El ID solo puede contener mayúsculas, números y guiones bajos',
+                        icon: 'warning',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff'
+                    });
+                    return false;
+                }
+                
+                if (!valor || valor.trim() === '') {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Campo requerido',
+                        text: 'El valor es requerido',
+                        icon: 'warning',
+                        confirmButtonColor: '#c5a367',
+                        background: '#1f060c',
+                        color: '#fff'
+                    });
+                    return false;
+                }
+                
                 showLoading();
-                
-                var form = $(this);
-                var url = form.attr('action');
-                var data = form.serialize();
-                
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: data,
-                    success: function(response) {
-                        hideLoading();
-                        if (response.success) {
-                            Swal.fire({
-                                title: '¡Éxito!',
-                                text: response.message,
-                                icon: 'success',
-                                confirmButtonColor: '#c5a367',
-                                background: '#1f060c',
-                                color: '#fff'
-                            }).then(() => {
-                                window.location.href = '/Parametros/Index';
-                            });
-                        } else {
-                            Swal.fire({
-                                title: 'Error',
-                                text: response.message,
-                                icon: 'error',
-                                confirmButtonColor: '#c5a367',
-                                background: '#1f060c',
-                                color: '#fff'
-                            });
+                return true;
+            });
+
+            // Confirmar cambios antes de salir
+            $('#btnRegresar').click(function(e) {
+                if (formModified) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: '¿Salir sin guardar?',
+                        text: 'Tiene cambios sin guardar',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#c5a367',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, salir',
+                        cancelButtonText: 'Cancelar',
+                        background: '#1f060c',
+                        color: '#fff'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/Parametros/Index';
                         }
-                    },
-                    error: function(xhr) {
-                        hideLoading();
-                        let errorMsg = 'Error al crear el parámetro';
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.message) errorMsg = response.message;
-                        } catch(e) {
-                            if (xhr.status === 409) {
-                                errorMsg = 'Ya existe un parámetro con ese ID';
-                            } else if (xhr.status === 500) {
-                                errorMsg = 'Error interno del servidor. Por favor, intente nuevamente.';
-                            }
-                        }
-                        
-                        Swal.fire({
-                            title: 'Error de Operación',
-                            text: errorMsg,
-                            icon: 'error',
-                            confirmButtonColor: '#c5a367',
-                            background: '#1f060c',
-                            color: '#fff'
-                        });
-                    }
-                });
+                    });
+                }
             });
         });
     </script>
-}
+    }

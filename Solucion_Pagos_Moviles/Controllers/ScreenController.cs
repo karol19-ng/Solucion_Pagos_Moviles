@@ -12,9 +12,9 @@ namespace API_Proyecto1.Controllers
     public class screen : ControllerBase
     {
         private readonly IPantallaService _service;
-        private readonly ILogger<screen> _logger;  // Agregar logger
+        private readonly ILogger<screen> _logger;  
 
-        public screen(IPantallaService service, ILogger<screen> logger)  // Inyectar logger
+        public screen(IPantallaService service, ILogger<screen> logger)  
         {
             _service = service;
             _logger = logger;
@@ -94,7 +94,7 @@ namespace API_Proyecto1.Controllers
         {
             try
             {
-                _logger.LogInformation("=== RECIBIDA PETICIÓN DELETE EN API ===");
+                _logger.LogInformation("=== RECIBE PETICIÓN DELETE EN API ===");
                 _logger.LogInformation("ID a eliminar: {Id}", id);
 
                 var usuario = User.FindFirst(ClaimTypes.Name)?.Value ?? "Sistema";
@@ -107,12 +107,12 @@ namespace API_Proyecto1.Controllers
                     return NotFound(new { codigo = -1, descripcion = "Pantalla no encontrada" });
                 }
 
-                _logger.LogInformation("✅ Pantalla {Id} eliminada exitosamente", id);
+                _logger.LogInformation("Pantalla {Id} eliminada exitosamente", id);
                 return Ok(new { codigo = 0, descripcion = "Pantalla eliminada exitosamente" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error al eliminar pantalla {Id}", id);
+                _logger.LogError(ex, "Error al eliminar pantalla {Id}", id);
                 return StatusCode(500, new { codigo = -1, descripcion = ex.Message });
             }
         }

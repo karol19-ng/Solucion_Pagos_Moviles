@@ -6,236 +6,359 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Pegasos.Web.Administrador.Services;
 
 namespace Pegasos.Web.Administrador.Controllers
 {
     [Authorize]
     public class ClientesController : Controller
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<ClientesController> _logger;
-        private readonly string _gatewayUrl = "https://localhost:7096/gateway/user";
+        private readonly IClienteCoreService _clienteService;
+        private readonly ILogger<ClientesCoreController> _logger;
 
         public ClientesController(
-            IHttpClientFactory httpClientFactory,
-            ILogger<ClientesController> logger)
+            IClienteCoreService clienteService,
+            ILogger<ClientesCoreController> logger)
         {
-            _httpClientFactory = httpClientFactory;
+            _clienteService = clienteService;
             _logger = logger;
         }
 
-        // MÉTODO HELPER PARA CREAR HTTPCLIENT CON TOKEN
-        private HttpClient CreateHttpClientWithToken(string token)
+        // GET: ClientesCore - Listar todos (con paginación)
+        public async Task<IActionResult> Index(int pagina = 1)
         {
-            var handler = new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-            };
-
-            var client = new HttpClient(handler);
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            client.Timeout = TimeSpan.FromSeconds(30);
-
-            return client;
-        }
-
-        // MÉTODO HELPER PARA OBTENER TOKEN
-        private async Task<string> GetAccessTokenAsync()
-        {
-            // 1. Primero intentar de AuthenticationProperties (lugar correcto)
-            var authResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            if (authResult.Succeeded)
-            {
-                var token = authResult.Properties.GetTokenValue("access_token");
-                if (!string.IsNullOrEmpty(token) && token != "TOKEN_NO_RECIBIDO")
-                {
-                    _logger.LogInformation("Token obtenido de AuthenticationProperties");
-                    return token;
-                }
-            }
-
-            // 2. Fallback a Claims
-            var claimToken = User.FindFirst("access_token")?.Value;
-            if (!string.IsNullOrEmpty(claimToken) && claimToken != "TOKEN_NO_RECIBIDO")
-            {
-                _logger.LogInformation("Token obtenido de Claims (fallback)");
-                return claimToken;
-            }
-
-            _logger.LogWarning("No se pudo obtener el token");
-            return null;
-        }
-
-        // LISTAR USUARIOS
-        public async Task<IActionResult> Index(string searchString)
-        {
-            // Obtener token usando el método helper
-            var token = await GetAccessTokenAsync();
-
-            if (string.IsNullOrEmpty(token))
-            {
-                ViewBag.Error = "No se encontró el Token de autenticación. Por favor, intenta cerrar sesión e ingresar de nuevo.";
-                return View("~/Views/Clientes/Index.cshtml", new List<UsuarioViewModel>());
-            }
-            _logger.LogWarning("========== TOKEN COMPLETO ==========");
-            _logger.LogWarning(token);  // Esto mostrará el token completo
-            _logger.LogWarning("====================================");
-
             try
             {
-                var client = CreateHttpClientWithToken(token);
-                _logger.LogWarning("Header Authorization: {Header}", client.DefaultRequestHeaders.Authorization?.ToString());
-                _logger.LogInformation("Enviando petición a Gateway: {Url}", _gatewayUrl);
-                _logger.LogInformation("Token: Bearer {Token}", token.Substring(0, Math.Min(30, token.Length)) + "...");
+                var todos = await _clienteService.ListarTodosAsync() ?? new List<ClienteCoreViewModel>();
 
-                var response = await client.GetAsync(_gatewayUrl);
-                var responseContent = await response.Content.ReadAsStringAsync();
+                const int registrosPorPagina = 10;
+                var totalRegistros = todos.Count;
+                var totalPaginas = (int)Math.Ceiling(totalRegistros / (double)registrosPorPagina);
 
-                _logger.LogInformation("Respuesta del Gateway - Status: {StatusCode}", response.StatusCode);
+                var clientes = todos
+                    .Skip((pagina - 1) * registrosPorPagina)
+                    .Take(registrosPorPagina)
+                    .ToList();
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var usuarios = JsonConvert.DeserializeObject<List<UsuarioViewModel>>(responseContent);
+                ViewBag.PaginaActual = pagina;
+                ViewBag.TotalPaginas = totalPaginas;
+                ViewBag.TotalRegistros = totalRegistros;
 
-                    // Aplicar filtro si hay searchString
-                    if (!string.IsNullOrEmpty(searchString) && usuarios != null)
-                    {
-                        usuarios = usuarios.Where(u =>
-                            (u.NombreCompleto?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                            (u.Identificacion?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false)
-                        ).ToList();
-                        ViewData["CurrentFilter"] = searchString;
-                    }
-
-                    return View("~/Views/Clientes/Index.cshtml", usuarios ?? new List<UsuarioViewModel>());
-                }
-                else
-                {
-                    _logger.LogWarning("Gateway error: {StatusCode} - {Content}", response.StatusCode, responseContent);
-                    ViewBag.Error = $"Error del Gateway: {response.StatusCode} - {responseContent}";
-                }
+                return View(clientes);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TempData["Error"] = "Sesión expirada. Por favor inicie sesión nuevamente.";
+                return RedirectToAction("Login", "Auth");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al conectar con el gateway");
-                ViewBag.Error = "Error de conexión: " + ex.Message;
+                _logger.LogError(ex, "Error en Index de clientes core");
+                TempData["Error"] = "Error al cargar los clientes";
+                return View(new List<ClienteCoreViewModel>());
             }
-
-            return View("~/Views/Clientes/Index.cshtml", new List<UsuarioViewModel>());
         }
 
-        // CREAR USUARIO (POST)
+        // GET: ClientesCore/Create - Mostrar formulario de creación
+        public async Task<IActionResult> Create()
+        {
+            try
+            {
+                // Cargar los tipos de identificación para el dropdown
+                ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
+                    ?? new List<string> { "FISICA", "JURIDICA", "DIMEX", "NITE" };
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar formulario de creación");
+                TempData["Error"] = "Error al cargar el formulario";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: ClientesCore/Create - Procesar creación
         [HttpPost]
-        public async Task<IActionResult> Create(CrearUsuarioViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CrearClienteCoreViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var token = await GetAccessTokenAsync();
-
-            if (string.IsNullOrEmpty(token))
-            {
-                ModelState.AddModelError("", "No se pudo obtener el token de autenticación. Por favor, cierra sesión y vuelve a ingresar.");
-                return View(model);
-            }
-
             try
             {
-                var client = CreateHttpClientWithToken(token);
+                // Log para ver qué datos llegan
+                _logger.LogInformation("Intentando crear cliente - Identificacion: {Identificacion}, Nombre: {Nombre}",
+                    model?.Identificacion, model?.NombreCompleto);
 
-                var apiData = new
+                // Validaciones manuales
+                if (model == null)
                 {
-                    iD_Usuario = 0,
-                    nombre_Completo = model.NombreCompleto,
-                    tipo_Identificacion = model.TipoIdentificacion,
-                    identificacion = model.Identificacion,
-                    email = model.Email,
-                    telefono = model.Telefono,
-                    usuario = model.Email,
-                    contraseña = model.Password,
-                    iD_Estado = 1,
-                    iD_Rol = model.Rol == "Administrador" ? 1 : 2
-                };
-
-                var json = JsonConvert.SerializeObject(apiData);
-                _logger.LogInformation("Enviando datos a Gateway: {Json}", json);
-
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await client.PostAsync(_gatewayUrl, content);
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Respuesta Create - Status: {StatusCode}, Content: {Content}",
-                    response.StatusCode, responseContent);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Usuario creado exitosamente.";
-                    return RedirectToAction("Index");
+                    _logger.LogWarning("Modelo es null");
+                    ModelState.AddModelError(string.Empty, "Datos no válidos");
+                    ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync();
+                    return View(model);
                 }
-                else
+
+                if (string.IsNullOrWhiteSpace(model.Identificacion))
                 {
-                    ModelState.AddModelError("", $"Error al crear el usuario: {response.StatusCode} - {responseContent}");
+                    ModelState.AddModelError("Identificacion", "La identificación es requerida");
                 }
+
+                if (string.IsNullOrWhiteSpace(model.NombreCompleto))
+                {
+                    ModelState.AddModelError("NombreCompleto", "El nombre completo es requerido");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("ModelState inválido");
+                    ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync();
+                    return View(model);
+                }
+
+                var resultado = await _clienteService.CrearAsync(model);
+                if (resultado)
+                {
+                    _logger.LogInformation("Cliente creado exitosamente");
+                    TempData["Success"] = "Cliente creado exitosamente"; // ✅ Mensaje de éxito
+                    return RedirectToAction(nameof(Index));
+                }
+
+                _logger.LogWarning("No se pudo crear el cliente");
+                TempData["Error"] = "No se pudo crear el cliente. Verifique que la identificación no esté duplicada."; // ❌ Mensaje de error
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear usuario");
-                ModelState.AddModelError("", "Error de conexión: " + ex.Message);
+                _logger.LogError(ex, "Error al crear cliente");
+                TempData["Error"] = "Error al crear el cliente: " + ex.Message; // ❌ Mensaje de error
             }
 
+            ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync();
             return View(model);
         }
 
-        // ELIMINAR USUARIO - CORREGIDO (sin atributo duplicado)
-        [HttpPost]
-        [ValidateAntiForgeryToken]  // ← Solo UNA vez
-        public async Task<IActionResult> Delete(string id)
+        // GET: ClientesCore/Edit/5 - Mostrar formulario de edición
+        public async Task<IActionResult> Edit(int id)
         {
-            if (string.IsNullOrEmpty(id))
+            try
             {
-                TempData["Error"] = "Identificación no válida.";
+                _logger.LogInformation("=== EDITANDO CLIENTE ===");
+                _logger.LogInformation("ID recibido: {Id}", id);
+
+                var cliente = await _clienteService.ObtenerPorIdAsync(id);
+
+                if (cliente == null)
+                {
+                    _logger.LogWarning("Cliente con ID {Id} no encontrado en el servicio", id);
+                    TempData["Error"] = "Cliente no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                _logger.LogInformation("Cliente encontrado: {Nombre}", cliente.NombreCompleto);
+
+                var model = new EditarClienteCoreViewModel
+                {
+                    Id = cliente.Id,
+                    TipoIdentificacion = cliente.TipoIdentificacion,
+                    Identificacion = cliente.Identificacion,
+                    NombreCompleto = cliente.NombreCompleto,
+                    EstadoId = cliente.EstadoId ?? 1
+                };
+
+                ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
+                    ?? new List<string>();
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar cliente para editar {Id}", id);
+                TempData["Error"] = "Error al cargar el cliente";
                 return RedirectToAction(nameof(Index));
             }
+        }
 
-            var token = await GetAccessTokenAsync();
+        // POST: ClientesCore/Edit/5 - Procesar edición
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, EditarClienteCoreViewModel model)
+        {
+            _logger.LogInformation("=== PROCESANDO EDICIÓN DE CLIENTE ===");
+            _logger.LogInformation("ID recibido: {Id}", id);
+            _logger.LogInformation("Model - Id: {ModelId}, Nombre: {Nombre}, Identificacion: {Identificacion}, TipoId: {TipoId}, EstadoId: {EstadoId}",
+                model?.Id, model?.NombreCompleto, model?.Identificacion, model?.TipoIdentificacion, model?.EstadoId);
 
-            if (string.IsNullOrEmpty(token))
+            if (model == null)
             {
-                TempData["Error"] = "No se pudo obtener el token de autenticación. Por favor, cierra sesión y vuelve a ingresar.";
-                return RedirectToAction(nameof(Index));
+                _logger.LogWarning("Modelo es null");
+                return NotFound();
+            }
+
+            if (id != model.Id)
+            {
+                _logger.LogWarning("El ID de la URL ({UrlId}) no coincide con el ID del modelo ({ModelId})", id, model.Id);
+                return NotFound();
+            }
+
+            // Validaciones manuales
+            if (string.IsNullOrWhiteSpace(model.Identificacion))
+            {
+                _logger.LogWarning("Identificación vacía");
+                ModelState.AddModelError("Identificacion", "La identificación es requerida");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.NombreCompleto))
+            {
+                _logger.LogWarning("Nombre completo vacío");
+                ModelState.AddModelError("NombreCompleto", "El nombre completo es requerido");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("ModelState inválido. Errores: {ErrorCount}", ModelState.ErrorCount);
+                foreach (var state in ModelState)
+                {
+                    foreach (var error in state.Value.Errors)
+                    {
+                        _logger.LogWarning("Error en {Key}: {ErrorMessage}", state.Key, error.ErrorMessage);
+                    }
+                }
+
+                ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
+                    ?? new List<string>();
+                return View(model);
             }
 
             try
             {
-                var client = CreateHttpClientWithToken(token);
-                var deleteUrl = $"{_gatewayUrl}/{id}";
-
-                _logger.LogInformation("Eliminando usuario en URL: {Url}", deleteUrl);
-
-                var response = await client.DeleteAsync(deleteUrl);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                _logger.LogInformation("Respuesta Delete - Status: {StatusCode}, Content: {Content}",
-                    response.StatusCode, responseContent);
-
-                if (response.IsSuccessStatusCode)
+                var resultado = await _clienteService.ActualizarAsync(model);
+                if (resultado)
                 {
-                    TempData["SuccessMessage"] = "Usuario eliminado exitosamente.";
+                    _logger.LogInformation("✅ Cliente {Id} actualizado exitosamente", id);
+                    TempData["Success"] = "Cliente actualizado exitosamente";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                _logger.LogWarning("❌ No se pudo actualizar el cliente {Id}", id);
+                ModelState.AddModelError(string.Empty, "No se pudo actualizar el cliente");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al actualizar cliente {Id}", id);
+                ModelState.AddModelError(string.Empty, "Error al actualizar el cliente");
+            }
+
+            ViewBag.TiposIdentificacion = await _clienteService.ObtenerTiposIdentificacionAsync()
+                ?? new List<string>();
+            return View(model);
+        }
+
+        // POST: ClientesCore/Delete/5 - Eliminar cliente
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                _logger.LogInformation("=== INTENTANDO ELIMINAR CLIENTE ===");
+                _logger.LogInformation("ID recibido: {Id}", id);
+
+                var resultado = await _clienteService.EliminarAsync(id);
+
+                if (resultado)
+                {
+                    _logger.LogInformation("Cliente {Id} eliminado exitosamente", id);
+                    return Json(new { success = true, message = "✅ Cliente eliminado exitosamente" });
                 }
                 else
                 {
-                    TempData["Error"] = $"No se pudo eliminar el usuario: {response.StatusCode} - {responseContent}";
+                    _logger.LogWarning("No se pudo eliminar el cliente {Id}", id);
+                    return Json(new { success = false, message = "❌ No se puede eliminar el cliente porque tiene cuentas asociadas. Primero debe eliminar las cuentas del cliente." });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar usuario con ID: {Id}", id);
-                TempData["Error"] = "Error de conexión: " + ex.Message;
+                _logger.LogError(ex, "Error al eliminar cliente {Id}", id);
+                return Json(new { success = false, message = "❌ Error al eliminar el cliente: " + ex.Message });
             }
-
-            return RedirectToAction(nameof(Index));
         }
+
+        // GET: ClientesCore/Buscar - Búsqueda en tiempo real
+        [HttpGet]
+        public async Task<IActionResult> Buscar(string termino)
+        {
+            try
+            {
+                var todos = await _clienteService.ListarTodosAsync() ?? new List<ClienteCoreViewModel>();
+
+                if (!string.IsNullOrWhiteSpace(termino))
+                {
+                    termino = termino.ToLower();
+                    todos = todos.Where(c =>
+                        (c.NombreCompleto?.ToLower()?.Contains(termino) ?? false) ||
+                        (c.Identificacion?.Contains(termino) ?? false)
+                    ).ToList();
+                }
+
+                return Json(todos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en búsqueda de clientes");
+                return Json(new List<ClienteCoreViewModel>());
+            }
+        }
+
+        // GET: ClientesCore/Detalles/5 - Ver detalles de un cliente (opcional, si quieres añadir)
+        public async Task<IActionResult> Detalles(int id)
+        {
+            try
+            {
+                var cliente = await _clienteService.ObtenerPorIdAsync(id);
+                if (cliente == null)
+                {
+                    TempData["Error"] = "Cliente no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(cliente);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener detalles del cliente {Id}", id);
+                TempData["Error"] = "Error al cargar los detalles";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> TestCreate()
+        {
+            try
+            {
+                var model = new CrearClienteCoreViewModel
+                {
+                    TipoIdentificacion = "FISICA",
+                    Identificacion = "TEST" + DateTime.Now.Ticks,
+                    NombreCompleto = "Cliente de Prueba"
+                };
+
+                _logger.LogInformation("Probando creación directa");
+                var resultado = await _clienteService.CrearAsync(model);
+
+                if (resultado)
+                {
+                    return Content("✅ Cliente creado exitosamente");
+                }
+                else
+                {
+                    return Content("❌ Falló la creación");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content($"❌ Error: {ex.Message}");
+            }
+        }
+
     }
 }

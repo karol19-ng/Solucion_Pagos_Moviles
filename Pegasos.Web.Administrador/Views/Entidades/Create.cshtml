@@ -70,7 +70,7 @@
             color: var(--dorado-primario);
         }
 
-        .form-control-custom {
+        .form-control-custom, .form-select-custom {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(197, 163, 103, 0.3);
             color: white;
@@ -80,7 +80,7 @@
             transition: all 0.3s ease;
         }
 
-        .form-control-custom:focus {
+        .form-control-custom:focus, .form-select-custom:focus {
             background: rgba(255, 255, 255, 0.1);
             border-color: var(--dorado-primario);
             color: white;
@@ -93,11 +93,23 @@
             font-style: italic;
         }
 
+        select.form-select-custom option {
+            background: var(--vinotinto-sidebar);
+            color: white;
+        }
+
         .text-danger {
             font-size: 0.85rem;
             margin-top: 5px;
             display: block;
             color: #dc3545 !important;
+        }
+
+        .text-muted {
+            color: rgba(255, 255, 255, 0.5) !important;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
         }
 
         .btn-container {
@@ -165,50 +177,52 @@
         }
 
         /* Estilos para SweetAlert2 */
-        .swal2-popup {
-            font-size: 1rem !important;
-            border: 1px solid var(--dorado-primario) !important;
-            background: linear-gradient(135deg, #1f060c 0%, #2a0a12 100%) !important;
+        .custom-success-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
         }
 
-        .swal2-title {
-            color: var(--dorado-primario) !important;
+        .custom-success-modal .swal2-title {
+            color: #c5a367;
+            font-size: 1.8rem;
         }
 
-        .swal2-html-container {
-            color: rgba(255, 255, 255, 0.9) !important;
+        .custom-success-modal .swal2-html-container {
+            color: #ffffff;
+            font-size: 1.1rem;
         }
 
-        .swal2-confirm {
-            background-color: var(--dorado-primario) !important;
-            color: var(--vinotinto-sidebar) !important;
+        .custom-success-modal .swal2-confirm {
+            background: transparent !important;
+            border: 2px solid #c5a367 !important;
+            color: #c5a367 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
         }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 10000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
+        .custom-success-modal .swal2-confirm:hover {
+            background: #c5a367 !important;
+            color: #1f060c !important;
+            transform: translateY(-2px);
         }
 
-        .spinner-custom {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--dorado-primario);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        .custom-modal .swal2-popup {
+            background: linear-gradient(135deg, #1f060c 0%, #2a0a14 100%);
+            border: 2px solid #c5a367;
+            border-radius: 15px;
+            color: white;
         }
 
-        @@keyframes spin {
-            to { transform: rotate(360deg); }
+        .custom-modal .swal2-title {
+            color: #c5a367;
+        }
+
+        .custom-modal .swal2-html-container {
+            color: #ffffff;
         }
     </style>
 }
@@ -243,6 +257,9 @@
                                placeholder="Ej: BCR, BN, BAC, etc."
                                value="@Model?.Identificador" />
                         <span asp-validation-for="Identificador" class="text-danger" id="identificadorError"></span>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Código único de la entidad (ej: BCR, BN, BAC)
+                        </small>
                     </div>
 
                     <div class="form-group">
@@ -269,24 +286,14 @@
     </div>
 </div>
 
-<!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner-custom"></div>
-</div>
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function showLoading() {
-            $('#loadingOverlay').fadeIn(200);
-        }
-
-        function hideLoading() {
-            $('#loadingOverlay').fadeOut(200);
-        }
-
         $(document).ready(function() {
+            // Variable para evitar doble envío
+            var isSubmitting = false;
+
             // Validación en tiempo real
             $('#Identificador').on('input', function() {
                 var valor = $(this).val();
@@ -306,9 +313,11 @@
                 }
             });
 
-            // Validación al enviar el formulario con SweetAlert2
+            // Envío del formulario
             $('#createForm').on('submit', function(e) {
                 e.preventDefault();
+                
+                if (isSubmitting) return false;
                 
                 var identificador = $('#Identificador').val();
                 var nombre = $('#Nombre').val();
@@ -316,10 +325,12 @@
 
                 if (!identificador || identificador.trim() === '') {
                     errores.push('El identificador es requerido');
+                    $('#identificadorError').text('El identificador es requerido');
                 }
 
                 if (!nombre || nombre.trim() === '') {
                     errores.push('El nombre es requerido');
+                    $('#nombreError').text('El nombre es requerido');
                 }
 
                 if (errores.length > 0) {
@@ -329,67 +340,131 @@
                         icon: 'warning',
                         confirmButtonColor: '#c5a367',
                         background: '#1f060c',
-                        color: '#fff'
+                        color: '#fff',
+                        customClass: { popup: 'custom-modal' }
                     });
                     return false;
                 }
 
+                isSubmitting = true;
+
                 // Mostrar loading
-                showLoading();
-                
+                var $btn = $('#btnGuardar');
+                var textoOriginal = $btn.html();
+                $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Guardando...').prop('disabled', true);
+
                 var form = $(this);
                 var url = form.attr('action');
                 var data = form.serialize();
-                
+
                 $.ajax({
                     url: url,
                     type: 'POST',
                     data: data,
+                    dataType: 'json', // Importante: esperar JSON
                     success: function(response) {
-                        hideLoading();
-                        if (response.success) {
+                        isSubmitting = false;
+                        
+                        // Verificar si la respuesta es un objeto JSON con success
+                        if (response && typeof response === 'object') {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Operación Exitosa!',
+                                    html: `
+                                        <div style="padding: 10px;">
+                                            <p style="font-size: 1.1rem; margin-bottom: 15px;">${response.message || 'Entidad creada exitosamente'}</p>
+                                            <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                                <i class="fas fa-university" style="color: #c5a367; margin-right: 8px;"></i>
+                                                <strong style="color: #c5a367;">Entidad: ${nombre}</strong><br>
+                                                <strong style="color: #c5a367;">Identificador: ${identificador}</strong>
+                                            </div>
+                                        </div>
+                                    `,
+                                    icon: 'success',
+                                    confirmButtonText: '<i class="fas fa-arrow-right me-2"></i>Ir al Listado',
+                                    confirmButtonColor: '#c5a367',
+                                    background: '#1f060c',
+                                    color: '#fff',
+                                    customClass: { popup: 'custom-success-modal' },
+                                    allowOutsideClick: false
+                                }).then(() => {
+                                    window.location.href = '/Entidades/Index';
+                                });
+                            } else {
+                                $btn.html(textoOriginal).prop('disabled', false);
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: response.message || 'Error al crear la entidad',
+                                    icon: 'error',
+                                    confirmButtonColor: '#c5a367',
+                                    background: '#1f060c',
+                                    color: '#fff',
+                                    customClass: { popup: 'custom-modal' }
+                                });
+                            }
+                        } else {
+                            // Si la respuesta no es JSON, probablemente es una redirección exitosa
                             Swal.fire({
-                                title: '¡Éxito!',
-                                text: response.message,
+                                title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Operación Exitosa!',
+                                html: `
+                                    <div style="padding: 10px;">
+                                        <p style="font-size: 1.1rem; margin-bottom: 15px;">Entidad creada exitosamente</p>
+                                        <div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                            <i class="fas fa-university" style="color: #c5a367; margin-right: 8px;"></i>
+                                            <strong style="color: #c5a367;">Entidad: ${nombre}</strong><br>
+                                            <strong style="color: #c5a367;">Identificador: ${identificador}</strong>
+                                        </div>
+                                    </div>
+                                `,
                                 icon: 'success',
+                                confirmButtonText: '<i class="fas fa-arrow-right me-2"></i>Ir al Listado',
                                 confirmButtonColor: '#c5a367',
                                 background: '#1f060c',
-                                color: '#fff'
+                                color: '#fff',
+                                customClass: { popup: 'custom-success-modal' },
+                                allowOutsideClick: false
                             }).then(() => {
                                 window.location.href = '/Entidades/Index';
-                            });
-                        } else {
-                            Swal.fire({
-                                title: 'Error',
-                                text: response.message,
-                                icon: 'error',
-                                confirmButtonColor: '#c5a367',
-                                background: '#1f060c',
-                                color: '#fff'
                             });
                         }
                     },
                     error: function(xhr) {
-                        hideLoading();
+                        isSubmitting = false;
+                        $btn.html(textoOriginal).prop('disabled', false);
+                        
                         let errorMsg = 'Error al crear la entidad';
+                        
                         try {
                             const response = JSON.parse(xhr.responseText);
                             if (response.message) errorMsg = response.message;
                         } catch(e) {
-                            if (xhr.status === 409) {
-                                errorMsg = 'Ya existe una entidad con ese identificador';
-                            } else if (xhr.status === 500) {
-                                errorMsg = 'Error interno del servidor. Por favor, intente nuevamente.';
+                            if (xhr.status === 409) errorMsg = 'Ya existe una entidad con ese identificador';
+                            else if (xhr.status === 500) errorMsg = 'Error interno del servidor';
+                            else if (xhr.status === 200) {
+                                // Si es 200 pero hay error en el parseo, probablemente fue exitoso
+                                Swal.fire({
+                                    title: '<i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem;"></i><br>¡Operación Exitosa!',
+                                    html: `Entidad "${nombre}" creada exitosamente`,
+                                    icon: 'success',
+                                    confirmButtonText: 'Ir al Listado',
+                                    confirmButtonColor: '#c5a367',
+                                    background: '#1f060c',
+                                    color: '#fff'
+                                }).then(() => {
+                                    window.location.href = '/Entidades/Index';
+                                });
+                                return;
                             }
                         }
                         
                         Swal.fire({
-                            title: 'Error de Operación',
+                            title: 'Error',
                             text: errorMsg,
                             icon: 'error',
                             confirmButtonColor: '#c5a367',
                             background: '#1f060c',
-                            color: '#fff'
+                            color: '#fff',
+                            customClass: { popup: 'custom-modal' }
                         });
                     }
                 });

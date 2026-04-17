@@ -308,7 +308,7 @@
                     </div>
 
                     <div class="btn-container">
-                        <a asp-action="Index" class="btn-secondary-custom">
+                        <a asp-action="Index" class="btn-secondary-custom" id="btnRegresar">
                             <i class="fas fa-arrow-left"></i> Regresar al Listado
                         </a>
                         <button type="submit" class="btn-warning-custom" id="btnActualizar">
@@ -339,7 +339,11 @@
         }
 
         $(document).ready(function() {
+            var formModified = false;
+
+            // Validación en tiempo real para PARÁMETROS
             $('#Valor').on('input', function() {
+                formModified = true;
                 var valor = $(this).val();
                 if (!valor || valor.trim() === '') {
                     $('#valorError').text('El valor es requerido');
@@ -348,20 +352,54 @@
                 }
             });
 
+            $('#EstadoId').on('change', function() {
+                formModified = true;
+            });
+
+            // Mostrar mensaje de éxito si existe en TempData
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: '¡Operación Exitosa!',
+                    text: '@TempData["Success"]',
+                    icon: 'success',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Ir al Listado'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/Parametros/Index';
+                    }
+                });
+                </text>
+            }
+            
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'Error',
+                    text: '@TempData["Error"]',
+                    icon: 'error',
+                    confirmButtonColor: '#c5a367',
+                    background: '#1f060c',
+                    color: '#fff',
+                    confirmButtonText: 'Aceptar'
+                });
+                </text>
+            }
+
+            // Envío del formulario para PARÁMETROS
             $('#editForm').on('submit', function(e) {
-                e.preventDefault();
-                
                 var valor = $('#Valor').val();
-                var errores = [];
-
+                
                 if (!valor || valor.trim() === '') {
-                    errores.push('El valor es requerido');
-                }
-
-                if (errores.length > 0) {
+                    e.preventDefault();
                     Swal.fire({
-                        title: 'Campos incompletos',
-                        html: '<div style="text-align: left;">Por favor complete todos los campos requeridos:<br>• ' + errores.join('<br>• ') + '</div>',
+                        title: 'Campo requerido',
+                        text: 'El valor del parámetro es requerido',
                         icon: 'warning',
                         confirmButtonColor: '#c5a367',
                         background: '#1f060c',
@@ -369,91 +407,35 @@
                     });
                     return false;
                 }
-
+                
                 showLoading();
-                
-                var form = $(this);
-                var url = form.attr('action');
-                var data = form.serialize();
-                
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: data,
-                    success: function(response) {
-                        hideLoading();
-                        if (response.success) {
-                            Swal.fire({
-                                title: '¡Éxito!',
-                                text: response.message,
-                                icon: 'success',
-                                confirmButtonColor: '#c5a367',
-                                background: '#1f060c',
-                                color: '#fff'
-                            }).then(() => {
-                                window.location.href = '/Parametros/Index';
-                            });
-                        } else {
-                            Swal.fire({
-                                title: 'Error',
-                                text: response.message,
-                                icon: 'error',
-                                confirmButtonColor: '#c5a367',
-                                background: '#1f060c',
-                                color: '#fff'
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        hideLoading();
-                        let errorMsg = 'Error al actualizar el parámetro';
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.message) errorMsg = response.message;
-                        } catch(e) {
-                            if (xhr.status === 500) {
-                                errorMsg = 'Error interno del servidor. Por favor, intente nuevamente.';
-                            }
-                        }
-                        
-                        Swal.fire({
-                            title: 'Error de Operación',
-                            text: errorMsg,
-                            icon: 'error',
-                            confirmButtonColor: '#c5a367',
-                            background: '#1f060c',
-                            color: '#fff'
-                        });
-                    }
-                });
+                return true;
             });
 
             // Confirmar cambios antes de salir
-            var formModified = false;
-            $('input, select').on('change', function() { formModified = true; });
-            $('input').on('keyup', function() { formModified = true; });
-
-            $('a[asp-action="Index"]').click(function(e) {
+            $('#btnRegresar').click(function(e) {
                 if (formModified) {
                     e.preventDefault();
                     Swal.fire({
                         title: '¿Salir sin guardar?',
-                        text: 'Tiene cambios sin guardar. ¿Está seguro que desea salir?',
+                        text: 'Tiene cambios sin guardar',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#c5a367',
-                        cancelButtonColor: '#dc3545',
-                        confirmButtonText: '<i class="fas fa-sign-out-alt me-2"></i>Sí, salir',
-                        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, salir',
+                        cancelButtonText: 'Cancelar',
                         background: '#1f060c',
-                        color: '#fff'
+                        color: '#fff',
+                        customClass: { popup: 'custom-modal' }
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = $(this).attr('href');
+                            window.location.href = '/Parametros/Index';
                         }
                     });
                 }
             });
         });
     </script>
+    
 }
