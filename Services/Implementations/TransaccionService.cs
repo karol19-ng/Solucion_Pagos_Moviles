@@ -275,9 +275,39 @@ namespace Services.Implementations
             }
         }
 
+        public async Task<ReporteTransaccionDTO> ConsultarTransaccionesPorFechaAsync(DateTime fecha)
+        {
+            var inicio = fecha.Date;
+            var fin = inicio.AddDays(1).AddTicks(-1);
+
+            var transacciones = await _context.TransaccionEnvios
+                .Where(t => t.FechaEnvio.HasValue
+                         && t.FechaEnvio.Value >= inicio
+                         && t.FechaEnvio.Value <= fin)
+                .OrderBy(t => t.FechaEnvio)
+                .Select(t => new ReporteTransaccionItem
+                {
+                    Fecha = t.FechaEnvio!.Value,
+                    TelefonoOrigen = t.Telefono_Origen,
+                    TelefonoDestino = t.Telefono_Destino,
+                    Monto = t.Monto
+                })
+                .ToListAsync();
+
+            return new ReporteTransaccionDTO
+            {
+                FechaConsultada = fecha.Date,
+                Transacciones = transacciones,
+                TotalMonto = transacciones.Sum(t => t.Monto),
+                TotalTransacciones = transacciones.Count()
+            };
+        }
+
         private bool IsValidPhone(string phone)
         {
             return Regex.IsMatch(phone, @"^\d{8}$"); // Formato Costa Rica
         }
+
+
     }
 }

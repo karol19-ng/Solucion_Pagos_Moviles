@@ -35,11 +35,12 @@ namespace BitacoraService.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<BitacoraResponse>>> GetAll()
+        public async Task<ActionResult<List<Bitacoratransaccionresponse>>> GetByFecha(
+            [FromQuery] DateTime? fecha)
         {
             try
             {
-                var result = await _service.ConsultarBitacorasAsync();
+                var result = await _service.ConsultarTransaccionesAsync(fecha);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -54,22 +55,6 @@ namespace BitacoraService.Controllers
             try
             {
                 var result = await _service.ConsultarPorUsuarioAsync(usuario);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { codigo = -1, descripcion = ex.Message });
-            }
-        }
-
-        [HttpGet("fecha")]
-        public async Task<ActionResult<List<BitacoraResponse>>> GetByFecha(
-            [FromQuery] DateTime fechaInicio,
-            [FromQuery] DateTime fechaFin)
-        {
-            try
-            {
-                var result = await _service.ConsultarPorFechaAsync(fechaInicio, fechaFin);
                 return Ok(result);
             }
             catch (Exception ex)

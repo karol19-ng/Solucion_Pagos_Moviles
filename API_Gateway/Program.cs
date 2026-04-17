@@ -12,8 +12,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // GTW1: Configurar Ocelot
-builder.Configuration.AddJsonFile("Configuration/ocelot.json", optional: false, reloadOnChange: true);
-
+builder.Configuration.AddJsonFile("Configuration/Ocelot .json", optional: false, reloadOnChange: true);
 // GTW2: Configurar autenticación JWT para validación
 builder.Services.AddAuthentication("GatewayAuth")  // ← Especificar esquema por defecto
     .AddJwtBearer("GatewayAuth", options =>
@@ -31,16 +30,27 @@ builder.Services.AddAuthentication("GatewayAuth")  // ← Especificar esquema po
         };
     });
 
+
+
 // IMPORTANTE: Registrar HttpClientFactory
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("GlobalDownstreamHandler")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    });
 
 builder.Services.AddOcelot();
+
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // IMPORTANTE: Agregar UseAuthentication y UseAuthorization ANTES del middleware
+app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();  // ← NUEVO
 app.UseAuthorization();   // ← NUEVO
@@ -50,7 +60,7 @@ app.UseMiddleware<GatewayAuthenticationMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+
 
 // GTW1: Ocelot como middleware final
 await app.UseOcelot();

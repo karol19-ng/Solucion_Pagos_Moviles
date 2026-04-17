@@ -77,5 +77,26 @@ namespace API_Proyecto1.Controllers
                 return StatusCode(500, new { codigo = -1, descripcion = ex.Message });
             }
         }
+        [AllowAnonymous]
+        [HttpGet("reporte")]
+        public async Task<IActionResult> Reporte([FromQuery] DateTime fecha)
+        {
+            Console.WriteLine($"=== REPORTE LLAMADO: {fecha} ===");
+            try
+            {
+                if (fecha == default)
+                    return BadRequest(new { codigo = -1, descripcion = "Fecha inválida" });
+
+                var result = await _service.ConsultarTransaccionesPorFechaAsync(fecha);
+                Console.WriteLine($"=== REPORTE OK: {result?.TotalTransacciones} ===");
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"=== REPORTE ERROR: {ex.Message} ===");
+                return StatusCode(500, new { codigo = -1, descripcion = ex.Message });
+            }
+        }
+
     }
 }
