@@ -1,24 +1,20 @@
+// services/apiClient.ts
 import axios from 'axios';
-import { API_BASE_URL } from '../constants/api';
-import { getToken, clearAll } from '../utils/storage';
+import { API_CONFIG } from '../app/constants/api';
+import storageService from '../utils/storage';
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' }
+  baseURL: API_CONFIG.GATEWAY_URL,
+  timeout: API_CONFIG.TIMEOUT,
+  headers: { 'Content-Type': 'application/json' },
 });
 
 apiClient.interceptors.request.use(async (config) => {
-  const token = await getToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const token = await storageService.getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
-
-apiClient.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    if (error.response?.status === 401) await clearAll();
-    return Promise.reject(error);
-  }
-);
 
 export default apiClient;
