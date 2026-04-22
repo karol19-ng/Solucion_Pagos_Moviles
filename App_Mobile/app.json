@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Banco-Pegasos",
+    "slug": "nexuspay-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0E17"
+    },
+    "scheme": "nexuspay",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
