@@ -12,14 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
-
-
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new() { Title = "API Proyecto1", Version = "v1" });
-
-    //ConfiguraciÛn JWT para Swagger
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -29,7 +24,6 @@ builder.Services.AddSwaggerGen(options =>
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Description = "Ingrese 'Bearer' seguido de un espacio y luego el token.\n\nEjemplo: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     });
-
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
         {
@@ -46,24 +40,32 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
-
-
 // DbContexts
-// Para Core Bancario
 builder.Services.AddDbContext<CoreBancarioDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CoreBancarioConnection")));
-
-// Para Pagos MÛviles
 builder.Services.AddDbContext<PagosMovilesDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("PagosMovilesConnection")));
-
-// Para Bit·cora
 builder.Services.AddDbContext<BitacoraDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("BitacoraConnection")));
 
 // HttpClient
 builder.Services.AddHttpClient();
+
+// CORS ‚Üê NUEVO
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMobileApp", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:8081",
+                "http://localhost:19006",
+                "exp://localhost:8081"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 // Services
 builder.Services.AddScoped<IBitacoraService, BitacoraService>();
@@ -91,6 +93,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero
         };
     });
+
 builder.Services.AddControllers()
     .AddJsonOptions(options => {
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
@@ -105,9 +108,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowMobileApp"); // ‚Üê NUEVO - debe ir primero
+
 //app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();
