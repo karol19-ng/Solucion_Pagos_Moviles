@@ -17,7 +17,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace('/(auth)/login' as any );
+      router.replace('/auth/login' as any );
     }
   }, [isAuthenticated, isLoading]);
 

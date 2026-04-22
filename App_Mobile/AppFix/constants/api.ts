@@ -1,0 +1,1 @@
+export const API_URL = "https://solucion-pagos-moviles.onrender.com";

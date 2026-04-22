@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { storage } from '../utils/storage';
-import { authService, decodeToken } from '../services/authService';
+import { storage } from '../app/utils/storage';
+import { authService, decodeToken } from '../app/services/authService';
 
 interface AuthUser {
   usuarioId: string;

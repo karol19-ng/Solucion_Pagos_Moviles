@@ -108,6 +108,17 @@ builder.Services.AddHttpClient<IRolService, RolService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<IBitacoraAdminService, BitacoraAdminService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+});
+
+builder.Services.AddHttpClient<ITransaccionService, TransaccionService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7096/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -121,7 +132,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// 🔴 NUEVO: Importante - Session debe ir antes de Authentication
 app.UseSession(); // HABILITAR SESIÓN
 
 app.UseAuthentication();

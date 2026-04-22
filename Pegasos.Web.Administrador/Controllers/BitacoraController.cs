@@ -2,12 +2,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Pegasos.Web.Administrador.Models;
 using Pegasos.Web.Administrador.Services;
+<<<<<<< HEAD
+=======
+using System.ComponentModel.DataAnnotations;
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
 
 namespace Pegasos.Web.Administrador.Controllers
 {
     [Authorize]
     public class BitacoraController : Controller
     {
+<<<<<<< HEAD
         private readonly IBitacoraAdminService _bitacoraService;
         private readonly ILogger<BitacoraController> _logger;
 
@@ -16,6 +21,14 @@ namespace Pegasos.Web.Administrador.Controllers
             ILogger<BitacoraController> logger)
         {
             _bitacoraService = bitacoraService;
+=======
+        private readonly ITransaccionService _transaccionService;
+        private readonly ILogger<BitacoraController> _logger;
+
+        public BitacoraController(ITransaccionService transaccionService, ILogger<BitacoraController> logger)
+        {
+            _transaccionService = transaccionService;
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
             _logger = logger;
         }
 
@@ -26,6 +39,7 @@ namespace Pegasos.Web.Administrador.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+<<<<<<< HEAD
         public async Task<IActionResult> Index(BitacoraViewModel filtro)
         {
             try
@@ -46,5 +60,40 @@ namespace Pegasos.Web.Administrador.Controllers
 
             return View(filtro);
         }
+=======
+        public async Task<IActionResult> Index(BitacoraViewModel filtro, string Fecha)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(Fecha) && DateTime.TryParse(Fecha, out var fechaParsed))
+                {
+                    filtro.Fecha = fechaParsed;
+                    var reporte = await _transaccionService.ConsultarTransaccionesPorFechaAsync(fechaParsed);
+
+                    ViewBag.Debug = $"Fecha: {fechaParsed:yyyy-MM-dd} | Transacciones: {reporte?.Transacciones?.Count ?? -1}";
+
+                    filtro.Resultados = reporte?.Transacciones?.Select(t => new BitacoraItemViewModel
+                    {
+                        Fecha = t.Fecha,
+                        TelefonoOrigen = t.TelefonoOrigen,
+                        TelefonoDestino = t.TelefonoDestino,
+                        Monto = t.Monto
+                    }).ToList() ?? new();
+                }
+                else
+                {
+                    ViewBag.Debug = $"Fecha recibida: '{Fecha}' — no se pudo parsear";
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Debug = $"EXCEPCION: {ex.Message}";
+                _logger.LogError(ex, "Error al consultar bitácora");
+            }
+            return View(filtro);
+        }
+
+
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
     }
 }

@@ -1,8 +1,20 @@
 ﻿{
   "Routes": [
-    // BITACORA (SRV18)
     {
-      "DownstreamPathTemplate": "/api/bitacora/{everything}",
+      "DownstreamPathTemplate": "/transactions/reporte",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5188
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/transactions/reporte",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+
+    {
+      "DownstreamPathTemplate": "/bitacora/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -12,10 +24,20 @@
       ],
       "UpstreamPathTemplate": "/gateway/bitacora/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST" ]
-
+    },
+    {
+      "DownstreamPathTemplate": "/bitacora",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5004
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/bitacora",
+      "UpstreamHttpMethod": [ "GET", "POST" ]
     },
 
-    // REGISTER (SRV9) - Inscripción
     {
       "DownstreamPathTemplate": "/auth/register",
       "DownstreamScheme": "https",
@@ -30,7 +52,6 @@
 
     },
 
-    // CANCEL-SUBSCRIPTION (SRV10)
     {
       "DownstreamPathTemplate": "/auth/cancel-subscription",
       "DownstreamScheme": "https",
@@ -45,7 +66,6 @@
 
     },
 
-    // TRANSACTIONS ROUTE (SRV12)
     {
       "DownstreamPathTemplate": "/transactions/route",
       "DownstreamScheme": "https",
@@ -60,7 +80,6 @@
 
     },
 
-    // ACCOUNTS BALANCE (SRV13)
     {
       "DownstreamPathTemplate": "/accounts/balance",
       "DownstreamScheme": "https",
@@ -75,7 +94,6 @@
 
     },
 
-    // ACCOUNTS TRANSACTIONS (SRV11)
     {
       "DownstreamPathTemplate": "/accounts/transactions",
       "DownstreamScheme": "https",
@@ -96,14 +114,13 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7258 // Puerto de Solucion_Pagos_Moviles
+          "Port": 7258
         }
       ],
       "UpstreamPathTemplate": "/gateway/api/CoreClient/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
-    // CORECLIENT (sin parámetros)
     {
       "DownstreamPathTemplate": "/api/CoreClient",
       "DownstreamScheme": "https",
@@ -117,7 +134,6 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
-    // TIPOS DE IDENTIFICACIÓN
     {
       "DownstreamPathTemplate": "/api/CoreClient/tipos-identificacion",
       "DownstreamScheme": "https",
@@ -131,9 +147,7 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
-    // ===== NUEVAS RUTAS PARA CUENTAS CORE (SA11) =====
 
-    // COREACCOUNT (con parámetros)
     {
       "DownstreamPathTemplate": "/api/CoreAccount/{everything}",
       "DownstreamScheme": "https",
@@ -147,7 +161,6 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
-    // COREACCOUNT (sin parámetros)
     {
       "DownstreamPathTemplate": "/api/CoreAccount",
       "DownstreamScheme": "https",
@@ -161,7 +174,6 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
-    // CUENTAS POR CLIENTE (por identificación)
     {
       "DownstreamPathTemplate": "/api/CoreAccount/cliente/{identificacion}",
       "DownstreamScheme": "https",
@@ -175,7 +187,6 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
-    // CUENTAS POR CLIENTE (por ID)
     {
       "DownstreamPathTemplate": "/api/CoreAccount/cliente-id/{clienteId}",
       "DownstreamScheme": "https",
@@ -189,7 +200,6 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
-    // TIPOS DE CUENTA
     {
       "DownstreamPathTemplate": "/api/CoreAccount/tipos-cuenta",
       "DownstreamScheme": "https",
@@ -203,7 +213,6 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
 
-    // PARAMETRO (con parámetros)
     {
       "DownstreamPathTemplate": "/api/parametro/{everything}",
       "DownstreamScheme": "https",
@@ -217,7 +226,6 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
-    // PARAMETRO (sin parámetros)
     {
       "DownstreamPathTemplate": "/api/parametro",
       "DownstreamScheme": "https",
@@ -232,7 +240,6 @@
     },
 
 
-    // ENTIDAD (con parámetros)
     {
       "DownstreamPathTemplate": "/api/entidad/{everything}",
       "DownstreamScheme": "https",
@@ -246,7 +253,6 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
-    // ENTIDAD (sin parámetros)
     {
       "DownstreamPathTemplate": "/api/entidad",
       "DownstreamScheme": "https",
@@ -260,7 +266,6 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
-    // PANTALLAS - LISTAR Y CREAR (GET y POST)
     {
       "DownstreamPathTemplate": "/screen",
       "DownstreamScheme": "https",
@@ -274,7 +279,6 @@
       "UpstreamHttpMethod": [ "GET", "POST" ]
     },
 
-    // PANTALLAS - OBTENER POR ID, ACTUALIZAR, ELIMINAR
     {
       "DownstreamPathTemplate": "/screen/{id}",
       "DownstreamScheme": "https",
@@ -288,7 +292,6 @@
       "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ]
     },
 
-    // ROLES - LISTAR Y CREAR (GET y POST)
     {
       "DownstreamPathTemplate": "/rol",
       "DownstreamScheme": "https",
@@ -302,7 +305,6 @@
       "UpstreamHttpMethod": [ "GET", "POST" ]
     },
 
-    // ROLES - OBTENER POR ID, ACTUALIZAR, ELIMINAR
     {
       "DownstreamPathTemplate": "/rol/{id}",
       "DownstreamScheme": "https",
@@ -316,7 +318,6 @@
       "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ]
     },
 
-    // RUTA GENÉRICA
     {
       "DownstreamPathTemplate": "/api/{everything}",
       "DownstreamScheme": "http",

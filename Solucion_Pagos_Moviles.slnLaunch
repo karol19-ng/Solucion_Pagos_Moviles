@@ -17,6 +17,10 @@
       {
         "Path": "Pegasos.Web.Administrador\\Pegasos.Web.Administrador.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "BitacoraService\\BitacoraService.csproj",
+        "Action": "Start"
       }
     ]
   }
