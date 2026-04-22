@@ -32,7 +32,10 @@ builder.Services.AddAuthentication("GatewayAuth")  // ← Especificar esquema po
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
 // IMPORTANTE: Registrar HttpClientFactory
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("GlobalDownstreamHandler")
@@ -43,6 +46,7 @@ builder.Services.AddHttpClient("GlobalDownstreamHandler")
 
 builder.Services.AddOcelot();
 
+<<<<<<< HEAD
 //Implemento del corsn 
 builder.Services.AddCors(options =>
 {
@@ -55,6 +59,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+=======
+
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

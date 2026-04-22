@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 ﻿namespace Pegasos.Web.Administrador.Models
 {
     public class BitacoraViewModel
@@ -18,6 +19,8 @@
     
 }
 =======
+=======
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace Pegasos.Web.Administrador.Models
@@ -37,5 +40,9 @@ namespace Pegasos.Web.Administrador.Models
         public decimal Monto { get; set; }
     }
 
+<<<<<<< HEAD
+}
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
+=======
 }
 >>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
