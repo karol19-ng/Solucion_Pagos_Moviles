@@ -32,6 +32,10 @@ builder.Services.AddAuthentication("GatewayAuth")  // ← Especificar esquema po
 
 
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
 // IMPORTANTE: Registrar HttpClientFactory
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("GlobalDownstreamHandler")
@@ -42,13 +46,28 @@ builder.Services.AddHttpClient("GlobalDownstreamHandler")
 
 builder.Services.AddOcelot();
 
+<<<<<<< HEAD
+//Implemento del corsn 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMobileApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:8081", "http://localhost:19006", "exp://localhost:8081")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
+=======
+
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
+app.UseCors("AllowMobileApp");
 // IMPORTANTE: Agregar UseAuthentication y UseAuthorization ANTES del middleware
 app.UseHttpsRedirection();
 app.UseRouting();

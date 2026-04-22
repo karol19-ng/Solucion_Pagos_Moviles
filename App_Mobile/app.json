@@ -1,7 +1,17 @@
 {
   "expo": {
+<<<<<<< HEAD
+<<<<<<< HEAD
+    "name": "pegasos-mobile",
+    "slug": "pegasos-mobile",
+=======
     "name": "Banco-Pegasos",
     "slug": "nexuspay-mobile",
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
+=======
+    "name": "Banco-Pegasos",
+    "slug": "nexuspay-mobile",
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,6 +21,17 @@
       "resizeMode": "contain",
       "backgroundColor": "#0A0E17"
     },
+<<<<<<< HEAD
+<<<<<<< HEAD
+    "scheme": "pegasos-mobile",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
+=======
+=======
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
     "scheme": "nexuspay",
     "experiments": {
       "typedRoutes": true
@@ -20,3 +41,7 @@
     ]
   }
 }
+<<<<<<< HEAD
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
+=======
+>>>>>>> 87e64982bb773abe1b92ecdc46068eb40859dd1e
