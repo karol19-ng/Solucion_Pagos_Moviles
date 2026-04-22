@@ -19,7 +19,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new() { Title = "API Proyecto1", Version = "v1" });
 
-    //ConfiguraciÛn JWT para Swagger
+    //Configuraci√≥n JWT para Swagger
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -54,16 +54,33 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<CoreBancarioDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CoreBancarioConnection")));
 
-// Para Pagos MÛviles
+// Para Pagos M√≥viles
 builder.Services.AddDbContext<PagosMovilesDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("PagosMovilesConnection")));
 
-// Para Bit·cora
+// Para Bit√°cora
 builder.Services.AddDbContext<BitacoraDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("BitacoraConnection")));
 
 // HttpClient
 builder.Services.AddHttpClient();
+
+//CORS
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMobileApp", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:8081",
+                "http://localhost:19006",
+                "exp://localhost:8081"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 // Services
 builder.Services.AddScoped<IBitacoraService, BitacoraService>();
@@ -97,6 +114,7 @@ builder.Services.AddControllers()
     });
 
 var app = builder.Build();
+app.UseCors("AllowMobileApp");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
